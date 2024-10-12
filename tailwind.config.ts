@@ -11,8 +11,15 @@ const config: Config = {
       colors: {
         background: "var(--background)",
         foreground: "var(--foreground)",
+        inputFocus: "#fff",
       },
     },
+    variants: {
+      extend: {
+        borderColor: ['focus'],
+        boxShadow: ['focus'],
+      },
+    }
   },
   plugins: [],
 };

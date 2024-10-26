@@ -1,7 +1,8 @@
 import { Handle, Position, useUpdateNodeInternals } from '@xyflow/react';
 import { useState, useEffect } from 'react';
 import { MdSend } from "react-icons/md";
-import { callAiApi } from '../api/aiApi';
+import TextContentDialog from './UI/dialog'; // 引入 CustomDialog 組件
+// import { callAiApi } from '../api/aiApi';
 interface CustomNodeData {
   data: {
     id: string;
@@ -21,10 +22,13 @@ export default function CustomNode({ data }: CustomNodeData) {
   const [userPrompt, setUserPrompt] = useState(data.userPrompt || '');
   // const [inputValue, setInputValue] = useState(data.label || '');
   const [result, setResult] = useState('(尚未輸出)');
-  const [quantity, setQuantity] = useState(1);
+  // const [quantity, setQuantity] = useState(1);
   const [loading, setLoading] = useState(false);
   const updateNodeInternals = useUpdateNodeInternals();
   const [handles, setHandles] = useState<{ id: string; label: string }[]>([]);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+
+
   useEffect(() => {
     const regex = /\[:(.*?)\:]/g;
     const matches = Array.from(userPrompt.matchAll(regex));
@@ -138,8 +142,9 @@ export default function CustomNode({ data }: CustomNodeData) {
       </div>
 
       {/* 結果輸出 */}
-      <div className="mt-2 p-2 border rounded border-gray-200 pt-2 text-gray-500 text-sm">{result}</div>
+      <div className="mt-2 p-2 border rounded border-gray-200 pt-2 text-gray-500 text-sm" onClick={() => setIsDialogOpen(true)}>{result}</div>
       <Handle type="source" position={Position.Right} style={handleStyle} />
+      <TextContentDialog message={result} isOpen={isDialogOpen} onClose={() => setIsDialogOpen(false)} />
     </div>
   );
 }

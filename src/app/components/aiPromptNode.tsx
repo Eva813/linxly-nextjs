@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { MdSend } from "react-icons/md";
 import TextContentDialog from './UI/dialog'; // 引入 CustomDialog 組件
 // import { callAiApi } from '../api/aiApi';
+import ReactMarkdown from 'react-markdown';
 interface CustomNodeData {
   data: {
     id: string;
@@ -142,7 +143,7 @@ export default function CustomNode({ data }: CustomNodeData) {
       </div>
 
       {/* 結果輸出 */}
-      <div className="mt-2 p-2 border rounded border-gray-200 pt-2 text-gray-500 text-sm" onClick={() => setIsDialogOpen(true)}>{result}</div>
+      <div className="mt-2 p-2 border rounded border-gray-200 pt-2 text-gray-500 text-sm" onClick={() => setIsDialogOpen(true)}><ReactMarkdown>{result}</ReactMarkdown></div>
       <Handle type="source" position={Position.Right} style={handleStyle} />
       <TextContentDialog message={result} isOpen={isDialogOpen} onClose={() => setIsDialogOpen(false)} />
     </div>

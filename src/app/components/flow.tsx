@@ -21,21 +21,22 @@ import AiPromptNode from './aiPromptNode';  // 導入 AiPromptNode
 // 有不同的 custom node 類型，可以在 nodeTypes 中設定
 // 例如: 一個輸入框的、或是2個輸入框的
 const initialNodes: Node[] = [];
-const initialEdges: Edge[] = [
-  {
-    id: 'e1-2',
-    source: '1',
-    target: '2',
-    style: { stroke: '#93c5fd' },
-  },
-  {
-    id: 'e2-3',
-    source: '2',
-    target: '3',
-    animated: true,
-    style: { stroke: '#86efac' },
-  },
-];
+// const initialEdges: Edge[] = [
+//   {
+//     id: 'e1-2',
+//     source: '1',
+//     target: '2',
+//     style: { stroke: '#93c5fd' },
+//   },
+//   {
+//     id: 'e2-3',
+//     source: '2',
+//     target: '3',
+//     animated: true,
+//     style: { stroke: '#86efac' },
+//   },
+// ];
+const initialEdges: Edge[] = [];
 
 export default function Flow() {
   const [nodes, setNodes] = useState<Node[]>(initialNodes);

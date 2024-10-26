@@ -7,6 +7,12 @@ interface CustomNodeData {
     label?: string;
   };
 }
+const handleStyle = {
+  background: '#555', // Custom color for the handle
+  width: 10,          // Custom width
+  height: 10,         // Custom height
+};
+
 
 export default function CustomNode({ data }: CustomNodeData) {
   const [inputValue, setInputValue] = useState(data.label || '');
@@ -16,7 +22,7 @@ export default function CustomNode({ data }: CustomNodeData) {
 
   return (
     <div className="p-2 bg-white rounded-md border border-gray-300">
-      <Handle type="target" position={Position.Top} />
+      <Handle type="target" position={Position.Left} style={handleStyle} />
       <div className="mb-2 font-bold">Text Input Node {data.id}</div>
       <textarea
         className="border border-gray-300 p-1 rounded w-full resize nodrag focus:outline-none focus:border-gray-600 focus:ring-0.5 focus:ring-gray-600"
@@ -24,7 +30,7 @@ export default function CustomNode({ data }: CustomNodeData) {
         onChange={(e) => setInputValue(e.target.value)}
         onMouseDown={handleMouseDown}
       />
-      <Handle type="source" position={Position.Bottom} />
+      <Handle type="source" position={Position.Right} style={handleStyle} />
     </div>
   );
 }

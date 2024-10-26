@@ -31,13 +31,19 @@ export default function CustomNode({ data }: CustomNodeData) {
 
 
   useEffect(() => {
-    const regex = /\[:(.*?)\:]/g;
+    // 匹配 userPrompt 中所有的 `[:label:]` 模式
+    const regex = /\[:(.*?)\]/g;
     const matches = Array.from(userPrompt.matchAll(regex));
+
+    // 根據匹配結果創建新的 handles 陣列
     const newHandles = matches.map((match, index) => ({
       id: `handle-${index}`,
       label: match[1],
     }));
+    console.log('newHandles:', newHandles);
     setHandles(newHandles);
+
+    // 更新節點內部，以確保渲染新 handle
     updateNodeInternals(data.id);
   }, [userPrompt, data.id, updateNodeInternals]);
 
@@ -66,7 +72,7 @@ export default function CustomNode({ data }: CustomNodeData) {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          messages: [{ role: 'user', content: `${systemPrompt}/n${userPrompt}` }],
+          messages: [{ role: 'user', content: `${systemPrompt}${userPrompt}` }],
         }),
       });
 
@@ -88,13 +94,28 @@ export default function CustomNode({ data }: CustomNodeData) {
   return (
     <div className="p-2 bg-white rounded-md border border-gray-300 w-md max-w-md">
       {/* <Handle type="target" position={Position.Left} style={handleStyle} /> */}
-      {handles.map((handle) => (
+      {/* 動態渲染左側的 handle */}
+
+      {/* {handles.map((handle) => (
         <Handle
           key={handle.id}
           type="target"
           position={Position.Left}
           id={handle.id}
           style={handleStyle}
+          title={handle.label}
+        />
+      ))} */}
+      {handles.map((handle, index) => (
+        <Handle
+          key={handle.id}
+          type="target"
+          position={Position.Left}
+          id={handle.id}
+          style={{
+            ...handleStyle,
+            top: `calc(50% + ${index * 20}px)`  // 逐一遞減位置
+          }}
           title={handle.label}
         />
       ))}

@@ -1,7 +1,8 @@
-import { Handle, Position, useUpdateNodeInternals } from '@xyflow/react';
+import { Handle, Position, useUpdateNodeInternals, useStore } from '@xyflow/react';
 import { useState, useEffect } from 'react';
 import { MdSend } from "react-icons/md";
-import TextContentDialog from './UI/dialog'; // 引入 CustomDialog 組件
+import TextContentDialog from './UI/textContentDialog'; // 引入 CustomDialog 組件
+import { useNodeData } from '@/contexts/NodeContext';
 // import { callAiApi } from '../api/aiApi';
 import ReactMarkdown from 'react-markdown';
 interface CustomNodeData {
@@ -10,6 +11,7 @@ interface CustomNodeData {
     label?: string;
     systemPrompt?: string;
     userPrompt?: string;
+    userPromptNodeId?: string; // 指定來源的 Text Node 的 id
   };
 }
 const handleStyle = {
@@ -19,6 +21,8 @@ const handleStyle = {
 };
 
 export default function CustomNode({ data }: CustomNodeData) {
+  const { nodeData } = useNodeData();
+
   const [systemPrompt, setSystemPrompt] = useState(data.systemPrompt || '');
   const [userPrompt, setUserPrompt] = useState(data.userPrompt || '');
   // const [inputValue, setInputValue] = useState(data.label || '');
@@ -28,7 +32,16 @@ export default function CustomNode({ data }: CustomNodeData) {
   const updateNodeInternals = useUpdateNodeInternals();
   const [handles, setHandles] = useState<{ id: string; label: string }[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-
+  const [edgeCount, setEdgeCount] = useState(0);
+  const userTextPrompt = nodeData[data.userPromptNodeId || ''] || '';
+  const edges = useStore((s) => s.edges.filter((e) => e.target === data.id));
+  // 更新節點並處理連線變化
+  useEffect(() => {
+    if (edges.length !== edgeCount) {
+      setEdgeCount(edges.length);
+      updateNodeInternals(data.id);
+    }
+  }, [edges.length, edgeCount, data.id, updateNodeInternals]);
 
   useEffect(() => {
     // 匹配 userPrompt 中所有的 `[:label:]` 模式
@@ -47,24 +60,17 @@ export default function CustomNode({ data }: CustomNodeData) {
     updateNodeInternals(data.id);
   }, [userPrompt, data.id, updateNodeInternals]);
 
-  // const handleSendClick = async () => {
-  //   setLoading(true);
-  //   try {
-  //     console.log('systemPrompt:', systemPrompt);
-  //     const response = await callAiApi(`${systemPrompt}\n${userPrompt}`);
-  //     setResult(response.choices[0].text);
-  //   } catch (error) {
-  //     console.error(error);
-  //     setResult('Error retrieving response');
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // };
 
   const handleSendClick = async () => {
     setLoading(true);
+    console.log('systemPrompt:', systemPrompt);
+    console.log('userPromptNodeId:', data.userPromptNodeId); /// 這個是來源的 Text Node 的 id，但是是 undefined?
+    console.log('userPrompt:', userTextPrompt);
     try {
       // 發送 POST 請求到 /api/chat 後端 API 路由
+      // 將所有 Text Input Node 的資料組合成 message 陣列
+      const userMessage = Object.values(nodeData); // 把 nodeData 裡所有文字值組合成一個陣列
+
 
       const response = await fetch('/api/chat', {
         method: 'POST',
@@ -72,7 +78,7 @@ export default function CustomNode({ data }: CustomNodeData) {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          messages: [{ role: 'user', content: `${systemPrompt}${userPrompt}` }],
+          messages: [{ role: 'system', content: `${systemPrompt}` }, { role: 'user', content: `${userMessage}` }],
         }),
       });
 
@@ -93,19 +99,7 @@ export default function CustomNode({ data }: CustomNodeData) {
 
   return (
     <div className="p-2 bg-white rounded-md border border-gray-300 w-md max-w-md">
-      {/* <Handle type="target" position={Position.Left} style={handleStyle} /> */}
       {/* 動態渲染左側的 handle */}
-
-      {/* {handles.map((handle) => (
-        <Handle
-          key={handle.id}
-          type="target"
-          position={Position.Left}
-          id={handle.id}
-          style={handleStyle}
-          title={handle.label}
-        />
-      ))} */}
       {handles.map((handle, index) => (
         <Handle
           key={handle.id}
@@ -164,8 +158,10 @@ export default function CustomNode({ data }: CustomNodeData) {
       </div>
 
       {/* 結果輸出 */}
-      <div className="mt-2 p-2 border rounded border-gray-200 pt-2 text-gray-500 text-sm" onClick={() => setIsDialogOpen(true)}><ReactMarkdown>{result}</ReactMarkdown></div>
-      <Handle type="source" position={Position.Right} style={handleStyle} />
+      <div className="mt-2 p-2 border rounded border-gray-200 pt-2 text-gray-500 text-sm max-h-[300px] overflow-y-auto nodrag" onClick={() => setIsDialogOpen(true)}>
+        <ReactMarkdown>{result.length > 300 ? result.substring(0, 300) + '...' : result}</ReactMarkdown>
+      </div>
+      <Handle type="source" position={Position.Right} style={handleStyle} id="source" />
       <TextContentDialog message={result} isOpen={isDialogOpen} onClose={() => setIsDialogOpen(false)} />
     </div>
   );

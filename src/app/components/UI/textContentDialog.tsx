@@ -1,5 +1,6 @@
 import React from 'react';
 import { Dialog, DialogContent, DialogClose, DialogFooter, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import ReactMarkdown from 'react-markdown';
 
 interface CustomDialogProps {
   message: string;
@@ -8,7 +9,6 @@ interface CustomDialogProps {
 }
 
 const TextContentDialog = ({ message, isOpen, onClose }: CustomDialogProps) => {
-
   // Function to handle file download
   const handleDownload = () => {
     const blob = new Blob([message], { type: 'text/plain' });
@@ -24,14 +24,14 @@ const TextContentDialog = ({ message, isOpen, onClose }: CustomDialogProps) => {
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="bg-white p-6 rounded-lg shadow-lg max-w-lg mx-auto mt-10">
+      <DialogContent className="bg-white p-6 rounded-lg shadow-lg max-w-2xl mx-auto mt-10">
         <DialogTitle className="text-xl">
           輸出結果
         </DialogTitle>
 
         <DialogDescription asChild>
-          <div className="mb-4 mt-2 p-2 border rounded border-gray-700 pt-2 text-gray-500">
-            {message}
+          <div className="mb-4 mt-2 p-2 border rounded border-gray-700 pt-2 text-gray-500 max-h-60 overflow-y-auto">
+            <ReactMarkdown>{message}</ReactMarkdown>
           </div>
         </DialogDescription>
 

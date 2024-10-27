@@ -6,6 +6,14 @@ export default async function handler(req, res) {
 
   if (req.method === 'POST') {
     try {
+      // const { message, systemPrompt, userPromptPrefixOrTemplate } = req.body;
+
+      // 組合 OpenAI API 所需的 `messages` 格式
+      // const messages = [
+      //   { role: "system", content: systemPrompt },
+      //   ...message.map(content => ({ role: "user", content }))
+      // ];
+      console.log('ddd', req.body.messages)
       const response = await axios.post(
         `${apiBaseUrl}/chat/completions`,
         {

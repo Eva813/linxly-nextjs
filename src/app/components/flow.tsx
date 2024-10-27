@@ -50,10 +50,44 @@ export default function Flow() {
     (changes) => setEdges((eds) => applyEdgeChanges(changes, eds)),
     [setEdges],
   );
+
+  // const onConnect: OnConnect = useCallback(
+  //   (connection) => {
+  //     // Check if the connection is valid
+  //     if (connection.source && connection.target) {
+  //       // setEdges((eds) => addEdge({
+  //       //   ...connection,
+  //       //   // Use the full handle IDs
+  //       //   sourceHandle: `source-${connection.source}`,
+  //       //   targetHandle: connection.targetHandle,
+  //       // }, eds));
+  //       setEdges((eds) => {
+  //         const newEdge = addEdge(connection, eds);
+  //         console.log('New edge created:', newEdge);
+  //         return newEdge;
+  //       });
+  //     } else {
+  //       console.log('Invalid connection:', connection);
+  //     }
+  //   },
+  //   [setEdges],
+  // );
   const onConnect: OnConnect = useCallback(
-    (connection) => setEdges((eds) => addEdge(connection, eds)),
-    [setEdges],
+    (params) => setEdges((eds) => addEdge(params, eds)),
+    [setEdges]
   );
+
+  //  const onConnect: OnConnect = useCallback(
+  //   (connection) => {
+  //     setEdges((eds) => addEdge({
+  //       ...connection,
+  //       sourceHandle: 'text-output', // 確保來源 handle 固定
+  //       // 讓目標 handle 保持動態，使用 connection.targetHandle
+  //       targetHandle: connection.targetHandle,
+  //     }, eds));
+  //   },
+  //   [setEdges],
+  // );
 
   // 自定義節點類型
   const nodeTypes: NodeTypes = { textInputNode: TextInputNode, aiPromptNode: AiPromptNode };
@@ -85,7 +119,8 @@ export default function Flow() {
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
         onConnect={onConnect}
-        fitView
+        panOnScroll
+        selectionOnDrag
       >
         <Background />
         <Controls />

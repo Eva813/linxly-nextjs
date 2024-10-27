@@ -1,5 +1,6 @@
 import { Handle, Position } from '@xyflow/react';
 import { useState } from 'react';
+import { useNodeData } from '@/contexts/NodeContext';
 
 interface CustomNodeData {
   data: {
@@ -15,9 +16,14 @@ const handleStyle = {
 
 
 export default function CustomNode({ data }: CustomNodeData) {
+  const { setNodeData } = useNodeData();
   const [inputValue, setInputValue] = useState(data.label || '');
   const handleMouseDown = (e: React.MouseEvent) => {
     e.stopPropagation();
+  };
+  const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setInputValue(e.target.value)
+    setNodeData(data.id, e.target.value);  // 更新 Context 中的文字內容
   };
 
   return (
@@ -27,10 +33,10 @@ export default function CustomNode({ data }: CustomNodeData) {
       <textarea
         className="border border-gray-300 p-1 rounded w-full resize nodrag focus:outline-none focus:border-gray-600 focus:ring-0.5 focus:ring-gray-600"
         value={inputValue}
-        onChange={(e) => setInputValue(e.target.value)}
         onMouseDown={handleMouseDown}
+        onChange={handleChange}
       />
-      <Handle type="source" position={Position.Right} style={handleStyle} />
+      <Handle type="source" id={`source-${data.id}`} position={Position.Right} style={handleStyle} />
     </div>
   );
 }

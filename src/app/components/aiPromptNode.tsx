@@ -3,7 +3,6 @@ import { useState, useEffect } from 'react';
 import { MdSend } from "react-icons/md";
 import TextContentDialog from './UI/textContentDialog'; // 引入 CustomDialog 組件
 import { useNodeData } from '@/contexts/NodeContext';
-// import { callAiApi } from '../api/aiApi';
 import ReactMarkdown from 'react-markdown';
 interface CustomNodeData {
   data: {
@@ -33,7 +32,6 @@ export default function CustomNode({ data }: CustomNodeData) {
   const [handles, setHandles] = useState<{ id: string; label: string }[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [edgeCount, setEdgeCount] = useState(0);
-  const userTextPrompt = nodeData[data.userPromptNodeId || ''] || '';
   // 獲取所有連接到這個節點的邊
   const edges = useStore((s) => s.edges.filter((e) => e.target === data.id));
   // 更新節點並處理連線變化
@@ -61,74 +59,7 @@ export default function CustomNode({ data }: CustomNodeData) {
     updateNodeInternals(data.id);
   }, [userPrompt, data.id, updateNodeInternals]);
 
-  // 獲取所有連接到這個節點的邊
-  // const edges = useStore((s) => s.edges.filter((e) => e.target === data.id));
-
-  // 收集所有連接的節點的文字內容
-  // const connectedTexts = edges.map(edge => nodeData[edge.source] || '').join('\n');
-  // console.log('connectedTexts:', connectedTexts);
-  // 獲取連接到此節點的 FileUploadNode 的內容
   const { getNode, getEdges } = useReactFlow();
-  // const getConnectedFileContent = () => {
-  //   const edges = getEdges();
-  //   // 找到所有連接到此節點的 edges
-  //   const incomingEdges = edges.filter(edge => edge.target === data.id);
-
-  //   // 從這些 edges 中獲取源節點的 fileContent
-  //   const fileContents = incomingEdges.map(edge => {
-  //     const sourceNode = getNode(edge.source);
-  //     return sourceNode?.data?.fileContent || '';
-  //   });
-  //   console.log('fileContents:', fileContents);
-
-  //   // 返回第一個找到的 fileContent
-  //   return fileContents[0] || '';
-  // };
-  const getConnectedFileContent = () => {
-    /// 有傳過來了
-    const edges = getEdges();
-    const incomingEdges = edges.filter(edge => edge.target === data.id);
-
-    console.log('All edges:', edges);
-    console.log('Incoming edges:', incomingEdges);
-
-    const fileContents = incomingEdges.map(edge => {
-      const sourceNode = getNode(edge.source);
-      console.log('Source node:', sourceNode);
-
-      // 修改這裡：使用正確的節點類型和數據字段
-      if (sourceNode?.type === 'fileUploadNode') { // 注意類型名稱要匹配
-        const content = sourceNode.data?.fileContent; // 使用正確的數據字段名
-        console.log('Found file content:', content);
-        return content || '';
-      }
-      return '';
-    });
-
-    const result = fileContents[0] || '';
-    console.log('Final file content result:', result);
-    return result;
-  };
-
-  // const getConnectedContent = () => {
-  //   const edges = getEdges();
-  //   const incomingEdges = edges.filter(edge => edge.target === data.id);
-
-  //   const contents = incomingEdges.map(edge => {
-  //     const sourceNode = getNode(edge.source);
-  //     console.log('Source node:', sourceNode);
-
-  //     // 根據節點類型返回不同的內容
-  //     if (sourceNode?.type === 'fileUploadNode') {
-  //       return sourceNode.data?.fileContent || '';
-  //     } else if (sourceNode?.type === 'textInputNode') {  // 確保這裡的類型名稱與您的節點類型匹配
-  //       return sourceNode.data?.inputContent || '';
-  //     }
-  //     return '';
-  //   });
-
-  //   return contents.join('\n'); // 將所有內容合併，用換行符分隔
-  // };
 
   const getConnectedContent = () => {
     const edges = getEdges();
@@ -161,23 +92,11 @@ export default function CustomNode({ data }: CustomNodeData) {
 
   const handleSendClick = async () => {
     setLoading(true);
-    // console.log('systemPrompt:', systemPrompt);
-    // console.log('userPromptNodeId:', data.userPromptNodeId); /// 這個是來源的 Text Node 的 id，但是是 undefined?
-    // console.log('userPrompt:', userTextPrompt);
-    // const userMessage = Object.values(nodeData); // 把 nodeData 裡所有文字值組合成一個陣列
-    // console.log('userMessage:', userMessage);
-    // const fileContent = getConnectedFileContent();
-    // const promptText = userMessage || fileContent;
-    // console.log('promptText:', fileContent);
     const connectedContent = getConnectedContent();
     console.log('Connected content:', connectedContent);
 
     try {
       // 發送 POST 請求到 /api/chat 後端 API 路由
-      // 將所有 Text Input Node 的資料組合成 message 陣列
-
-
-      // , { role: 'user', content: `${userMessage}`
       const response = await fetch('/api/chat', {
         method: 'POST',
         headers: {

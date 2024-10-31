@@ -1,6 +1,5 @@
 import { Handle, Position, useReactFlow } from '@xyflow/react';
 import { useState } from 'react';
-// import { useNodeData } from '@/contexts/NodeContext';
 
 interface CustomNodeData {
   data: {
@@ -16,7 +15,6 @@ const handleStyle = {
 
 
 export default function CustomNode({ data }: CustomNodeData) {
-  // const { setNodeData } = useNodeData();
   const [inputValue, setInputValue] = useState(data.label || '');
   const { setNodes } = useReactFlow();
   const handleMouseDown = (e: React.MouseEvent) => {
@@ -24,7 +22,6 @@ export default function CustomNode({ data }: CustomNodeData) {
   };
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setInputValue(e.target.value)
-    // setNodeData(data.id, e.target.value);  // 更新 Context 中的文字內容
     // 新增：更新節點數據
     setNodes((nodes) => {
       return nodes.map((node) => {

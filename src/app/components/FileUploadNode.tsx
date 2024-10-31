@@ -52,10 +52,6 @@ function FileUploadNode({ data, id }: NodeProps) {
     }
   }, [id, setNodes]);
 
-  const handleTextareaScroll = useCallback((event: React.UIEvent<HTMLTextAreaElement>) => {
-    event.stopPropagation(); // 防止滾動事件傳播至 ReactFlow
-  }, []);
-
   return (
     <div className="px-4 py-2 rounded-md bg-white border border-gray-300 w-[16rem]">
       <div className="flex flex-col items-center">
@@ -87,7 +83,6 @@ function FileUploadNode({ data, id }: NodeProps) {
               className="w-full p-2 border rounded resize-y overflow-y-auto nodrag nowheel min-h-[250px]"
               value={fileContent}
               readOnly
-              onScroll={handleTextareaScroll}
             />
           </div>
         )}

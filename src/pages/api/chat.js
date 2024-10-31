@@ -13,6 +13,7 @@ export default async function handler(req, res) {
       //   { role: "system", content: systemPrompt },
       //   ...message.map(content => ({ role: "user", content }))
       // ];
+      console.log('req.body', req.body)
       console.log('ddd', req.body.messages)
       const response = await axios.post(
         `${apiBaseUrl}/chat/completions`,

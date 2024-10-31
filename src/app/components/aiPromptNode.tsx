@@ -1,7 +1,7 @@
 import { Handle, Position, useUpdateNodeInternals, useStore, useReactFlow } from '@xyflow/react';
 import { useState, useEffect } from 'react';
 import { MdSend } from "react-icons/md";
-import TextContentDialog from './UI/textContentDialog'; // 引入 CustomDialog 組件
+import TextContentDialog from './ui/textContentDialog'; // 引入 CustomDialog 組件
 import { useNodeData } from '@/contexts/NodeContext';
 import ReactMarkdown from 'react-markdown';
 interface CustomNodeData {

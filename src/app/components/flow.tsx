@@ -17,6 +17,15 @@ import {
 import TextInputNode from './textInputNode'; // 導入 TextInputNode
 import AiPromptNode from './aiPromptNode';  // 導入 AiPromptNode
 import FileUploadNode from './FileUploadNode'; // 導入 FileUploadNode
+import { LuText } from "react-icons/lu";
+import { GiArtificialHive } from "react-icons/gi";
+import { LuFileUp } from "react-icons/lu";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 // https://reactflow.dev/learn/getting-started/adding-interactivity
 // https://reactflow.dev/learn/advanced-use/typescript
 // 有不同的 custom node 類型，可以在 nodeTypes 中設定
@@ -127,69 +136,93 @@ export default function Flow() {
         <Background />
         <Controls />
         {/* <MiniMap /> */}
-        <Panel position="top-right" className="bg-white p-4 rounded-lg shadow-lg flex flex-col">
-          <h3 className="font-bold mb-2">Flow Controls</h3>
-          {/* 按鈕 1: 增加文字輸入框的節點 */}
-          <button
-            className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 mb-2"
-            onClick={() => {
-              const id = `${nodes.length + 1}`;
-              const newNode = {
-                id,
-                type: 'textInputNode', // 指定節點類型為 textInputNode
-                data: { label: `Text Input ${id}`, id },
-                position: {
-                  x: Math.random() * 500,
-                  y: Math.random() * 500,
-                },
-              };
-              setNodes([...nodes, newNode]);
-            }}
-          >
-            Add Text Input Node
-          </button>
-
-          {/* 按鈕 2: 增加 AI prompt 節點 */}
-          <button
-            className="px-3 py-1 bg-yellow-500 text-white rounded hover:bg-yellow-600 mb-2"
-            onClick={() => {
-              const id = `${nodes.length + 1}`;
-              const newNode = {
-                id,
-                type: 'aiPromptNode', // 指定節點類型為 aiPromptNode
-                data: { label: `AI Prompt ${id}`, id },
-                position: {
-                  x: Math.random() * 500,
-                  y: Math.random() * 500,
-                },
-              };
-              setNodes([...nodes, newNode]);
-            }}
-          >
-            Add AI Prompt Node
-          </button>
-
-          {/* 按鈕 3: 增加 上傳 txt 檔案 節點 */}
-          <button
-            className="px-3 py-1 bg-green-500 text-white rounded hover:bg-green-600"
-            onClick={() => {
-              const id = `${nodes.length + 1}`;
-              const newNode = {
-                id,
-                type: 'fileUploadNode', // 指定節點類型為 fileUploadNode
-                data: { label: `File Upload ${id}`, id },
-                position: {
-                  x: Math.random() * 500,
-                  y: Math.random() * 500,
-                },
-              };
-              setNodes([...nodes, newNode]);
-            }}
-          >
-            Add File Upload Node
-          </button>
+        <Panel position="top-left" className="bg-white p-4 rounded-lg shadow-md flex flex-col" style={{ position: 'fixed', top: '80px', left: '40px', zIndex: 100 }} >
+          <TooltipProvider delayDuration={200}>
+            <Tooltip>
+              {/* 按鈕 1: 增加文字輸入框的節點 */}
+              <TooltipTrigger asChild>
+                <button
+                  className="px-3 py-1 border border-gray-300 rounded p-1 hover:bg-gray-200 mb-2  hover:border-gray-200 transition-colors"
+                  onClick={() => {
+                    const id = `${nodes.length + 1}`;
+                    const newNode = {
+                      id,
+                      type: 'textInputNode', // 指定節點類型為 textInputNode
+                      data: { label: `Text Input ${id}`, id },
+                      position: {
+                        x: Math.random() * 500,
+                        y: Math.random() * 500,
+                      },
+                    };
+                    setNodes([...nodes, newNode]);
+                  }}
+                >
+                  <LuText className="text-black" />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="right" align="center">
+                <p>Add Text Input Node</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+          <TooltipProvider delayDuration={200}>
+            <Tooltip>
+              {/* 按鈕 2: 增加 AI prompt 節點 */}
+              <TooltipTrigger asChild>
+                <button
+                  className="px-3 py-1 border border-gray-300 rounded p-1 hover:bg-gray-200 mb-2  hover:border-gray-200 transition-colors"
+                  onClick={() => {
+                    const id = `${nodes.length + 1}`;
+                    const newNode = {
+                      id,
+                      type: 'aiPromptNode', // 指定節點類型為 aiPromptNode
+                      data: { label: `AI Prompt ${id}`, id },
+                      position: {
+                        x: Math.random() * 500,
+                        y: Math.random() * 500,
+                      },
+                    };
+                    setNodes([...nodes, newNode]);
+                  }}
+                >
+                  <GiArtificialHive className="text-black" />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="right" align="center">
+                <p>Add AI Prompt Node</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+          <TooltipProvider delayDuration={200}>
+            <Tooltip>
+              {/* 按鈕 3: 增加 上傳 txt 檔案 節點 */}
+              <TooltipTrigger asChild>
+                <button
+                  className="px-3 py-1 border border-gray-300 rounded p-1 hover:bg-gray-200 mb-2 hover:border-gray-200 transition-colors"
+                  onClick={() => {
+                    const id = `${nodes.length + 1}`;
+                    const newNode = {
+                      id,
+                      type: 'fileUploadNode', // 指定節點類型為 fileUploadNode
+                      data: { label: `File Upload ${id}`, id },
+                      position: {
+                        x: Math.random() * 500,
+                        y: Math.random() * 500,
+                      },
+                    };
+                    setNodes([...nodes, newNode]);
+                  }}
+                >
+                  <LuFileUp className="text-black" />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="right" align="center">
+                <p>Add File Upload Node</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         </Panel>
       </ReactFlow>
-    </div>
+    </div >
   );
 }

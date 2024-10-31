@@ -1,8 +1,6 @@
 import { useState, useCallback } from 'react';
 import { Handle, Position, NodeProps, useReactFlow } from '@xyflow/react';
 import { MdUploadFile } from "react-icons/md";
-// import { Label } from "@/components/ui/label";
-// import { Input } from "@/components/ui/input"
 
 const handleStyle = {
   background: '#555', // Custom color for the handle

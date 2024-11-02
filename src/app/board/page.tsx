@@ -8,8 +8,8 @@ const FlowWithNoSSR = dynamic(
   {
     ssr: false,
     loading: () => (
-      <div className="w-full h-screen flex items-center justify-center">
-        <div className="text-xl">Loading Flow Editor...</div>
+      <div className="w-full h-screen flex items-center justify-center dark:bg-[#141414]">
+        <div className="text-xl dark:text-white">Loading Flow Editor...</div>
       </div>
     )
   }

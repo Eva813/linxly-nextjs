@@ -14,7 +14,7 @@ interface CustomNodeData {
   };
 }
 const handleStyle = {
-  background: '#555', // Custom color for the handle
+  //background: '#555', // Custom color for the handle
   width: 10,          // Custom width
   height: 10,         // Custom height
 };
@@ -125,7 +125,7 @@ export default function CustomNode({ data }: CustomNodeData) {
   };
 
   return (
-    <div className="p-2 bg-white rounded-md border border-gray-300 w-[16rem]">
+    <div className="p-2 bg-white rounded-md border border-gray-300 w-[16rem] dark:bg-flow-darker">
       {/* 動態渲染左側的 handle */}
       {handles.map((handle, index) => (
         <Handle
@@ -138,22 +138,23 @@ export default function CustomNode({ data }: CustomNodeData) {
             top: `calc(50% + ${index * 20}px)`  // 逐一遞減位置
           }}
           title={handle.label}
+          className="bg-[#555] dark:bg-white"
         />
       ))}
       {/* 標題 */}
-      <div className="mb-2 font-bold text-gray-500">未命名 AI Card</div>
+      <div className="mb-2 font-bold text-gray-500 dark:text-white">未命名 AI Card</div>
       {/* System Prompt */}
-      <label className="block text-sm font-medium text-gray-700 mb-1">System Prompt</label>
+      <label className="block text-sm font-medium text-gray-700 mb-1 dark:text-white">System Prompt</label>
       <textarea
-        className="border border-gray-300 p-1 rounded w-full resize-y nodrag nowheelfocus:outline-none focus:border-gray-600 focus:ring-0.5 focus:ring-gray-600"
+        className="border border-gray-300 p-1 rounded w-full resize-y nodrag nowheel focus:outline-none focus:border-gray-600 focus:ring-0.5 focus:ring-gray-600 dark:bg-flow-darker"
         value={systemPrompt}
         onChange={(e) => setSystemPrompt(e.target.value)}
         rows={2}
       />
       {/* User Prompt */}
-      <label className="block text-sm font-medium text-gray-700 mb-1">User Prompt</label>
+      <label className="block text-sm font-medium text-gray-700 mb-1 dark:text-white">User Prompt</label>
       <textarea
-        className="border border-gray-300 p-1 rounded w-full resize-y nodrag nowheel focus:outline-none focus:border-gray-600 focus:ring-0.5 focus:ring-gray-600"
+        className="border border-gray-300 p-1 rounded w-full resize-y nodrag nowheel focus:outline-none focus:border-gray-600 focus:ring-0.5 focus:ring-gray-600 dark:bg-flow-darker"
         value={userPrompt}
         onChange={(e) => setUserPrompt(e.target.value)}
         rows={2}
@@ -178,8 +179,8 @@ export default function CustomNode({ data }: CustomNodeData) {
             +
           </button>
         </div> */}
-        <button className="p-2 bg-gray-200 rounded-full hover:bg-gray-300 flex  items-center justify-center ml-auto" onClick={handleSendClick} disabled={loading}>
-          <MdSend className="text-black text-lg ml-1" />
+        <button className="p-2 bg-gray-200 rounded-full hover:bg-gray-300 flex  items-center justify-center ml-auto dark:bg-flow-darker dark:border dark:border-white" onClick={handleSendClick} disabled={loading}>
+          <MdSend className="text-black text-lg ml-1 dark:text-white" />
           {loading ? 'Loading...' : 'Send'}
         </button>
       </div>
@@ -188,7 +189,7 @@ export default function CustomNode({ data }: CustomNodeData) {
       <div className="mt-2 p-2 border rounded border-gray-200 pt-2 text-gray-500 text-sm max-h-[300px] overflow-y-auto nodrag nowheel" onClick={() => setIsDialogOpen(true)}>
         <ReactMarkdown>{result.length > 300 ? result.substring(0, 300) + '...' : result}</ReactMarkdown>
       </div>
-      <Handle type="source" position={Position.Right} style={handleStyle} id="source" />
+      <Handle type="source" position={Position.Right} style={handleStyle} id="source" className="bg-[#555] dark:bg-white" />
       <TextContentDialog message={result} isOpen={isDialogOpen} onClose={() => setIsDialogOpen(false)} />
     </div>
   );

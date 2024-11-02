@@ -3,7 +3,7 @@ import { Handle, Position, NodeProps, useReactFlow } from '@xyflow/react';
 import { MdUploadFile } from "react-icons/md";
 
 const handleStyle = {
-  background: '#555', // Custom color for the handle
+  //background: '#555', // Custom color for the handle
   width: 10,          // Custom width
   height: 10,         // Custom height
 };
@@ -51,9 +51,9 @@ function FileUploadNode({ data, id }: NodeProps) {
   }, [id, setNodes]);
 
   return (
-    <div className="px-4 py-2 rounded-md bg-white border border-gray-300 w-[16rem]">
+    <div className="px-4 py-2 rounded-md bg-white border border-gray-300 w-[16rem] dark:bg-flow-darker">
       <div className="flex flex-col items-center">
-        <h3 className="text-lg font-bold mb-2">File Upload</h3>
+        <h3 className="text-lg font-bold mb-2 dark:text-white">File Upload</h3>
         <div className="flex flex-col items-center mb-2">
           {fileName ? (
             <>
@@ -61,7 +61,7 @@ function FileUploadNode({ data, id }: NodeProps) {
             </>
           ) : (
             <label className="cursor-pointer">
-              <div className="border-2 border-dashed border-gray-200 rounded-lg flex flex-col gap-1 p-6 items-center hover:bg-gray-50">
+              <div className="border-2 border-dashed border-gray-200 rounded-lg flex flex-col gap-1 p-6 items-center hover:bg-gray-50 dark:hover:bg-flow-darker">
                 <MdUploadFile className="w-12 h-12" />
                 <span className="text-sm font-medium text-gray-500">click to upload</span>
                 <span className="text-xs text-gray-500">txt file</span>
@@ -78,14 +78,14 @@ function FileUploadNode({ data, id }: NodeProps) {
         {fileContent && (
           <div className="mt-4 w-full overflow-y-auto min-h-[250px] ">
             <textarea
-              className="w-full p-2 border rounded resize-y overflow-y-auto nodrag nowheel min-h-[250px]"
+              className="w-full p-2 border border-gray-300 rounded resize-y overflow-y-auto focus:outline-none focus:border-gray-600 focus:ring-0.5 focus:ring-gray-600 nodrag nowheel min-h-[250px] dark:bg-flow-darker dark:text-white "
               value={fileContent}
               readOnly
             />
           </div>
         )}
       </div>
-      <Handle type="source" position={Position.Right} style={handleStyle} />
+      <Handle type="source" position={Position.Right} style={handleStyle} className="bg-[#555] dark:bg-white" />
     </div>
   );
 }

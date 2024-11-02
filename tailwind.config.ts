@@ -67,7 +67,11 @@ const config: Config = {
 					'3': 'hsl(var(--chart-3))',
 					'4': 'hsl(var(--chart-4))',
 					'5': 'hsl(var(--chart-5))'
-				}
+				},
+				'flow-dark': '#2B2B2B',
+				'flow-darker': '#1e1e1e',
+				'flow-border': '#333333',
+				'flow-dark-hover': '#3E3E3E',
 			},
 			borderRadius: {
 				lg: 'var(--radius)',

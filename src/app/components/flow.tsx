@@ -11,7 +11,8 @@ import {
   type OnNodesChange,
   type OnEdgesChange,
   addEdge,
-  type NodeTypes
+  type NodeTypes,
+  type ColorMode
 } from '@xyflow/react';
 // import CustomNode from './textInputNode' // 導入自定義的 Node
 import TextInputNode from './textInputNode'; // 導入 TextInputNode
@@ -26,6 +27,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
+import { useTheme } from 'next-themes'
 // https://reactflow.dev/learn/getting-started/adding-interactivity
 // https://reactflow.dev/learn/advanced-use/typescript
 // 有不同的 custom node 類型，可以在 nodeTypes 中設定
@@ -60,6 +62,7 @@ export default function Flow() {
     (changes) => setEdges((eds) => applyEdgeChanges(changes, eds)),
     [setEdges],
   );
+  const { theme } = useTheme()
 
   // const onConnect: OnConnect = useCallback(
   //   (connection) => {
@@ -121,7 +124,7 @@ export default function Flow() {
   }, []);
 
   return (
-    <div style={{ width: '100%', height: '800px' }}>
+    <div className='h-screen w-full' >
       <ReactFlow
         nodes={nodes}
         nodeTypes={nodeTypes}
@@ -132,17 +135,18 @@ export default function Flow() {
         panOnScroll
         selectionOnDrag
         preventScrolling={false}
+        colorMode={theme as ColorMode}
       >
         <Background />
         <Controls />
         {/* <MiniMap /> */}
-        <Panel position="top-left" className="bg-white p-4 rounded-lg shadow-md flex flex-col" style={{ position: 'fixed', top: '80px', left: '40px', zIndex: 100 }} >
+        <Panel position="top-left" className="bg-white p-2 shadow-sm flex flex-col dark:bg-flow-dark" style={{ position: 'fixed', top: '80px', left: '40px', zIndex: 100 }} >
           <TooltipProvider delayDuration={200}>
             <Tooltip>
               {/* 按鈕 1: 增加文字輸入框的節點 */}
               <TooltipTrigger asChild>
                 <button
-                  className="px-3 py-1 border border-gray-300 rounded p-1 hover:bg-gray-200 mb-2  hover:border-gray-200 transition-colors"
+                  className="px-2 py-1 border border-gray-300 rounded p-1 hover:bg-gray-200 mb-2  hover:border-gray-200 transition-colors dark:hover:bg-flow-dark-hover"
                   onClick={() => {
                     const id = `${nodes.length + 1}`;
                     const newNode = {
@@ -157,7 +161,7 @@ export default function Flow() {
                     setNodes([...nodes, newNode]);
                   }}
                 >
-                  <LuText className="text-black" />
+                  <LuText className="text-black dark:text-white" />
                 </button>
               </TooltipTrigger>
               <TooltipContent side="right" align="center">
@@ -170,7 +174,7 @@ export default function Flow() {
               {/* 按鈕 2: 增加 AI prompt 節點 */}
               <TooltipTrigger asChild>
                 <button
-                  className="px-3 py-1 border border-gray-300 rounded p-1 hover:bg-gray-200 mb-2  hover:border-gray-200 transition-colors"
+                  className="px-2 py-1 border border-gray-300 rounded p-1 hover:bg-gray-200 mb-2  hover:border-gray-200 transition-colors dark:hover:bg-flow-dark-hover"
                   onClick={() => {
                     const id = `${nodes.length + 1}`;
                     const newNode = {
@@ -185,7 +189,7 @@ export default function Flow() {
                     setNodes([...nodes, newNode]);
                   }}
                 >
-                  <GiArtificialHive className="text-black" />
+                  <GiArtificialHive className="text-black dark:text-white" />
                 </button>
               </TooltipTrigger>
               <TooltipContent side="right" align="center">
@@ -198,7 +202,7 @@ export default function Flow() {
               {/* 按鈕 3: 增加 上傳 txt 檔案 節點 */}
               <TooltipTrigger asChild>
                 <button
-                  className="px-3 py-1 border border-gray-300 rounded p-1 hover:bg-gray-200 mb-2 hover:border-gray-200 transition-colors"
+                  className="px-2 py-1 border border-gray-300 rounded p-1 hover:bg-gray-200 mb-2 hover:border-gray-200 transition-colors dark:hover:bg-flow-dark-hover"
                   onClick={() => {
                     const id = `${nodes.length + 1}`;
                     const newNode = {
@@ -213,7 +217,7 @@ export default function Flow() {
                     setNodes([...nodes, newNode]);
                   }}
                 >
-                  <LuFileUp className="text-black" />
+                  <LuFileUp className="text-black dark:text-white" />
                 </button>
               </TooltipTrigger>
               <TooltipContent side="right" align="center">

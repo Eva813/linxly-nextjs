@@ -4,6 +4,8 @@ import { MdSend } from "react-icons/md";
 import TextContentDialog from './ui/textContentDialog'; // 引入 CustomDialog 組件
 import { useNodeData } from '@/contexts/NodeContext';
 import ReactMarkdown from 'react-markdown';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+
 interface CustomNodeData {
   data: {
     id: string;
@@ -14,14 +16,13 @@ interface CustomNodeData {
   };
 }
 const handleStyle = {
-  //background: '#555', // Custom color for the handle
   width: 10,          // Custom width
   height: 10,         // Custom height
 };
 
 export default function CustomNode({ data }: CustomNodeData) {
-  const { nodeData } = useNodeData();
-
+  // const { nodeData } = useNodeData();
+  const { setNodes, deleteElements, getNodes, addNodes } = useReactFlow();
   const [systemPrompt, setSystemPrompt] = useState(data.systemPrompt || '');
   const [userPrompt, setUserPrompt] = useState(data.userPrompt || '');
   // const [inputValue, setInputValue] = useState(data.label || '');
@@ -124,6 +125,36 @@ export default function CustomNode({ data }: CustomNodeData) {
     }
   };
 
+  const handleDeleteNode = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    deleteElements({ nodes: [{ id: data.id }] });
+  };
+
+  const handleCopyNode = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const nodes = getNodes();
+    const currentNode = nodes.find(node => node.id === data.id);
+
+    if (currentNode) {
+      const newId = `${Date.now()}`;
+      const newNode = {
+        ...currentNode,
+        id: newId,
+        position: {
+          x: currentNode.position.x + 250,
+          y: currentNode.position.y + 50
+        },
+        data: {
+          ...currentNode.data,
+          id: newId,
+          systemPrompt: systemPrompt,
+          userPrompt: userPrompt,
+        },
+      };
+      addNodes(newNode);
+    }
+  };
+
   return (
     <div className="p-2 bg-white rounded-md border border-gray-300 w-[16rem] dark:bg-flow-darker">
       {/* 動態渲染左側的 handle */}
@@ -141,6 +172,21 @@ export default function CustomNode({ data }: CustomNodeData) {
           className="bg-[#555] dark:bg-white"
         />
       ))}
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <button className="absolute top-2 right-2 w-6 h-6 flex items-center justify-center text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
+            ⋮
+          </button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent side="right" align="start" sideOffset={15} alignOffset={-5} className="w-28 dark:bg-flow-darker">
+          <DropdownMenuItem onClick={handleCopyNode} className="text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700">
+            <span className="font-medium">複製</span> Card
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={handleDeleteNode} className="text-red-500 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700">
+            <span className="font-medium">刪除</span> Card
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
       {/* 標題 */}
       <div className="mb-2 font-bold text-gray-500 dark:text-white">未命名 AI Card</div>
       {/* System Prompt */}

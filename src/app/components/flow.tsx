@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useMemo } from 'react';
 import {
   ReactFlow, Background, Controls, Panel, applyNodeChanges,
   applyEdgeChanges,
@@ -103,7 +103,11 @@ export default function Flow() {
   // );
 
   // 自定義節點類型
-  const nodeTypes: NodeTypes = { textInputNode: TextInputNode, aiPromptNode: AiPromptNode, fileUploadNode: FileUploadNode };
+  const nodeTypes = useMemo(() => ({
+    textInputNode: TextInputNode,
+    aiPromptNode: AiPromptNode,
+    fileUploadNode: FileUploadNode
+  }), []);
   // 當頁面加載時，自動添加兩個節點
   useEffect(() => {
     const initialNodes = [
@@ -123,8 +127,77 @@ export default function Flow() {
     setNodes(initialNodes);
   }, []);
 
+  // 找到最後一個 textInputNode 的位置
+  const getNewNodePosition = useCallback(() => {
+    const textNodes = nodes.filter(node => node.type === 'textInputNode');
+    if (textNodes.length === 0) {
+      // 如果沒有現有的 textInputNode，返回預設位置
+      return { x: 100, y: 100 };
+    }
+
+    // 找到最下方的節點
+    const lastNode = textNodes.reduce((lowest, current) => {
+      return (current.position.y > lowest.position.y) ? current : lowest;
+    }, textNodes[0]);
+
+    // 在最後一個節點下方 150 像素的位置新增節點
+    return {
+      x: lastNode.position.x,
+      y: lastNode.position.y + 150
+    };
+  }, [nodes]);
+  // 修改新增文字輸入框節點的處理函數
+  const addTextInputNode = useCallback(() => {
+    setNodes((currentNodes) => {
+      const newId = `${Date.now()}`; // 使用時間戳作為唯一ID
+      // 取得新的節點位置
+      const position = getNewNodePosition();
+      const newNode = {
+        id: newId,
+        type: 'textInputNode',
+        data: { label: `Text Input ${newId}`, id: newId },
+        position: position,
+      };
+      return [...currentNodes, newNode];
+    });
+  }, [getNewNodePosition]);
+
+  // 修改新增AI prompt節點的處理函數
+  const addAiPromptNode = useCallback(() => {
+    setNodes((currentNodes) => {
+      const newId = `${Date.now()}`;
+      const newNode = {
+        id: newId,
+        type: 'aiPromptNode',
+        data: { label: `AI Prompt ${newId}`, id: newId },
+        position: {
+          x: Math.random() * 500,
+          y: Math.random() * 500,
+        },
+      };
+      return [...currentNodes, newNode];
+    });
+  }, []);
+
+  // 修改新增檔案上傳節點的處理函數
+  const addFileUploadNode = useCallback(() => {
+    setNodes((currentNodes) => {
+      const newId = `${Date.now()}`;
+      const newNode = {
+        id: newId,
+        type: 'fileUploadNode',
+        data: { label: `File Upload ${newId}`, id: newId },
+        position: {
+          x: Math.random() * 500,
+          y: Math.random() * 500,
+        },
+      };
+      return [...currentNodes, newNode];
+    });
+  }, []);
+
   return (
-    <div className='h-screen w-full' >
+    <div className='h-[calc(100vh-64px)] w-full' >
       <ReactFlow
         nodes={nodes}
         nodeTypes={nodeTypes}
@@ -147,19 +220,7 @@ export default function Flow() {
               <TooltipTrigger asChild>
                 <button
                   className="px-2 py-1 border border-gray-300 rounded p-1 hover:bg-gray-200 mb-2  hover:border-gray-200 transition-colors dark:hover:bg-flow-dark-hover"
-                  onClick={() => {
-                    const id = `${nodes.length + 1}`;
-                    const newNode = {
-                      id,
-                      type: 'textInputNode', // 指定節點類型為 textInputNode
-                      data: { label: `Text Input ${id}`, id },
-                      position: {
-                        x: Math.random() * 500,
-                        y: Math.random() * 500,
-                      },
-                    };
-                    setNodes([...nodes, newNode]);
-                  }}
+                  onClick={addTextInputNode}
                 >
                   <LuText className="text-black dark:text-white" />
                 </button>
@@ -175,19 +236,7 @@ export default function Flow() {
               <TooltipTrigger asChild>
                 <button
                   className="px-2 py-1 border border-gray-300 rounded p-1 hover:bg-gray-200 mb-2  hover:border-gray-200 transition-colors dark:hover:bg-flow-dark-hover"
-                  onClick={() => {
-                    const id = `${nodes.length + 1}`;
-                    const newNode = {
-                      id,
-                      type: 'aiPromptNode', // 指定節點類型為 aiPromptNode
-                      data: { label: `AI Prompt ${id}`, id },
-                      position: {
-                        x: Math.random() * 500,
-                        y: Math.random() * 500,
-                      },
-                    };
-                    setNodes([...nodes, newNode]);
-                  }}
+                  onClick={addAiPromptNode}
                 >
                   <GiArtificialHive className="text-black dark:text-white" />
                 </button>
@@ -203,19 +252,7 @@ export default function Flow() {
               <TooltipTrigger asChild>
                 <button
                   className="px-2 py-1 border border-gray-300 rounded p-1 hover:bg-gray-200 mb-2 hover:border-gray-200 transition-colors dark:hover:bg-flow-dark-hover"
-                  onClick={() => {
-                    const id = `${nodes.length + 1}`;
-                    const newNode = {
-                      id,
-                      type: 'fileUploadNode', // 指定節點類型為 fileUploadNode
-                      data: { label: `File Upload ${id}`, id },
-                      position: {
-                        x: Math.random() * 500,
-                        y: Math.random() * 500,
-                      },
-                    };
-                    setNodes([...nodes, newNode]);
-                  }}
+                  onClick={addFileUploadNode}
                 >
                   <LuFileUp className="text-black dark:text-white" />
                 </button>

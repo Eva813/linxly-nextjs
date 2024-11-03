@@ -8,7 +8,7 @@ const FlowWithNoSSR = dynamic(
   {
     ssr: false,
     loading: () => (
-      <div className="w-full h-screen flex items-center justify-center dark:bg-[#141414]">
+      <div className="w-full h-[calc(100vh-64px)] flex items-center justify-center dark:bg-[#141414]">
         <div className="text-xl dark:text-white">Loading Flow Editor...</div>
       </div>
     )
@@ -17,7 +17,7 @@ const FlowWithNoSSR = dynamic(
 
 export default function BoardPage() {
   return (
-    <div className="w-full h-screen bg-slate-50">
+    <div className="w-full h-[calc(100vh-64px)] bg-white-50">
       <FlowWithNoSSR />
     </div>
   );

@@ -14,7 +14,7 @@ body {
 
 @layer base {
   :root {
-    --background: rgb(255, 255, 255);
+    --background: rgb(255, 255, 255, 0.4);
     --foreground: 240 10% 3.9%;
     --card: 0 0% 100%;
     --card-foreground: 240 10% 3.9%;
@@ -39,11 +39,11 @@ body {
     --chart-4: 43 74% 66%;
     --chart-5: 27 87% 67%;
     --radius: 0.5rem;
-    --header-bg: rgba(255, 255, 255, 0.4);
+    --header-bg: rgba(255, 255, 255, 0.3);
   }
 
   .dark {
-    --background: rgb(20, 20, 20);
+    --background: radial-gradient(circle at center, rgba(0, 0, 0, 0.8) 0%, rgba(0, 0, 20, 0.9) 50%, rgba(0, 0, 50, 0.8) 100%);
     --foreground: 0 0% 98%;
     --card: 240 10% 3.9%;
     --card-foreground: 0 0% 98%;
@@ -67,8 +67,18 @@ body {
     --chart-3: 30 80% 55%;
     --chart-4: 280 65% 60%;
     --chart-5: 340 75% 55%;
-    --header-bg: rgb(20, 20, 20, 0.3);
+    --header-bg: radial-gradient(circle at center, rgba(0, 0, 0, 0.8) 0%, rgba(0, 0, 20, 0.9) 50%, rgba(0, 0, 50, 0.8) 100%);
   }
+}
+
+/* ReactFlow 背景渐变 */
+.dark .react-flow {
+  background: radial-gradient(circle at center, rgba(0, 0, 0, 0.8) 0%, rgba(0, 0, 20, 0.9) 50%, rgba(0, 0, 50, 0.8) 100%);
+}
+
+/* 确保背景组件透明 */
+.dark .react-flow__background {
+  background-color: transparent;
 }
 
 @layer base {
@@ -79,4 +89,11 @@ body {
   body {
     @apply bg-background text-foreground;
   }
+}
+
+.gradient-bg {
+  background: radial-gradient(circle at center,
+      rgba(0, 0, 0, 0.8) 0%,
+      rgba(0, 0, 20, 0.9) 50%,
+      rgba(0, 0, 50, 0.8) 100%);
 }

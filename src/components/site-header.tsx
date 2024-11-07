@@ -12,7 +12,7 @@ export function SiteHeader() {
     <header
       className="sticky top-0 z-50 w-full"
       style={{
-        backgroundColor: 'var(--header-bg)',
+        background: 'var(--header-bg)',
         backdropFilter: 'blur(5px)',
         WebkitBackdropFilter: 'blur(5px)' // 為 Safari 瀏覽器添加支持
       }}

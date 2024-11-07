@@ -8,7 +8,9 @@ const FlowWithNoSSR = dynamic(
   {
     ssr: false,
     loading: () => (
-      <div className="w-full h-[calc(100vh-64px)] flex items-center justify-center dark:bg-[#141414]">
+      <div className="w-full h-[calc(100vh-64px)] flex items-center justify-center" style={{
+        background: 'var(--header-bg)'
+      }}>
         <div className="text-xl dark:text-white">Loading Flow Editor...</div>
       </div>
     )

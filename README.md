@@ -1,35 +1,54 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Linxly
 
-使用 react-icon, react flow
+[正體中文](./README.zh-TW) | English 
 
-## Getting Started
+## Introduction
 
-First, run the development server:
+Linxly is an innovative tool that allows users to organize, visualize, and expand their ideas by creating interactive cards, and discover meaningful connections between them.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+## Features
+
+Interactive Cards: Each card can contain descriptions, questions, or other data, allowing users to think and organize flexibly.
+
+Card Relationships: Establish relationships between cards in an intuitive way, helping users visualize various conceptual connections more easily.
+
+Flexible Application: Suitable for idea organization, project management, or brainstorming, making thoughts more concrete and visual
+
+## Technology Stack
+
+Linxly primarily uses the following technologies:
+
+Next.js: For building the application
+
+TypeScript: Enhances code maintainability and reliability
+
+xyFlow: Provides an intuitive drag-and-drop interface for creating cards and their relationships
+
+OpenAI API: Integrates AI technology to provide more intelligent relationship analysis
+
+## Installation & Usage
+
+Clone the project repository:
+
+```
+git clone https://github.com/yourusername/linxly.git
+cd linxly
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Install the required dependencies:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```
+npm install
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Start the development server:
 
-## Learn More
+```
+npm run dev
+```
 
-To learn more about Next.js, take a look at the following resources:
+Begin building your knowledge network
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
 
 ## Deploy on Vercel
 

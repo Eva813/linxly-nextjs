@@ -1,6 +1,6 @@
 # Linxly
 
-[正體中文](./README.zh-TW) | English 
+[正體中文](https://github.com/Eva813/linxly-nextjs/blob/main/README.zh-TW.md) | English 
 
 ## Introduction
 

@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect, useMemo } from 'react';
 import {
   ReactFlow, Background, Controls, Panel, applyNodeChanges,
-  applyEdgeChanges,
+  applyEdgeChanges
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import {
@@ -12,7 +12,8 @@ import {
   type OnEdgesChange,
   addEdge,
   type NodeTypes,
-  type ColorMode
+  type ColorMode,
+  type ReactFlowInstance
 } from '@xyflow/react';
 // import CustomNode from './textInputNode' // 導入自定義的 Node
 import TextInputNode from './textInputNode'; // 導入 TextInputNode
@@ -28,6 +29,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip"
 import { useTheme } from 'next-themes'
+import { LuSave } from "react-icons/lu";
 // https://reactflow.dev/learn/getting-started/adding-interactivity
 // https://reactflow.dev/learn/advanced-use/typescript
 // 有不同的 custom node 類型，可以在 nodeTypes 中設定
@@ -63,6 +65,7 @@ export default function Flow() {
     [setEdges],
   );
   const { theme } = useTheme()
+  const [rfInstance, setRfInstance] = useState<ReactFlowInstance | null>(null); // 用於儲存 ReactFlow 實例
 
   // const onConnect: OnConnect = useCallback(
   //   (connection) => {
@@ -169,7 +172,11 @@ export default function Flow() {
       const newNode = {
         id: newId,
         type: 'aiPromptNode',
-        data: { label: `AI Prompt ${newId}`, id: newId },
+        data: {
+          label: `AI Prompt ${newId}`, id: newId, systemPrompt: '',
+          userPrompt: '',
+          result: '', // 添加初始 result 
+        },
         position: {
           x: Math.random() * 500,
           y: Math.random() * 500,
@@ -196,6 +203,94 @@ export default function Flow() {
     });
   }, []);
 
+  // onSave 函數，用於儲存流程圖
+  const onSave = useCallback(async () => {
+    if (rfInstance) {
+      // 取得流程圖的物件表示
+      const flowData = rfInstance.toObject();
+
+      // 儲存到 localStorage（或發送至後端 API）
+      localStorage.setItem('flowData', JSON.stringify(flowData));
+
+      // 假設要發送至後端 API
+      // try {
+      //   const response = await fetch('/api/saveFlow', {
+      //     method: 'POST',
+      //     headers: { 'Content-Type': 'application/json' },
+      //     body: JSON.stringify({
+      //       userId: 'user123', // 假設的用戶 ID
+      //       flowKey: 'myFlowKey', // 流程圖的唯一鍵值
+      //       flowData: flowData
+      //     })
+      //   });
+
+      //   if (response.ok) {
+      //     alert('流程圖已成功儲存到伺服器');
+      //   } else {
+      //     alert('儲存失敗');
+      //   }
+      // } catch (error) {
+      //   console.error('儲存流程圖時發生錯誤:', error);
+      //   alert('儲存過程中出現錯誤');
+      // }
+    }
+  }, [rfInstance]);
+
+  // 定義 onRestore 函數
+  // const onRestore = useCallback(async () => {
+  //   // 從 localStorage 獲取流程圖數據
+  //   const savedFlowData = JSON.parse(localStorage.getItem('flowData') || '{}');
+  //   console.log('savedFlowData', savedFlowData);
+
+  //   // 如果後端 API 可用，也可以通過 fetch 獲取數據
+  //   // const response = await fetch('/api/getFlow/user123/myFlowKey');
+  //   // const savedFlowData = await response.json();
+
+  //   if (savedFlowData) {
+  //     const { nodes = [], edges = [], viewport } = savedFlowData;
+  //     setNodes(nodes);
+  //     setEdges(edges);
+  //     if (viewport) {
+  //       rfInstance?.setViewport(viewport); // 設置檢視位置
+  //     }
+  //   }
+  // }, [rfInstance]);
+
+  const onRestore = useCallback(async () => {
+    const savedFlowData = JSON.parse(localStorage.getItem('flowData') || '{}');
+    console.log('savedFlowData', savedFlowData);
+
+    if (savedFlowData) {
+      const { nodes = [], edges = [], viewport } = savedFlowData;
+
+      // 先設置節點
+      setNodes(nodes);
+
+      // 直接設置邊，不需要額外的驗證
+      // 因為 ReactFlow 會自動處理無效的連接
+      setEdges(edges);
+
+      if (viewport && rfInstance) {
+        rfInstance.setViewport(viewport);
+      }
+    }
+  }, [rfInstance]);
+
+  // 在組件加載時執行 onRestore 函數
+  // useEffect(() => {
+  //   onRestore();
+  // }, [onRestore]);
+  // 確保在組件加載後有一定延遲再執行 restore
+  useEffect(() => {
+    // 給予一些時間讓節點完全渲染
+    const timer = setTimeout(() => {
+      onRestore();
+    }, 100);
+
+    return () => clearTimeout(timer);
+  }, []);
+
+
   return (
     <div className='h-[calc(100vh-64px)] w-full' >
       <ReactFlow
@@ -209,6 +304,7 @@ export default function Flow() {
         selectionOnDrag
         preventScrolling={false}
         colorMode={theme as ColorMode}
+        onInit={setRfInstance}  // 設定 ReactFlow 實例
       >
         <Background />
         <Controls />
@@ -259,6 +355,22 @@ export default function Flow() {
               </TooltipTrigger>
               <TooltipContent side="right" align="center">
                 <p>Add File Upload Node</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+          <TooltipProvider delayDuration={200}>
+            <Tooltip>
+              {/* 按鈕 3: 增加 上傳 txt 檔案 節點 */}
+              <TooltipTrigger asChild>
+                <button
+                  className="px-2 py-1 border border-gray-300 rounded p-1 hover:bg-gray-200 mb-2 hover:border-gray-200 transition-colors dark:hover:bg-flow-dark-hover"
+                  onClick={onSave}
+                >
+                  <LuSave className="text-black dark:text-white" />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="right" align="center">
+                <p>Save Board</p>
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>

@@ -13,6 +13,7 @@ interface CustomNodeData {
     systemPrompt?: string;
     userPrompt?: string;
     userPromptNodeId?: string; // 指定來源的 Text Node 的 id
+    result?: string; // 結果
   };
 }
 const handleStyle = {
@@ -26,7 +27,7 @@ export default function CustomNode({ data }: CustomNodeData) {
   const [systemPrompt, setSystemPrompt] = useState(data.systemPrompt || '');
   const [userPrompt, setUserPrompt] = useState(data.userPrompt || '');
   // const [inputValue, setInputValue] = useState(data.label || '');
-  const [result, setResult] = useState('(尚未輸出)');
+  const [result, setResult] = useState(data.result || '(尚未輸出)');
   // const [quantity, setQuantity] = useState(1);
   const [loading, setLoading] = useState(false);
   const updateNodeInternals = useUpdateNodeInternals();
@@ -91,6 +92,71 @@ export default function CustomNode({ data }: CustomNodeData) {
       .join('\n');
   };
 
+  // 更新 systemPrompt 的處理函數
+  const handleSystemPromptChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const newValue = e.target.value;
+    setSystemPrompt(newValue);
+
+    // 更新節點數據
+    setNodes((nodes) => {
+      return nodes.map((node) => {
+        if (node.id === data.id) {
+          return {
+            ...node,
+            data: {
+              ...node.data,
+              systemPrompt: newValue,
+            },
+          };
+        }
+        return node;
+      });
+    });
+  };
+
+  // 更新 userPrompt 的處理函數
+  const handleUserPromptChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const newValue = e.target.value;
+    setUserPrompt(newValue);
+
+    // 更新節點數據
+    setNodes((nodes) => {
+      return nodes.map((node) => {
+        if (node.id === data.id) {
+          return {
+            ...node,
+            data: {
+              ...node.data,
+              userPrompt: newValue,
+            },
+          };
+        }
+        return node;
+      });
+    });
+  };
+
+  // 添加 result 的處理函數
+  const handleResultChange = (newResult: string) => {
+    setResult(newResult);
+
+    // 更新節點數據
+    setNodes((nodes) => {
+      return nodes.map((node) => {
+        if (node.id === data.id) {
+          return {
+            ...node,
+            data: {
+              ...node.data,
+              result: newResult,
+            },
+          };
+        }
+        return node;
+      });
+    });
+  };
+
   const handleSendClick = async () => {
     setLoading(true);
     const connectedContent = getConnectedContent();
@@ -112,11 +178,11 @@ export default function CustomNode({ data }: CustomNodeData) {
 
       // 解析 API 的 JSON 回應
       const data = await response.json();
-      // const assistantMessage = data.choices[0].message;
-      console.log('assistantMessage:', data);
-      // 回傳的值，會是 markdown 格式的文字，要轉換一下
-      // 產出的寬度要有所限制？不然會太寬
-      setResult(data.choices[0].message.content);  // 假設回應結構有 message
+      const newResult = data.choices[0].message.content;
+      setResult(newResult);
+      console.log('newResult:', newResult);
+      // 使用新的處理函數來更新 result
+      handleResultChange(newResult);
     } catch (error) {
       console.error('Error calling AI API:', error);
       setResult('Error retrieving response');
@@ -149,6 +215,7 @@ export default function CustomNode({ data }: CustomNodeData) {
           id: newId,
           systemPrompt: systemPrompt,
           userPrompt: userPrompt,
+          result: result,
         },
       };
       addNodes(newNode);
@@ -194,7 +261,7 @@ export default function CustomNode({ data }: CustomNodeData) {
       <textarea
         className="border border-gray-300 p-1 rounded w-full resize-y nodrag nowheel focus:outline-none focus:border-gray-600 focus:ring-0.5 focus:ring-gray-600 dark:bg-flow-darker"
         value={systemPrompt}
-        onChange={(e) => setSystemPrompt(e.target.value)}
+        onChange={handleSystemPromptChange}
         rows={2}
       />
       {/* User Prompt */}
@@ -202,7 +269,7 @@ export default function CustomNode({ data }: CustomNodeData) {
       <textarea
         className="border border-gray-300 p-1 rounded w-full resize-y nodrag nowheel focus:outline-none focus:border-gray-600 focus:ring-0.5 focus:ring-gray-600 dark:bg-flow-darker"
         value={userPrompt}
-        onChange={(e) => setUserPrompt(e.target.value)}
+        onChange={handleUserPromptChange}
         rows={2}
       />
 

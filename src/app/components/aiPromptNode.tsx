@@ -2,7 +2,6 @@ import { Handle, Position, useUpdateNodeInternals, useStore, useReactFlow } from
 import { useState, useEffect } from 'react';
 import { MdSend } from "react-icons/md";
 import TextContentDialog from './ui/textContentDialog'; // 引入 CustomDialog 組件
-import { useNodeData } from '@/contexts/NodeContext';
 import ReactMarkdown from 'react-markdown';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
@@ -22,11 +21,9 @@ const handleStyle = {
 };
 
 export default function CustomNode({ data }: CustomNodeData) {
-  // const { nodeData } = useNodeData();
   const { setNodes, deleteElements, getNodes, addNodes } = useReactFlow();
   const [systemPrompt, setSystemPrompt] = useState(data.systemPrompt || '');
   const [userPrompt, setUserPrompt] = useState(data.userPrompt || '');
-  // const [inputValue, setInputValue] = useState(data.label || '');
   const [result, setResult] = useState(data.result || '(尚未輸出)');
   // const [quantity, setQuantity] = useState(1);
   const [loading, setLoading] = useState(false);

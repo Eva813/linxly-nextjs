@@ -1,10 +1,10 @@
-// src/app/board/page.tsx
 'use client';
 
 import dynamic from 'next/dynamic';
+import { useParams } from 'next/navigation';
 
 const FlowWithNoSSR = dynamic(
-  () => import('../components/flow'),
+  () => import('../../components/flow'),
   {
     ssr: false,
     loading: () => (
@@ -18,9 +18,12 @@ const FlowWithNoSSR = dynamic(
 );
 
 export default function BoardPage() {
+  const params = useParams();
+  const boardId = params?.boardId as string;
+  console.log('boardId', boardId);
   return (
     <div className="w-full h-[calc(100vh-64px)] bg-white-50">
-      <FlowWithNoSSR />
+      <FlowWithNoSSR boardId={boardId as string} />
     </div>
   );
 }

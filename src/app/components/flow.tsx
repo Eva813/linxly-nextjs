@@ -11,7 +11,6 @@ import {
   type OnNodesChange,
   type OnEdgesChange,
   addEdge,
-  type NodeTypes,
   type ColorMode,
   type ReactFlowInstance
 } from '@xyflow/react';
@@ -35,24 +34,9 @@ import { LuSave } from "react-icons/lu";
 // 有不同的 custom node 類型，可以在 nodeTypes 中設定
 // 例如: 一個輸入框的、或是2個輸入框的
 const initialNodes: Node[] = [];
-// const initialEdges: Edge[] = [
-//   {
-//     id: 'e1-2',
-//     source: '1',
-//     target: '2',
-//     style: { stroke: '#93c5fd' },
-//   },
-//   {
-//     id: 'e2-3',
-//     source: '2',
-//     target: '3',
-//     animated: true,
-//     style: { stroke: '#86efac' },
-//   },
-// ];
 const initialEdges: Edge[] = [];
 
-export default function Flow() {
+export default function Flow({ boardId }: { boardId: string; }) {
   const [nodes, setNodes] = useState<Node[]>(initialNodes);
   const [edges, setEdges] = useState<Edge[]>(initialEdges);
 
@@ -67,43 +51,10 @@ export default function Flow() {
   const { theme } = useTheme()
   const [rfInstance, setRfInstance] = useState<ReactFlowInstance | null>(null); // 用於儲存 ReactFlow 實例
 
-  // const onConnect: OnConnect = useCallback(
-  //   (connection) => {
-  //     // Check if the connection is valid
-  //     if (connection.source && connection.target) {
-  //       // setEdges((eds) => addEdge({
-  //       //   ...connection,
-  //       //   // Use the full handle IDs
-  //       //   sourceHandle: `source-${connection.source}`,
-  //       //   targetHandle: connection.targetHandle,
-  //       // }, eds));
-  //       setEdges((eds) => {
-  //         const newEdge = addEdge(connection, eds);
-  //         console.log('New edge created:', newEdge);
-  //         return newEdge;
-  //       });
-  //     } else {
-  //       console.log('Invalid connection:', connection);
-  //     }
-  //   },
-  //   [setEdges],
-  // );
   const onConnect: OnConnect = useCallback(
     (params) => setEdges((eds) => addEdge(params, eds)),
     [setEdges]
   );
-
-  //  const onConnect: OnConnect = useCallback(
-  //   (connection) => {
-  //     setEdges((eds) => addEdge({
-  //       ...connection,
-  //       sourceHandle: 'text-output', // 確保來源 handle 固定
-  //       // 讓目標 handle 保持動態，使用 connection.targetHandle
-  //       targetHandle: connection.targetHandle,
-  //     }, eds));
-  //   },
-  //   [setEdges],
-  // );
 
   // 自定義節點類型
   const nodeTypes = useMemo(() => ({
@@ -111,24 +62,6 @@ export default function Flow() {
     aiPromptNode: AiPromptNode,
     fileUploadNode: FileUploadNode
   }), []);
-  // 當頁面加載時，自動添加兩個節點
-  useEffect(() => {
-    const initialNodes = [
-      {
-        id: '1',
-        type: 'textInputNode', // 指定節點類型為 textInputNode
-        data: { label: 'Text Input 1', id: '1' },
-        position: { x: 400, y: 100 },
-      },
-      {
-        id: '2',
-        type: 'aiPromptNode', // 指定節點類型為 aiPromptNode
-        data: { label: 'AI Prompt 2', id: '2' },
-        position: { x: 700, y: 100 },
-      }
-    ];
-    setNodes(initialNodes);
-  }, []);
 
   // 找到最後一個 textInputNode 的位置
   const getNewNodePosition = useCallback(() => {
@@ -210,7 +143,8 @@ export default function Flow() {
       const flowData = rfInstance.toObject();
 
       // 儲存到 localStorage（或發送至後端 API）
-      localStorage.setItem('flowData', JSON.stringify(flowData));
+      localStorage.setItem(`flowData-${boardId}`, JSON.stringify(flowData));
+
 
       // 假設要發送至後端 API
       // try {
@@ -234,61 +168,61 @@ export default function Flow() {
       //   alert('儲存過程中出現錯誤');
       // }
     }
-  }, [rfInstance]);
+  }, [rfInstance, boardId]);
 
-  // 定義 onRestore 函數
-  // const onRestore = useCallback(async () => {
-  //   // 從 localStorage 獲取流程圖數據
-  //   const savedFlowData = JSON.parse(localStorage.getItem('flowData') || '{}');
-  //   console.log('savedFlowData', savedFlowData);
-
-  //   // 如果後端 API 可用，也可以通過 fetch 獲取數據
-  //   // const response = await fetch('/api/getFlow/user123/myFlowKey');
-  //   // const savedFlowData = await response.json();
-
-  //   if (savedFlowData) {
-  //     const { nodes = [], edges = [], viewport } = savedFlowData;
-  //     setNodes(nodes);
-  //     setEdges(edges);
-  //     if (viewport) {
-  //       rfInstance?.setViewport(viewport); // 設置檢視位置
-  //     }
-  //   }
-  // }, [rfInstance]);
-
-  const onRestore = useCallback(async () => {
-    const savedFlowData = JSON.parse(localStorage.getItem('flowData') || '{}');
+  // 定義 onRestore 函數，用於恢復已保存的流程圖
+  const onRestore = useCallback(() => {
+    const savedFlowData = JSON.parse(localStorage.getItem(`flowData-${boardId}`) || '{}');
     console.log('savedFlowData', savedFlowData);
 
-    if (savedFlowData) {
+    if (savedFlowData.nodes?.length || savedFlowData.edges?.length) {
       const { nodes = [], edges = [], viewport } = savedFlowData;
 
-      // 先設置節點
       setNodes(nodes);
-
-      // 直接設置邊，不需要額外的驗證
-      // 因為 ReactFlow 會自動處理無效的連接
       setEdges(edges);
 
       if (viewport && rfInstance) {
         rfInstance.setViewport(viewport);
       }
+    } else {
+      console.log('No saved flow data found, skipping restore.');
     }
-  }, [rfInstance]);
-
-  // 在組件加載時執行 onRestore 函數
-  // useEffect(() => {
-  //   onRestore();
-  // }, [onRestore]);
-  // 確保在組件加載後有一定延遲再執行 restore
+  }, [rfInstance, boardId]);
+  // 頁面加載
   useEffect(() => {
-    // 給予一些時間讓節點完全渲染
-    const timer = setTimeout(() => {
-      onRestore();
-    }, 100);
+    if (!rfInstance) return; // 确保 ReactFlow 实例存在
+    const savedFlowData = JSON.parse(localStorage.getItem(`flowData-${boardId}`) || '{}');
+    console.log('savedFlowData', savedFlowData);
+    // 區分保存的空數據和完全沒有數據的情況
+    if (savedFlowData && 'nodes' in savedFlowData && 'edges' in savedFlowData) {
+      // user 保存了流程（包括空節點和edge）
+      console.log('Restoring saved flow data...');
+      setNodes(savedFlowData.nodes || []);
+      setEdges(savedFlowData.edges || []);
 
-    return () => clearTimeout(timer);
-  }, []);
+      if (savedFlowData.viewport) {
+        rfInstance.setViewport(savedFlowData.viewport);
+      }
+    } else {
+      // 沒有保存的數據，初始化默認節點
+      console.log('Initializing Flow with default nodes...');
+      const initialDefaultNodes = [
+        {
+          id: '1',
+          type: 'textInputNode', // 指定節點類型為 textInputNode
+          data: { label: 'Text Input 1', id: '1' },
+          position: { x: 400, y: 100 },
+        },
+        {
+          id: '2',
+          type: 'aiPromptNode', // 指定節點類型為 aiPromptNode
+          data: { label: 'AI Prompt 2', id: '2' },
+          position: { x: 700, y: 100 },
+        },
+      ];
+      setNodes(initialDefaultNodes);
+    }
+  }, [rfInstance, boardId, onRestore]);
 
 
   return (

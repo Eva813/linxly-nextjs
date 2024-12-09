@@ -67,11 +67,14 @@ export default function CustomNode({ data }: CustomNodeData) {
 
     incomingEdges.forEach(edge => {
       const sourceNode = getNode(edge.source);
+      console.log('source', sourceNode)
       let content: string = '';
       if (sourceNode?.type === 'fileUploadNode') {
         content = String(sourceNode.data?.fileContent || '');
       } else if (sourceNode?.type === 'textInputNode') {
         content = String(sourceNode.data?.inputContent || '');
+      } else if (sourceNode?.type === 'aiPromptNode') {
+        content = String(sourceNode.data?.result || '');
       }
 
       const handleId = edge.targetHandle;
@@ -82,11 +85,20 @@ export default function CustomNode({ data }: CustomNodeData) {
     });
 
     console.log('contentMap:', contentMap);
+    console.log('userPrompt', userPrompt)
 
     // Add this return statement
-    return Array.from(contentMap.entries())
+    // return Array.from(contentMap.entries())
+    //   .map(([label, content]) => `${label}: ${content}`)
+    //   .join('\n');
+    const combinedContent = Array.from(contentMap.entries())
       .map(([label, content]) => `${label}: ${content}`)
       .join('\n');
+
+    console.log('ALL', `${userPrompt}\n${combinedContent}`)
+
+    // Include userPrompt in the final output
+    return `${userPrompt}\n${combinedContent}`;
   };
 
   // 更新 systemPrompt 的處理函數

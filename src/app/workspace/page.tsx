@@ -1,6 +1,7 @@
 'use client';
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { Button } from "@/components/ui/button"
 
 type Board = {
   id: string;
@@ -42,20 +43,39 @@ const Workspace = () => {
   };
 
   return (
-    <div className="p-6">
+    <div className={`p-6 min-h-screen dotted-bg`}>
       <h1 className="text-2xl font-bold mb-6">工作區</h1>
-      <button onClick={addBoard} className="bg-blue-500 text-white p-2 rounded hover:bg-blue-600 transition-colors mb-6">
+      <Button onClick={addBoard} variant="default" className="mb-6">
         新增 Board
-      </button>
+      </Button>
+
       <div className="boards-container grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {boards.map((board) => (
-          <div key={board.id} className="bg-gray-400 text-white p-4 rounded-lg shadow-lg flex flex-col justify-between items-start space-y-2">
+          <div
+            key={board.id}
+            className="bg-gradient-to-br from-gray-900 to-gray-800 text-white flex flex-col justify-between space-y-2 rounded-lg shadow-lg p-4  dark:bg-white dark:from-white dark:to-white dark:text-black"
+          >
             <h3 className="text-lg font-semibold">{board.name}</h3>
             <p>{board.createdAt}</p>
-            <button onClick={() => router.push(`/board/${board.id}`)} className="bg-green-500 text-white p-1 rounded hover:bg-green-600 transition-colors">查看</button>
-            <button onClick={() => deleteBoard(board.id)} className="bg-red-500 text-white p-1 rounded hover:bg-red-600 transition-colors">
-              刪除
-            </button>
+            <div className="flex space-x-2 justify-end w-full">
+              {/* 查看按鈕 - 使用 Shadcn Button */}
+              <Button
+                className='bg-gray-600 text-white dark:text-black hover:bg-gray-600 dark:hover:bg-gray-400 dark:bg-gray-400 dark:text-white'
+                onClick={() => router.push(`/board/${board.id}`)}
+                variant="secondary"
+              >
+                查看
+              </Button>
+
+              {/* 刪除按鈕 - 使用 Shadcn Button */}
+              <Button
+                className='bg-red-500 dark:bg-rose-500 dark:text-white'
+                onClick={() => deleteBoard(board.id)}
+                variant="destructive"
+              >
+                刪除
+              </Button>
+            </div>
           </div>
         ))}
       </div>

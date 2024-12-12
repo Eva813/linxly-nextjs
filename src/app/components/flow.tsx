@@ -243,7 +243,7 @@ export default function Flow({ boardId }: { boardId: string; }) {
         <Background />
         <Controls />
         {/* <MiniMap /> */}
-        <Panel position="top-left" className="bg-white p-2 shadow-sm flex flex-col dark:bg-flow-dark" style={{ position: 'fixed', top: '80px', left: '40px', zIndex: 100 }} >
+        <Panel position="top-left" className="bg-white p-2 shadow-sm flex flex-col dark:bg-flow-dark" style={{ position: 'fixed', top: '120px', left: '10px', zIndex: 100 }} >
           <TooltipProvider delayDuration={200}>
             <Tooltip>
               {/* 按鈕 1: 增加文字輸入框的節點 */}

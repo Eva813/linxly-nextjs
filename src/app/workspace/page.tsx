@@ -24,10 +24,11 @@ const Workspace = () => {
   // 新增 Board 的邏輯
   const addBoard = () => {
     const newBoardId = `board-${Date.now()}`; // 使用時間戳生成唯一 ID
+    const newBoardName = 'Central Topic'; // 允許用戶輸入名稱
     const newBoard: Board = {
       id: newBoardId,
-      name: 'Central Topic', // 預設名稱，可以允許用戶後續更改
-      createdAt: new Date().toLocaleString(), // 記錄創建時間
+      name: newBoardName, // 使用用戶輸入的名稱
+      createdAt: new Date().toLocaleString(),
     };
     const updatedBoards = [...boards, newBoard];
     setBoards(updatedBoards);
@@ -46,7 +47,7 @@ const Workspace = () => {
     <div className={`p-6 min-h-screen dotted-bg`}>
       <h1 className="text-2xl font-bold mb-6">工作區</h1>
       <Button onClick={addBoard} variant="default" className="mb-6">
-        新增 Board
+        Add Board
       </Button>
 
       <div className="boards-container grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -64,7 +65,7 @@ const Workspace = () => {
                 onClick={() => router.push(`/board/${board.id}`)}
                 variant="secondary"
               >
-                查看
+                View
               </Button>
 
               {/* 刪除按鈕 - 使用 Shadcn Button */}
@@ -73,7 +74,7 @@ const Workspace = () => {
                 onClick={() => deleteBoard(board.id)}
                 variant="destructive"
               >
-                刪除
+                Delete
               </Button>
             </div>
           </div>

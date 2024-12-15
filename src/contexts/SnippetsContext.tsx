@@ -31,8 +31,6 @@ interface SnippetsContextType {
 
 const SnippetsContext = createContext<SnippetsContextType | undefined>(undefined);
 
-
-
 export function SnippetsProvider({ children }: { children: ReactNode }) {
   const [folders, setFolders] = useState<Folder[]>([]);
   const hasInitialized = useRef(false); // 初始化旗標

@@ -1,14 +1,28 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
 import { useSnippets } from '@/contexts/SnippetsContext';
+import { Button } from '@/components/ui/button';
+import { FaFolderPlus } from "react-icons/fa";
+import { FaFileMedical } from "react-icons/fa";
+import { BsThreeDotsVertical } from "react-icons/bs";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { FaCaretDown } from "react-icons/fa";
+import { FaCaretRight } from "react-icons/fa";
 
 const Sidebar = () => {
   const { folders, setFolders } = useSnippets();
   const router = useRouter();
   const pathname = usePathname();
+  const [activeFolderMenu, setActiveFolderMenu] = useState<string | null>(null);
+  const [collapsedFolders, setCollapsedFolders] = useState<Set<string>>(new Set());
 
   // Helper function to extract folder or snippet ID from pathname
   const getCurrentContext = () => {
@@ -104,45 +118,100 @@ const Sidebar = () => {
     }
   };
 
+  const deleteFolder = (folderId: string) => {
+    const updatedFolders = folders.filter(folder => folder.id !== folderId);
+    setFolders(updatedFolders);
+    setActiveFolderMenu(null);
+    if (mode === 'folder' && id === folderId) {
+      router.push('/snippets');
+    }
+  };
+  const toggleCollapse = (folderId: string) => {
+    const newCollapsed = new Set(collapsedFolders);
+    if (newCollapsed.has(folderId)) {
+      newCollapsed.delete(folderId);
+    } else {
+      newCollapsed.add(folderId);
+    }
+    setCollapsedFolders(newCollapsed);
+  };
+
+
   return (
-    <div className="w-1/4 h-screen p-4 bg-gray-100 flex flex-col border-r border-gray-300">
-      <div className="flex space-x-2 mb-4">
-        <button onClick={addFolder} className="px-3 py-1 bg-blue-500 text-white rounded">
+    <div className="w-1/4 h-screen p-4 flex flex-col border-r border-gray-300">
+      <div className="grid grid-cols-2 gap-x-4 mb-4">
+        <Button onClick={addFolder} >
+          <FaFolderPlus />
           Add Folder
-        </button>
-        <button onClick={addSnippet} className="px-3 py-1 bg-green-500 text-white rounded">
+        </Button>
+        <Button onClick={addSnippet} >
+          < FaFileMedical />
           Add Snippet
-        </button>
+        </Button>
       </div>
-      <h2 className="text-lg font-semibold mb-4">Folders</h2>
       <div className="flex-1 overflow-y-auto">
-        <ul>
+        <ul className='dark:text-gray-200'>
           {folders.map((folder) => (
-            <li key={folder.id}
-              className="mb-2">
-              <div className={`px-2 py-1 ${pathname === `/snippets/folder/${folder.id}` ? 'bg-blue-200' : ''
-                }`}>
-                <Link href={`/snippets/folder/${folder.id}`}>
-                  <strong className="cursor-pointer">{folder.name}</strong>
-                </Link>
-              </div>
-              <ul className="ml-4 mt-1">
-                {folder.snippets.length === 0 ? (
-                  <span className="ml-2 text-gray-500">No snippets in the folder</span>
-                ) : (
-                  folder.snippets.map((snippet) => (
-                    <li
-                      key={snippet.id}
-                      className={`mt-1 pa-2 ${pathname === `/snippets/snippet/${snippet.id}` ? 'bg-green-200' : 'bg-transparent'
-                        }`}
-                    >
-                      <Link href={`/snippets/snippet/${snippet.id}`}>
-                        {snippet.name}
-                      </Link>
-                    </li>
-                  ))
-                )}
-              </ul>
+            <li key={folder.id} className="mb-2">
+              <Link className={`px-2 py-1 w-full block rounded hover:bg-gray-100 dark:hover:text-black flex items-center justify-between text-lg ${pathname === `/snippets/folder/${folder.id}` ? 'bg-slate-100 dark:text-black' : ''
+                }`} href={`/snippets/folder/${folder.id}`}>
+                <strong className="cursor-pointer">{folder.name}</strong>
+                <div className="flex items-center">
+                  <button
+                    onClick={() => toggleCollapse(folder.id)}
+                    className="focus:outline-none hover:bg-gray-200 dark:hover:bg-gray-800 p-1 rounded mr-1"
+                  >
+                    {collapsedFolders.has(folder.id) ? <FaCaretRight className="text-gray-400" /> : <FaCaretDown className="text-gray-400" />}
+                  </button>
+                  {/* DropdownMenu */}
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <button
+                        onClick={(e) => {
+                          e.preventDefault();
+                          setActiveFolderMenu(
+                            activeFolderMenu === folder.id ? null : folder.id
+                          );
+                        }}
+                        className="focus:outline-none hover:bg-gray-200 dark:hover:bg-gray-800 p-1 rounded"
+                      >
+                        <BsThreeDotsVertical className="text-gray-400" />
+                      </button>
+                    </DropdownMenuTrigger>
+                    {activeFolderMenu === folder.id && (
+                      <DropdownMenuContent>
+                        <DropdownMenuItem>
+                          <button
+                            onClick={() => deleteFolder(folder.id)}
+                            className="w-full text-left"
+                          >
+                            Delete
+                          </button>
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    )}
+                  </DropdownMenu>
+                </div>
+              </Link>
+              {!collapsedFolders.has(folder.id) && (
+                <ul className="ml-4 mt-1">
+                  {folder.snippets.length === 0 ? (
+                    <span className="ml-2 text-gray-500">No snippets in the folder</span>
+                  ) : (
+                    folder.snippets.map((snippet) => (
+                      <li
+                        key={snippet.id}
+                        className="mb-2"
+                      >
+                        <Link className={`px-2 py-1 w-full block rounded hover:bg-gray-100 dark:hover:text-black ${pathname === `/snippets/snippet/${snippet.id}` ? 'bg-slate-100 dark:text-black' : 'bg-transparent'
+                          }`} href={`/snippets/snippet/${snippet.id}`}>
+                          {snippet.name}
+                        </Link>
+                      </li>
+                    ))
+                  )}
+                </ul>
+              )}
             </li>
           ))}
         </ul>

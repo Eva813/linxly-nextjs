@@ -1,7 +1,7 @@
 "use client";
 import { Button } from '@/components/ui/button';
 import { useSnippets } from '@/contexts/SnippetsContext';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 interface FolderPageProps {
   params: {
@@ -15,15 +15,32 @@ const FolderPage = ({ params }: FolderPageProps) => {
 
   const currentFolder = folders.find(folder => folder.id === folderId);
 
-  const [name, setName] = useState(currentFolder ? currentFolder.name : '');
-  const [description, setDescription] = useState(currentFolder ? currentFolder.description : '');
+  // 本地狀態，用於雙向綁定
+  const [name, setName] = useState('');
+  const [description, setDescription] = useState('');
+
+  // 監聽 currentFolder 的變化，並更新本地狀態
+  useEffect(() => {
+    if (currentFolder) {
+      setName(currentFolder.name);
+      setDescription(currentFolder.description);
+    }
+  }, [currentFolder]);
 
   if (!currentFolder) {
     return <p>Folder not found.</p>;
   }
 
   const handleSave = () => {
-    updateFolder(folderId, { name, description });
+    if (currentFolder) {
+      const updatedFolder = {
+        ...currentFolder,
+        name,
+        description,
+      };
+      console.log('Updating folder:', updatedFolder);
+      updateFolder(folderId, updatedFolder);
+    }
   };
 
   return (

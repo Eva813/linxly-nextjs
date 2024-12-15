@@ -26,6 +26,7 @@ interface SnippetsContextType {
   deleteFolder: (id: string) => void;
   addSnippetToFolder: (folderId: string, snippet: Omit<Snippet, 'id'>) => void;
   deleteSnippetFromFolder: (folderId: string, snippetId: string) => void;
+  updateSnippet: (snippetId: string, updatedSnippet: Partial<Snippet>) => void;
 }
 
 const SnippetsContext = createContext<SnippetsContextType | undefined>(undefined);
@@ -136,6 +137,17 @@ export function SnippetsProvider({ children }: { children: ReactNode }) {
     );
   };
 
+  const updateSnippet = (snippetId: string, updatedSnippet: Partial<Snippet>) => {
+    setFolders(prevFolders =>
+      prevFolders.map(folder => ({
+        ...folder,
+        snippets: folder.snippets.map(snippet =>
+          snippet.id === snippetId ? { ...snippet, ...updatedSnippet } : snippet
+        ),
+      }))
+    );
+  };
+
   return (
     <SnippetsContext.Provider
       value={{
@@ -146,6 +158,7 @@ export function SnippetsProvider({ children }: { children: ReactNode }) {
         deleteFolder,
         addSnippetToFolder,
         deleteSnippetFromFolder,
+        updateSnippet
       }}
     >
       {children}

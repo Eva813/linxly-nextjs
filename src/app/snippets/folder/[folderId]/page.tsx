@@ -2,6 +2,7 @@
 import { Button } from '@/components/ui/button';
 import { useSnippets } from '@/contexts/SnippetsContext';
 import { useState, useEffect } from 'react';
+import { Textarea } from "@/components/ui/textarea"
 
 interface FolderPageProps {
   params: {
@@ -51,10 +52,10 @@ const FolderPage = ({ params }: FolderPageProps) => {
         value={name}
         onChange={(e) => setName(e.target.value)}
       />
-      <textarea
+      <Textarea
         value={description}
         rows={4}
-        className='focus:outline-gray-500 hover:ring-1 hover:ring-gray-400 p-2 rounded mb-2'
+        className=' hover:ring-1 hover:ring-gray-400 p-2 rounded mb-2'
         onChange={(e) => { setDescription(e.target.value) }}
         placeholder="input description"
       />

@@ -5,8 +5,9 @@ import { Input } from "@/components/ui/input";
 import { FaTag } from "react-icons/fa6";
 import { FaKeyboard } from "react-icons/fa6";
 import { useState, useEffect } from 'react';
-import { Textarea } from "@/components/ui/textarea"
+// import { Textarea } from "@/components/ui/textarea"
 import { Button } from '@/components/ui/button';
+import TipTapEditor from '@/app/components/tipTapEditor';
 
 interface SnippetPageProps {
   params: {
@@ -67,7 +68,8 @@ const SnippetPage = ({ params }: SnippetPageProps) => {
           <FaKeyboard className="absolute left-0 top-0 m-2.5 h-4 w-4 text-muted-foreground" />
         </div>
       </div>
-      <Textarea placeholder="Type your message here." className='hover:ring-1 hover:ring-gray-400 mb-2' rows={6} value={content} onChange={(e) => setContent(e.target.value)} />
+      {/* <Textarea placeholder="Type your message here." className='hover:ring-1 hover:ring-gray-400 mb-2' rows={6} value={content} onChange={(e) => setContent(e.target.value)} /> */}
+      <TipTapEditor value={content} onChange={setContent} />
       <Button className='w-20' onClick={handleSave}>Save</Button>
     </div>
   );

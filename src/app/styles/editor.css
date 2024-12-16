@@ -1,0 +1,50 @@
+.editor-container {
+  .tiptap-container {
+    border: 1px solid #BDBDBD;
+    border-radius: 0 0 4px 4px;
+    outline: none;
+  }
+
+  .tiptap {
+    padding: 16px;
+    overflow-y: auto;
+    height: inherit;
+    width: inherit;
+    line-height: 1.5;
+  }
+
+  .toolbar {
+    border-top: 1px solid #BDBDBD;
+    border-left: 1px solid #BDBDBD;
+    border-right: 1px solid #BDBDBD;
+    border-radius: 4px 4px 0 0;
+  }
+
+  .ProseMirror {
+    &:focus {
+      outline: none;
+    }
+
+    ul,
+    ol {
+      padding-left: 1.2rem;
+    }
+
+    ul li,
+    ol li {
+      position: relative;
+    }
+
+    ol {
+      list-style: decimal outside none;
+
+      li {
+        margin-left: 0;
+      }
+    }
+
+    span {
+      font-weight: inherit;
+    }
+  }
+}

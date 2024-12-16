@@ -12,7 +12,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuTrigger,
+  DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu"
 import { FaCaretDown } from "react-icons/fa";
 import { FaCaretRight } from "react-icons/fa";

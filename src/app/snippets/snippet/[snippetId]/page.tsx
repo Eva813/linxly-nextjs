@@ -9,6 +9,7 @@ import TipTapEditor from '@/app/components/tipTapEditor';
 
 import Sidebar from '@/app/snippets/snippet/[snippetId]/editorSidebar'
 import InsertTextFieldDialog from '@/app/snippets/snippet/[snippetId]/InsertTextFieldDialog'
+import { Editor } from '@tiptap/react'
 
 interface SnippetPageProps {
   params: {
@@ -27,7 +28,7 @@ const SnippetPage = ({ params }: SnippetPageProps) => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   // 假設 TipTapEditor 提供一個 ref 或透過 onEditorReady 拿到 editor 實例
-  const editorRef = useRef(null);
+  const editorRef = useRef<Editor | null>(null);
 
   let currentSnippet = null;
   for (const folder of folders) {
@@ -73,24 +74,65 @@ const SnippetPage = ({ params }: SnippetPageProps) => {
 
   const handleInsert = (label: string, defaultValue: string) => {
     const editor = editorRef.current;
+    console.log('ddd', editor)
+    console.log('Current content:', editor?.getHTML());
     if (editor) {
-      const formtext = `(formtext: name=${label || 'field'}; default=${defaultValue || ''})`;
-      const selectedText = editor.getSelectedText();
-      console.log('selectedText:', selectedText);
+      // 創建要插入的節點
+      // const textField = {
+      //   type: 'formTextField',
+      //   attrs: {
+      //     label,
+      //     defaultValue
+      //   }
+      // };
+      editor.chain()
+        .focus()
+        .insertContent({
+          type: 'formTextField',
+          attrs: {
+            label,
+            defaultValue
+          }
+        })
+        .run();
 
-      if (selectedText) {
-        // 替換選取的文字
-        editor.chain().focus().replaceSelection(formtext).run();
-      } else {
-        // 在當前光標位置插入文字
-        editor.chain().focus().insertContent(formtext).run();
-      }
+      // 使用 commands 來插入內容
+      // editor.commands.insertContent(textField);
+      console.log('inset', editor.getHTML)
 
-      // 更新 content 狀態
-      const newContent = editor.getHTML();
-      setContent(newContent);
+      // 更新content狀態
+      setContent(editor.getHTML());
     }
   }
+
+  // const handleInsert = (label: string, defaultValue: string) => {
+  //   const editor = editorRef.current;
+  //   console.log('ee', editor)
+  //   if (editor) {
+  //     const nodeData = {
+  //       type: 'formTextField',  // 確保這個 type 與你在 TipTap extension 中定義的名稱一致
+  //       attrs: {
+  //         label: label || 'field',
+  //         defaultValue: defaultValue || ''
+  //       },
+  //       content: defaultValue || ''  // 可選：如果需要顯示預設值
+  //     };
+  //     console.log('ddd', nodeData)
+
+  //     if (editor.state.selection.empty) {
+  //       // 沒有選取文字，直接在游標處插入
+  //       editor.chain().focus().insertContent(nodeData).run();
+  //     } else {
+  //       // 有選取文字，先刪除選取範圍再插入
+  //       editor.chain()
+  //         .focus()
+  //         .deleteSelection()
+  //         .insertContent(nodeData)
+  //         .run();
+  //     }
+  //     setContent(editor.getHTML());
+  //   }
+  // }
 
   return (
     <div className='flex'>

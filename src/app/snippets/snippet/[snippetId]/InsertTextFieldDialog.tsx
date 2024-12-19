@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
+import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 
@@ -23,6 +23,9 @@ export default function InsertTextFieldDialog({ isOpen, onClose, onInsert }: Ins
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Insert text field</DialogTitle>
+          <DialogDescription>
+            Please provide a label and default value for the text field.
+          </DialogDescription>
         </DialogHeader>
         <div className="space-y-4">
           <div>

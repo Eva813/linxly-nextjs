@@ -11,17 +11,20 @@ import { Button } from "@/components/ui/button"
 import { FaBold, FaItalic, FaList, FaListOl, FaAlignCenter, FaAlignLeft, FaAlignRight } from "react-icons/fa6";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover"
 import { ImFontSize } from "react-icons/im";
+import { FormTextNode } from './FormTextNode'
 interface TipTapEditorProps {
   value: string;
   height?: string;
   isRequired?: boolean;
   onChange: (value: string) => void;
+  onEditorReady: (editor: any) => void;
 }
 const TipTapEditor = ({
   value,
   height = '12rem',
   isRequired = false,
   onChange,
+  onEditorReady
 }: TipTapEditorProps) => {
   const [hasError, setHasError] = useState(false);
   // const [currentColor, setCurrentColor] = useState('');
@@ -48,6 +51,7 @@ const TipTapEditor = ({
       TextStyle,
       FontSize.configure({ types: ['textStyle'] }),
       TextAlign.configure({ types: ['heading', 'paragraph'] }),
+      FormTextNode
       // Color,
     ],
   });
@@ -78,9 +82,16 @@ const TipTapEditor = ({
 
   useEffect(() => {
     if (editor && value !== editor.getHTML()) {
+      console.log('Updating editor content:', value);
       editor.commands.setContent(value || '', false);
     }
   }, [value, editor]);
+  // 當 editor 實例創建完成時，通過 onEditorReady 傳遞給父組件
+  useEffect(() => {
+    if (editor) {
+      onEditorReady(editor);
+    }
+  }, [editor, onEditorReady]);
 
   return (
     <div className="editor-container flex flex-col mb-4">

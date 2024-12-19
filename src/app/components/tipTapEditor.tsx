@@ -10,8 +10,6 @@ import { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button"
 import { FaBold, FaItalic, FaList, FaListOl, FaAlignCenter, FaAlignLeft, FaAlignRight } from "react-icons/fa6";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover"
-import { RiFontSize } from "react-icons/ri";
-import { TbTextSize } from "react-icons/tb";
 import { ImFontSize } from "react-icons/im";
 interface TipTapEditorProps {
   value: string;

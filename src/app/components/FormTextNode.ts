@@ -27,16 +27,41 @@ export const FormTextNode = Node.create({
     ]
   },
 
-  renderHTML({ HTMLAttributes }) {
-    return ['span', mergeAttributes(
-      {
-        'data-type': 'formtext',
-        'class': 'form-text-field',
-        'contenteditable': 'false',
-        style: 'background-color: #e2e8f0; padding: 2px 6px; border-radius: 4px; margin: 0 2px;'
-      },
-      HTMLAttributes
-    ), `{{${HTMLAttributes.label || 'field'}}}`]
+  // renderHTML({ HTMLAttributes }) {
+  //   return ['span', mergeAttributes(
+  //     {
+  //       'data-type': 'formtext',
+  //       'class': 'form-text-field',
+  //       'contenteditable': 'false',
+  //       // style: 'background-color: #e2e8f0; padding: 2px 6px; border-radius: 4px; margin: 0 2px;'
+  //     },
+  //     HTMLAttributes
+  //   ), `{{ default: ${HTMLAttributes.defaultValue || ''}, name: ${HTMLAttributes.label || 'field'} }}`]
+  // },
+
+  // 編輯器將文件輸出為 HTML 
+  renderHTML({ node, HTMLAttributes }) {
+    const { label, defaultValue } = node.attrs
+
+    // 判斷 defaultValue 是否存在
+    let textContent = `name: ${label}`
+    if (defaultValue) {
+      textContent = `name: ${label}, default: ${defaultValue}`
+    }
+
+    return [
+      'span',
+      mergeAttributes(
+        {
+          'data-type': 'formtext',
+          'class': 'form-text-field',
+          'contenteditable': 'false',
+          'role': 'button'
+        },
+        HTMLAttributes
+      ),
+      textContent
+    ]
   },
 
   addNodeView() {
@@ -45,12 +70,15 @@ export const FormTextNode = Node.create({
       span.setAttribute('data-type', 'formtext')
       span.setAttribute('class', 'form-text-field')
       span.setAttribute('contenteditable', 'false')
-      span.style.backgroundColor = '#e2e8f0'
-      span.style.padding = '2px 6px'
-      span.style.borderRadius = '4px'
-      span.style.margin = '0 2px'
-      span.textContent = `{{${node.attrs.label || 'field'}}}`
 
+      const { label, defaultValue } = node.attrs
+
+      // 判斷 defaultValue 是否存在
+      if (defaultValue) {
+        span.textContent = `name: ${label}, default: ${defaultValue} `
+      } else {
+        span.textContent = `name: ${label}`
+      }
       return {
         dom: span
       }

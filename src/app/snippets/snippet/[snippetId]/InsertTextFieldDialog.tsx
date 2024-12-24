@@ -29,7 +29,7 @@ export default function InsertTextFieldDialog({ isOpen, onClose, onInsert }: Ins
         </DialogHeader>
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium mb-1">Label (optional)</label>
+            <label className="block text-sm font-medium mb-1">Name</label>
             <Input value={label} onChange={(e) => setLabel(e.target.value)} placeholder="Enter a label..." />
           </div>
           <div>

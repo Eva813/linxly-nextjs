@@ -1,6 +1,6 @@
 'use client';
 
-import { useEditor, EditorContent } from '@tiptap/react';
+import { useEditor, EditorContent, Editor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import TextStyle from '@tiptap/extension-text-style';
 import TextAlign from '@tiptap/extension-text-align';
@@ -17,7 +17,7 @@ interface TipTapEditorProps {
   height?: string;
   isRequired?: boolean;
   onChange: (value: string) => void;
-  onEditorReady: (editor: any) => void;
+  onEditorReady: (editor: Editor) => void;
 }
 const TipTapEditor = ({
   value,
@@ -99,9 +99,9 @@ const TipTapEditor = ({
         {/* Font Size */}
         <Popover>
           <PopoverTrigger>
-            <Button className='mx-1 px-2' variant={currentFontSize ? 'default' : 'ghost'}>
-              < ImFontSize />
-            </Button>
+            <div className='mx-1 px-2'>
+              <ImFontSize />
+            </div>
           </PopoverTrigger>
           <PopoverContent className="w-35 flex flex-col gap-2 p-2">
             <Button onClick={unsetFontSize}>Default</Button>

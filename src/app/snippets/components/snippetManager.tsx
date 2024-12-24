@@ -6,7 +6,7 @@ export default function SnippetManager() {
   const { snippets, addSnippet, deleteSnippet } = useSnippets();
   const [name, setName] = useState('');
   const [content, setContent] = useState('');
-  const [folders, setFolders] = useState<{ [key: string]: any[] }>({}); // 新增資料夾狀態
+  const [folders, setFolders] = useState<{ [key: string]: { id: string; name: string; content: string }[] }>({}); // 新增資料夾狀態
 
   const handleAdd = () => {
     if (name.trim() === '' || content.trim() === '') return;

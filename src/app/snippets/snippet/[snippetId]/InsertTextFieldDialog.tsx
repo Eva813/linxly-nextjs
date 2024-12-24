@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 
@@ -20,7 +20,7 @@ export default function InsertTextFieldDialog({ isOpen, onClose, onInsert }: Ins
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent>
+      <DialogContent className="bg-white shadow-lg p-6 rounded-md">
         <DialogHeader>
           <DialogTitle>Insert text field</DialogTitle>
           <DialogDescription>

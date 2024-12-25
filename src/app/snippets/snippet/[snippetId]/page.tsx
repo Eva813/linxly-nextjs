@@ -10,45 +10,59 @@ import TipTapEditor from '@/app/components/tipTapEditor';
 import Sidebar from '@/app/snippets/snippet/[snippetId]/editorSidebar'
 import InsertTextFieldDialog from '@/app/snippets/snippet/[snippetId]/InsertTextFieldDialog'
 import { Editor } from '@tiptap/react'
+import { NodeSelection } from 'prosemirror-state'
 
 interface SnippetPageProps {
   params: {
     snippetId: string;
   };
 }
+interface Snippet {
+  id: string
+  name: string
+  shortcut: string
+  content: string
+}
 
 const SnippetPage = ({ params }: SnippetPageProps) => {
-  const { snippetId } = params;
-  const { folders, updateSnippet } = useSnippets();
-  const [name, setName] = useState('');
-  const [shortcut, setShortcut] = useState('');
-  const [content, setContent] = useState('');
+  const { snippetId } = params
+  const { folders, updateSnippet } = useSnippets()
+  const [name, setName] = useState('')
+  const [shortcut, setShortcut] = useState('')
+  const [content, setContent] = useState('')
 
-  // 用於控制 Dialog 的顯示
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  // 透過 ref 持有 editor 實例
+  const editorRef = useRef<Editor | null>(null)
 
-  // 假設 TipTapEditor 提供一個 ref 或透過 onEditorReady 拿到 editor 實例
-  const editorRef = useRef<Editor | null>(null);
+  // 對話框相關
+  const [isDialogOpen, setIsDialogOpen] = useState(false)
+  // 若 editNodeInfo 為 null，就代表是「新增」；若有值，就代表「編輯」
+  const [editNodeInfo, setEditNodeInfo] = useState<{
+    pos: number
+    label: string
+    defaultValue: string
+  } | null>(null)
 
-  let currentSnippet = null;
+  // 查找對應的 snippet
+  let currentSnippet: Snippet | null = null
   for (const folder of folders) {
-    const snippet = folder.snippets.find(s => s.id === snippetId);
+    const snippet = folder.snippets.find((s: Snippet) => s.id === snippetId)
     if (snippet) {
-      currentSnippet = snippet;
-      break;
+      currentSnippet = snippet
+      break
     }
   }
 
   useEffect(() => {
     if (currentSnippet) {
-      setName(currentSnippet.name);
-      setShortcut(currentSnippet.shortcut);
-      setContent(currentSnippet.content);
+      setName(currentSnippet.name)
+      setShortcut(currentSnippet.shortcut)
+      setContent(currentSnippet.content)
     }
-  }, [currentSnippet]);
+  }, [currentSnippet])
 
   if (!currentSnippet) {
-    return <p>Snippet not found.</p>;
+    return <p>Snippet not found.</p>
   }
 
   const handleSave = () => {
@@ -58,81 +72,72 @@ const SnippetPage = ({ params }: SnippetPageProps) => {
         name,
         shortcut,
         content,
-      };
-      console.log('Updating snippet:', updatedSnippet);
-      updateSnippet(snippetId, updatedSnippet);
+      }
+      console.log('Updating snippet:', updatedSnippet)
+      updateSnippet(snippetId, updatedSnippet)
     }
   }
 
+  // 按下 sidebar 的「新增欄位」按鈕
   const handleInsertTextFieldClick = () => {
-    setIsDialogOpen(true);
+    setEditNodeInfo(null) // 表示「插入」模式
+    setIsDialogOpen(true)
+  }
+
+  // 當用戶在編輯器裡點擊自訂 Node
+  const handleFormTextNodeClick = ({
+    pos,
+    label,
+    defaultValue,
+  }: {
+    pos: number
+    label: string
+    defaultValue: string
+  }) => {
+    setEditNodeInfo({ pos, label, defaultValue }) // 進入「編輯」模式
+    setIsDialogOpen(true)
   }
 
   const handleDialogClose = () => {
-    setIsDialogOpen(false);
+    setIsDialogOpen(false)
   }
 
+  // 對話框點擊「確認」時
   const handleInsert = (label: string, defaultValue: string) => {
-    const editor = editorRef.current;
-    console.log('ddd', editor)
-    console.log('Current content:', editor?.getHTML());
-    if (editor) {
-      // 創建要插入的節點
-      // const textField = {
-      //   type: 'formTextField',
-      //   attrs: {
-      //     label,
-      //     defaultValue
-      //   }
-      // };
-      editor.chain()
+    const editor = editorRef.current
+    if (!editor) return
+
+    if (!editNodeInfo) {
+      // === 新增 ===
+      editor
+        .chain()
         .focus()
         .insertContent({
           type: 'formTextField',
           attrs: {
             label,
-            defaultValue
-          }
+            defaultValue,
+          },
         })
-        .run();
-
-      // 使用 commands 來插入內容
-      // editor.commands.insertContent(textField);
-      console.log('inset', editor.getHTML)
-
-      // 更新content狀態
-      setContent(editor.getHTML());
+        .run()
+    } else {
+      // === 編輯 ===
+      const { pos } = editNodeInfo
+      const { doc } = editor.state
+      const nodeSelection = NodeSelection.create(doc, pos)
+      const tr = editor.state.tr.setSelection(nodeSelection)
+      editor.view.dispatch(tr)
+    
+      editor.chain().focus().updateAttributes('formTextField', {
+        label,
+        defaultValue,
+      }).run()
     }
+
+    // 立即更新 content 狀態
+    setContent(editor.getHTML())
+    setIsDialogOpen(false)
   }
-
-  // const handleInsert = (label: string, defaultValue: string) => {
-  //   const editor = editorRef.current;
-  //   console.log('ee', editor)
-  //   if (editor) {
-  //     const nodeData = {
-  //       type: 'formTextField',  // 確保這個 type 與你在 TipTap extension 中定義的名稱一致
-  //       attrs: {
-  //         label: label || 'field',
-  //         defaultValue: defaultValue || ''
-  //       },
-  //       content: defaultValue || ''  // 可選：如果需要顯示預設值
-  //     };
-  //     console.log('ddd', nodeData)
-
-  //     if (editor.state.selection.empty) {
-  //       // 沒有選取文字，直接在游標處插入
-  //       editor.chain().focus().insertContent(nodeData).run();
-  //     } else {
-  //       // 有選取文字，先刪除選取範圍再插入
-  //       editor.chain()
-  //         .focus()
-  //         .deleteSelection()
-  //         .insertContent(nodeData)
-  //         .run();
-  //     }
-  //     setContent(editor.getHTML());
-  //   }
-  // }
 
   return (
     <div className='flex'>
@@ -152,6 +157,8 @@ const SnippetPage = ({ params }: SnippetPageProps) => {
           value={content}
           onChange={setContent}
           onEditorReady={(editorInstance) => { editorRef.current = editorInstance; }}
+          // 註冊 Node 點擊事件
+          onFormTextNodeClick={handleFormTextNodeClick}
         />
         <Button className='w-20' onClick={handleSave}>Save</Button>
       </div>
@@ -162,6 +169,9 @@ const SnippetPage = ({ params }: SnippetPageProps) => {
         isOpen={isDialogOpen}
         onClose={handleDialogClose}
         onInsert={handleInsert}
+         // 帶入目前要編輯的資料；若是 null 就表示新增
+         defaultLabel={editNodeInfo?.label || ''}
+         defaultDefaultValue={editNodeInfo?.defaultValue || ''}
       />
     </div>
   );

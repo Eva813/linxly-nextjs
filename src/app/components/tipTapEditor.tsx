@@ -18,13 +18,20 @@ interface TipTapEditorProps {
   isRequired?: boolean;
   onChange: (value: string) => void;
   onEditorReady: (editor: Editor) => void;
+  // 當用戶點擊自訂 Node 時的回呼
+  onFormTextNodeClick?: (params: {
+    pos: number
+    label: string
+    defaultValue: string
+  }) => void
 }
 const TipTapEditor = ({
   value,
   height = '12rem',
   isRequired = false,
   onChange,
-  onEditorReady
+  onEditorReady,
+  onFormTextNodeClick
 }: TipTapEditorProps) => {
   const [hasError, setHasError] = useState(false);
   // const [currentColor, setCurrentColor] = useState('');
@@ -51,7 +58,12 @@ const TipTapEditor = ({
       TextStyle,
       FontSize.configure({ types: ['textStyle'] }),
       TextAlign.configure({ types: ['heading', 'paragraph'] }),
-      FormTextNode
+       // 在這裡將 FormTextNode 配置 onFormTextClick
+       FormTextNode.configure({
+        onFormTextClick: (params) => {
+          onFormTextNodeClick?.(params)
+        },
+      }),
       // Color,
     ],
   });

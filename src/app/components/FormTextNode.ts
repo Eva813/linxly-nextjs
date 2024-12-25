@@ -1,6 +1,22 @@
+// FormTextNode.ts
 import { Node, mergeAttributes } from '@tiptap/core'
+import { ReactNodeViewRenderer } from '@tiptap/react'
+import FormTextView from './formTextView'
 
-export const FormTextNode = Node.create({
+/**
+ * 第 1 個泛型參數：Options
+ * 第 2 個泛型參數：Storage (若你用不到 Storage，可直接用空物件)
+ * 第 3 個泛型參數：Attrs (在 Tiptap v2/v3，語法可能略有差異)
+ *
+ * 但在 Tiptap v2/v3，官方通常把 "attrs" 放在第 2 或第 3 個泛型裡。
+ * 這裡假設 Tiptap v2/v3，基本概念相同：要讓 Tiptap 知道你的 Node 有哪些 attrs。
+ */
+interface FormTextOptions {
+  onFormTextClick?: (data: { pos: number; label: string; defaultValue: string }) => void
+}
+
+// 這裡假設 Tiptap v2/v3 的寫法，attrs 型別放在第 2 或第 3 參數
+export const FormTextNode = Node.create<FormTextOptions>({
   name: 'formTextField',
 
   group: 'inline',
@@ -8,14 +24,20 @@ export const FormTextNode = Node.create({
   selectable: true,
   draggable: true,
 
+  addOptions() {
+    return {
+      onFormTextClick: undefined,
+    }
+  },
+
   addAttributes() {
     return {
       label: {
-        default: 'field'
+        default: 'field',
       },
       defaultValue: {
-        default: ''
-      }
+        default: '',
+      },
     }
   },
 
@@ -23,27 +45,12 @@ export const FormTextNode = Node.create({
     return [
       {
         tag: 'span[data-type="formtext"]',
-      }
+      },
     ]
   },
 
-  // renderHTML({ HTMLAttributes }) {
-  //   return ['span', mergeAttributes(
-  //     {
-  //       'data-type': 'formtext',
-  //       'class': 'form-text-field',
-  //       'contenteditable': 'false',
-  //       // style: 'background-color: #e2e8f0; padding: 2px 6px; border-radius: 4px; margin: 0 2px;'
-  //     },
-  //     HTMLAttributes
-  //   ), `{{ default: ${HTMLAttributes.defaultValue || ''}, name: ${HTMLAttributes.label || 'field'} }}`]
-  // },
-
-  // 編輯器將文件輸出為 HTML 
   renderHTML({ node, HTMLAttributes }) {
     const { label, defaultValue } = node.attrs
-
-    // 判斷 defaultValue 是否存在
     let textContent = `name: ${label}`
     if (defaultValue) {
       textContent = `name: ${label}, default: ${defaultValue}`
@@ -54,34 +61,19 @@ export const FormTextNode = Node.create({
       mergeAttributes(
         {
           'data-type': 'formtext',
-          'class': 'form-text-field',
-          'contenteditable': 'false',
-          'role': 'button'
+          class: 'form-text-field',
+          contenteditable: 'false',
+          role: 'button',
         },
-        HTMLAttributes
+        HTMLAttributes,
       ),
-      textContent
+      textContent,
     ]
   },
 
   addNodeView() {
-    return ({ node }) => {
-      const span = document.createElement('span')
-      span.setAttribute('data-type', 'formtext')
-      span.setAttribute('class', 'form-text-field')
-      span.setAttribute('contenteditable', 'false')
-
-      const { label, defaultValue } = node.attrs
-
-      // 判斷 defaultValue 是否存在
-      if (defaultValue) {
-        span.textContent = `name: ${label}, default: ${defaultValue} `
-      } else {
-        span.textContent = `name: ${label}`
-      }
-      return {
-        dom: span
-      }
-    }
-  }
+    // 可以在這裡指定泛型，例如: ReactNodeViewRenderer<MyNodeViewProps>(FormTextView)
+    // 但最常見的情況下，只要你的 React component 有宣告 NodeViewProps<...> 就行
+    return ReactNodeViewRenderer(FormTextView)
+  },
 })

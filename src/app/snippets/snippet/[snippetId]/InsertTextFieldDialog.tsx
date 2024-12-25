@@ -1,4 +1,5 @@
-import React, { useState } from 'react'
+'use client';
+import React, { useState, useEffect } from 'react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
@@ -7,15 +8,27 @@ interface InsertTextFieldDialogProps {
   isOpen: boolean;
   onClose: () => void;
   onInsert: (label: string, defaultValue: string) => void;
+    // 如果是編輯，會帶入既有數值
+    defaultLabel?: string
+    defaultDefaultValue?: string
 }
 
-export default function InsertTextFieldDialog({ isOpen, onClose, onInsert }: InsertTextFieldDialogProps) {
-  const [label, setLabel] = useState('')
+export default function InsertTextFieldDialog({ isOpen, onClose, onInsert,   defaultLabel = '',
+  defaultDefaultValue = '', }: InsertTextFieldDialogProps) {
+  const [label, setLabel] = useState(defaultLabel)
   const [defaultValue, setDefaultValue] = useState('')
+
+  // Dialog 每次打開時，重設 state
+  useEffect(() => {
+    if (isOpen) {
+      setLabel(defaultLabel)
+      setDefaultValue(defaultDefaultValue)
+    }
+  }, [isOpen, defaultLabel, defaultDefaultValue])
 
   const handleInsert = () => {
     onInsert(label, defaultValue)
-    onClose()
+    // onClose()
   }
 
   return (

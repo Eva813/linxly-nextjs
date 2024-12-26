@@ -23,6 +23,7 @@ const Sidebar = () => {
   const pathname = usePathname();
   const [activeFolderMenu, setActiveFolderMenu] = useState<string | null>(null);
   const [collapsedFolders, setCollapsedFolders] = useState<Set<string>>(new Set());
+  const [activeSnippetMenu, setActiveSnippetMenu] = useState<string | null>(null);
 
   // Helper function to extract folder or snippet ID from pathname
   const getCurrentContext = () => {
@@ -136,6 +137,25 @@ const Sidebar = () => {
     setCollapsedFolders(newCollapsed);
   };
 
+  const deleteFile = (folderId: string, snippetId: string) => {
+    const updatedFolders = folders.map(folder => {
+      if (folder.id === folderId) {
+        return {
+          ...folder,
+          snippets: folder.snippets.filter(snippet => snippet.id !== snippetId)
+        };
+      }
+      return folder;
+    });
+    setFolders(updatedFolders);
+    setActiveSnippetMenu(null);
+    console.log('folderId', folderId);
+    if (mode === 'snippet') {
+      console.log('Snippet deleted, redirecting to folder', folderId);
+      router.push(`/snippets/folder/${folderId}`);
+    }
+  };
+
 
   return (
     <div className="w-1/4 h-screen p-4 flex flex-col border-r border-gray-300">
@@ -203,10 +223,42 @@ const Sidebar = () => {
                         key={snippet.id}
                         className="mb-2"
                       >
-                        <Link className={`px-2 py-1 w-full block rounded hover:bg-gray-100 dark:hover:text-black ${pathname === `/snippets/snippet/${snippet.id}` ? 'bg-slate-100 dark:text-black' : 'bg-transparent'
-                          }`} href={`/snippets/snippet/${snippet.id}`}>
-                          {snippet.name}
-                        </Link>
+                        <div
+                          className={`flex items-center justify-between px-2 py-1 w-full block rounded hover:bg-gray-100 dark:hover:text-black ${pathname === `/snippets/snippet/${snippet.id}` ? 'bg-slate-100 dark:text-black' : 'bg-transparent'
+                            }`}
+                        >
+                          <Link className="flex-1 block" href={`/snippets/snippet/${snippet.id}`}>
+                            {snippet.name}
+                          </Link>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <button
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  setActiveSnippetMenu(
+                                    activeSnippetMenu === snippet.id ? null : snippet.id
+                                  );
+                                }}
+                                className="focus:outline-none hover:bg-gray-200 dark:hover:bg-gray-800 p-1 rounded"
+                              >
+                                <BsThreeDotsVertical className="text-gray-400" />
+                              </button>
+                            </DropdownMenuTrigger>
+                            {activeSnippetMenu === snippet.id && (
+                              <DropdownMenuContent>
+                                <DropdownMenuItem>
+                                  <button
+                                    onClick={() => deleteFile(folder.id, snippet.id)}
+                                    className="w-full text-left"
+                                  >
+                                    Delete
+                                  </button>
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            )}
+                          </DropdownMenu>
+                        </div>
                       </li>
                     ))
                   )}

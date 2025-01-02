@@ -127,7 +127,7 @@ const SnippetPage = ({ params }: SnippetPageProps) => {
       const nodeSelection = NodeSelection.create(doc, pos)
       const tr = editor.state.tr.setSelection(nodeSelection)
       editor.view.dispatch(tr)
-    
+
       editor.chain().focus().updateAttributes('formTextField', {
         label,
         defaultValue,
@@ -169,9 +169,9 @@ const SnippetPage = ({ params }: SnippetPageProps) => {
         isOpen={isDialogOpen}
         onClose={handleDialogClose}
         onInsert={handleInsert}
-         // 帶入目前要編輯的資料；若是 null 就表示新增
-         defaultLabel={editNodeInfo?.label || ''}
-         defaultDefaultValue={editNodeInfo?.defaultValue || ''}
+        // 帶入目前要編輯的資料；若是 null 就表示新增
+        defaultLabel={editNodeInfo?.label || ''}
+        defaultDefaultValue={editNodeInfo?.defaultValue || ''}
       />
     </div>
   );

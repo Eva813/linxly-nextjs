@@ -4,6 +4,8 @@ import "./globals.css";
 import { NodeProvider } from '@/contexts/NodeContext';
 import { SiteHeader } from '@/components/site-header';
 import { ThemeProvider } from "@/components/theme-provider";
+import SnippetDialog from "@/app/components/snippetDialog";
+import { SnippetsProvider } from '@/contexts/SnippetsContext';
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -33,8 +35,11 @@ export default function RootLayout({
       >
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
           <NodeProvider>
-            <SiteHeader />
-            {children}
+            <SnippetsProvider>
+              <SiteHeader />
+              {children}
+              <SnippetDialog />
+            </SnippetsProvider>
           </NodeProvider>
         </ThemeProvider>
       </body>

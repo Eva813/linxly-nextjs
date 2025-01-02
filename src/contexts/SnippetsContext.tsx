@@ -27,6 +27,14 @@ interface SnippetsContextType {
   addSnippetToFolder: (folderId: string, snippet: Omit<Snippet, 'id'>) => void;
   deleteSnippetFromFolder: (folderId: string, snippetId: string) => void;
   updateSnippet: (snippetId: string, updatedSnippet: Partial<Snippet>) => void;
+  // Add these new properties
+  isDialogOpen: boolean;
+  setIsDialogOpen: (open: boolean) => void;
+  matchedSnippet: {
+    content: string;
+    targetElement: HTMLInputElement | null;
+  };
+  setMatchedSnippet: (snippet: { content: string; targetElement: HTMLInputElement | null }) => void;
 }
 
 const SnippetsContext = createContext<SnippetsContextType | undefined>(undefined);
@@ -34,6 +42,15 @@ const SnippetsContext = createContext<SnippetsContextType | undefined>(undefined
 export function SnippetsProvider({ children }: { children: ReactNode }) {
   const [folders, setFolders] = useState<Folder[]>([]);
   const hasInitialized = useRef(false); // 初始化旗標
+  // Add these new states
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [matchedSnippet, setMatchedSnippet] = useState<{
+    content: string;
+    targetElement: HTMLInputElement | null;
+  }>({
+    content: '',
+    targetElement: null
+  });
 
   useEffect(() => {
     if (typeof window !== 'undefined' && !hasInitialized.current) {
@@ -73,6 +90,55 @@ export function SnippetsProvider({ children }: { children: ReactNode }) {
       hasInitialized.current = true; // 標記已初始化
     }
   }, []);
+
+  // Add new useEffect for shortcut detection
+  useEffect(() => {
+    const handleKeyUp = (e: KeyboardEvent) => {
+      const target = e.target as HTMLInputElement;
+
+      // 只處理 input 和 textarea，且必須有值
+      if ((target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') && target.value) {
+        const currentValue = target.value;
+
+        // 只在輸入 "/" 時才進行檢查
+        if (e.key === '/' || currentValue.includes('/')) {
+          let matchedSnippetData: Snippet | null = null;
+
+          folders.forEach(folder => {
+            folder.snippets.forEach(snippet => {
+              // 確保 shortcut 是以 "/" 開頭
+              if (snippet.shortcut.startsWith('/') &&
+                currentValue.endsWith(snippet.shortcut)) {
+                if (!matchedSnippetData ||
+                  snippet.shortcut.length > matchedSnippetData.shortcut.length) {
+                  matchedSnippetData = snippet;
+                }
+              }
+            });
+          });
+
+          if (matchedSnippetData) {
+            console.log('Found matching snippet:', matchedSnippetData);
+            setMatchedSnippet({
+              content: matchedSnippetData.content,
+              targetElement: target
+            });
+            setIsDialogOpen(true);
+
+            // 移除 shortcut
+            const newValue = currentValue.slice(
+              0,
+              currentValue.length - matchedSnippetData.shortcut.length
+            );
+            target.value = newValue;
+          }
+        }
+      }
+    };
+
+    document.addEventListener('keyup', handleKeyUp);
+    return () => document.removeEventListener('keyup', handleKeyUp);
+  }, [folders]);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -156,7 +222,12 @@ export function SnippetsProvider({ children }: { children: ReactNode }) {
         deleteFolder,
         addSnippetToFolder,
         deleteSnippetFromFolder,
-        updateSnippet
+        updateSnippet,
+        // Add these new values
+        isDialogOpen,
+        setIsDialogOpen,
+        matchedSnippet,
+        setMatchedSnippet
       }}
     >
       {children}

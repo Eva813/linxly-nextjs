@@ -1,11 +1,12 @@
 import { Handle, Position, useReactFlow } from '@xyflow/react';
-import { useState, memo } from 'react';
+import { useState, memo, useEffect, useRef } from 'react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
 interface CustomNodeData {
   data: {
     id: string;
     label?: string;
+    inputContent?: string;
   };
 }
 
@@ -17,8 +18,38 @@ const handleStyle = {
 const TextInputNode = ({ data }: CustomNodeData) => {
   const [inputValue, setInputValue] = useState(data.label || '');
   const { setNodes, deleteElements, getNodes, addNodes } = useReactFlow();
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  // 監聽 data.label 的變化
+  // useEffect(() => {
+  //   const newValue = data.label || data.inputContent || '';
+  //   if (newValue !== inputValue) {
+  //     // 是否執行 handleChage 儲存？
+  //     setInputValue(newValue);
+  //   }
+  // }, [data.label, data.inputContent]);
+  const updateNodeData = (newValue: string) => {
+    setInputValue(newValue);
+    setNodes((nodes) =>
+      nodes.map((node) => {
+        if (node.id === data.id) {
+          return {
+            ...node,
+            data: {
+              ...node.data,
+              label: newValue,
+              inputContent: newValue,
+            },
+          };
+        }
+        return node;
+      })
+    );
+  };
+
+
 
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    updateNodeData(e.target.value);
     const newValue = e.target.value;
     setInputValue(newValue);
 
@@ -38,6 +69,7 @@ const TextInputNode = ({ data }: CustomNodeData) => {
       });
     });
   };
+
 
   const handleDeleteNode = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -92,6 +124,7 @@ const TextInputNode = ({ data }: CustomNodeData) => {
       <div className="mb-2 font-bold">Text Input Node {data.id}</div>
 
       <textarea
+        ref={textareaRef}
         className="border border-gray-300 p-1 rounded w-full resize-y focus:outline-none focus:border-gray-600 focus:ring-0.5 focus:ring-gray-600 nowheel nodrag dark:bg-flow-darker"
         value={inputValue}
         onChange={handleChange}

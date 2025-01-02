@@ -1,6 +1,8 @@
 import { Handle, Position, useReactFlow } from '@xyflow/react';
 import { useState, memo, useEffect, useRef } from 'react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { useSnippets } from '@/contexts/SnippetsContext';
+
 
 interface CustomNodeData {
   data: {
@@ -19,6 +21,7 @@ const TextInputNode = ({ data }: CustomNodeData) => {
   const [inputValue, setInputValue] = useState(data.label || '');
   const { setNodes, deleteElements, getNodes, addNodes } = useReactFlow();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const { matchedSnippet } = useSnippets();
   // 監聽 data.label 的變化
   // useEffect(() => {
   //   const newValue = data.label || data.inputContent || '';
@@ -27,6 +30,25 @@ const TextInputNode = ({ data }: CustomNodeData) => {
   //     setInputValue(newValue);
   //   }
   // }, [data.label, data.inputContent]);
+  // 監聽 matchedSnippet 的變化
+  useEffect(() => {
+    if (matchedSnippet?.content && textareaRef.current) {
+      const textarea = textareaRef.current;
+      const start = textarea.selectionStart;
+      const end = textarea.selectionEnd;
+      const currentValue = textarea.value;
+
+      // 組合新的內容：前面的文字 + snippet content + 後面的文字
+      const newValue = currentValue.slice(0, start) + matchedSnippet.content + currentValue.slice(end);
+
+      updateNodeData(newValue);
+
+      // 更新光標位置到插入內容之後
+      const newPosition = start + matchedSnippet.content.length;
+      textarea.setSelectionRange(newPosition, newPosition);
+    }
+  }, [matchedSnippet]);
+
   const updateNodeData = (newValue: string) => {
     setInputValue(newValue);
     setNodes((nodes) =>

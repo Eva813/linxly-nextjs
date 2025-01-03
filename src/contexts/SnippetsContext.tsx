@@ -33,8 +33,10 @@ interface SnippetsContextType {
   matchedSnippet: {
     content: string;
     targetElement: HTMLInputElement | null;
+    insert: boolean;
   };
-  setMatchedSnippet: (snippet: { content: string; targetElement: HTMLInputElement | null }) => void;
+  // , insert: boolean 
+  setMatchedSnippet: (snippet: { content: string; targetElement: HTMLInputElement | null, insert: boolean;}) => void;
 }
 
 const SnippetsContext = createContext<SnippetsContextType | undefined>(undefined);
@@ -47,9 +49,11 @@ export function SnippetsProvider({ children }: { children: ReactNode }) {
   const [matchedSnippet, setMatchedSnippet] = useState<{
     content: string;
     targetElement: HTMLInputElement | null;
+    insert: boolean;
   }>({
     content: '',
-    targetElement: null
+    targetElement: null,
+    insert: false
   });
 
   useEffect(() => {
@@ -97,7 +101,7 @@ export function SnippetsProvider({ children }: { children: ReactNode }) {
       const target = e.target as HTMLInputElement;
 
       // 只處理 input 和 textarea，且必須有值
-      if ((target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') && target.value) {
+      if ((target.tagName === 'INPUT' || target.tagName === 'TEXTAREA')) {
         const currentValue = target.value;
 
         // 只在輸入 "/" 時才進行檢查
@@ -121,7 +125,8 @@ export function SnippetsProvider({ children }: { children: ReactNode }) {
             console.log('Found matching snippet:', matchedSnippetData);
             setMatchedSnippet({
               content: matchedSnippetData.content,
-              targetElement: target
+              targetElement: target,
+              insert: false
             });
             setIsDialogOpen(true);
 

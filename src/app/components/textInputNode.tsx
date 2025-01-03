@@ -1,5 +1,5 @@
 import { Handle, Position, useReactFlow } from '@xyflow/react';
-import { useState, memo, useEffect, useRef } from 'react';
+import { useState, memo, useEffect, useRef, useCallback } from 'react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useSnippets } from '@/contexts/SnippetsContext';
 
@@ -21,7 +21,7 @@ const TextInputNode = ({ data }: CustomNodeData) => {
   const [inputValue, setInputValue] = useState(data.label || '');
   const { setNodes, deleteElements, getNodes, addNodes } = useReactFlow();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const { matchedSnippet } = useSnippets();
+  const { matchedSnippet, setMatchedSnippet } = useSnippets();
   // 監聽 data.label 的變化
   // useEffect(() => {
   //   const newValue = data.label || data.inputContent || '';
@@ -31,8 +31,29 @@ const TextInputNode = ({ data }: CustomNodeData) => {
   //   }
   // }, [data.label, data.inputContent]);
   // 監聽 matchedSnippet 的變化
+  const updateNodeData = useCallback((newValue: string) => {
+      setInputValue(newValue);
+      setNodes((nodes) =>
+        nodes.map((node) => {
+          if (node.id === data.id) {
+            return {
+              ...node,
+              data: {
+                ...node.data,
+                label: newValue,
+                inputContent: newValue,
+              },
+            };
+          }
+          return node;
+        })
+      );
+    }, [data.id, setNodes]);
+
   useEffect(() => {
-    if (matchedSnippet?.content && textareaRef.current) {
+    console.log('matchedSnippet', matchedSnippet);
+    if (matchedSnippet?.content && textareaRef.current && matchedSnippet.insert) {
+      console.log('matchedSnippet', matchedSnippet);
       const textarea = textareaRef.current;
       const start = textarea.selectionStart;
       const end = textarea.selectionEnd;
@@ -47,26 +68,9 @@ const TextInputNode = ({ data }: CustomNodeData) => {
       const newPosition = start + matchedSnippet.content.length;
       textarea.setSelectionRange(newPosition, newPosition);
     }
-  }, [matchedSnippet]);
+  }, [matchedSnippet,setMatchedSnippet, updateNodeData]);
 
-  const updateNodeData = (newValue: string) => {
-    setInputValue(newValue);
-    setNodes((nodes) =>
-      nodes.map((node) => {
-        if (node.id === data.id) {
-          return {
-            ...node,
-            data: {
-              ...node.data,
-              label: newValue,
-              inputContent: newValue,
-            },
-          };
-        }
-        return node;
-      })
-    );
-  };
+
 
 
 

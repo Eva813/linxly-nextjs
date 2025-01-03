@@ -41,9 +41,16 @@ const SnippetDialog = () => {
       const target = matchedSnippet.targetElement;
       const newValue = target.value + matchedSnippet.content;
       target.value = newValue;
+      console.log('Inserting snippet:', matchedSnippet.content);
       setIsDialogOpen(false);
-      setMatchedSnippet({ content: '', targetElement: null });
+       // 更新 matchedSnippet 以觸發 TextInputNode 中的 useEffect
+      setMatchedSnippet({ content: matchedSnippet.content , targetElement: null,insert: true });
     }
+  };
+
+  const handleCancel = () => {
+    setIsDialogOpen(false);
+    setMatchedSnippet({ content: '', targetElement: null, insert: false });
   };
 
   return (
@@ -60,7 +67,7 @@ const SnippetDialog = () => {
             <div className="whitespace-pre-wrap" dangerouslySetInnerHTML={{ __html: parsedContent }} />
           </div>
           <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+            <Button variant="outline" onClick={handleCancel}>
               Cancel
             </Button>
             <Button onClick={handleInsert}>Insert</Button>

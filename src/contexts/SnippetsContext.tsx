@@ -1,5 +1,5 @@
 'use client';
-import { createContext, useContext, useState, useEffect, useRef } from 'react';
+import { createContext, useContext, useState, useEffect, useRef, useMemo, use } from 'react';
 import { ReactNode } from 'react';
 
 const STORAGE_KEY = 'my_snippets';
@@ -34,9 +34,10 @@ interface SnippetsContextType {
     content: string;
     targetElement: HTMLInputElement | null;
     insert: boolean;
+    shortcut: string;
   };
   // , insert: boolean 
-  setMatchedSnippet: (snippet: { content: string; targetElement: HTMLInputElement | null, insert: boolean;}) => void;
+  setMatchedSnippet: (snippet: { content: string; targetElement: HTMLInputElement | null, insert: boolean; shortcut: string; }) => void;
 }
 
 const SnippetsContext = createContext<SnippetsContextType | undefined>(undefined);
@@ -50,10 +51,12 @@ export function SnippetsProvider({ children }: { children: ReactNode }) {
     content: string;
     targetElement: HTMLInputElement | null;
     insert: boolean;
+    shortcut: string;
   }>({
     content: '',
     targetElement: null,
-    insert: false
+    insert: false,
+    shortcut: ''
   });
 
   useEffect(() => {
@@ -95,55 +98,114 @@ export function SnippetsProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  // Add new useEffect for shortcut detection
-  useEffect(() => {
-    const handleKeyUp = (e: KeyboardEvent) => {
-      const target = e.target as HTMLInputElement;
-
-      // 只處理 input 和 textarea，且必須有值
-      if ((target.tagName === 'INPUT' || target.tagName === 'TEXTAREA')) {
-        const currentValue = target.value;
-
-        // 只在輸入 "/" 時才進行檢查
-        if (e.key === '/' || currentValue.includes('/')) {
-          let matchedSnippetData: Snippet | null = null;
-
-          folders.forEach(folder => {
-            folder.snippets.forEach(snippet => {
-              // 確保 shortcut 是以 "/" 開頭
-              if (snippet.shortcut.startsWith('/') &&
-                currentValue.endsWith(snippet.shortcut)) {
-                if (!matchedSnippetData ||
-                  snippet.shortcut.length > matchedSnippetData.shortcut.length) {
-                  matchedSnippetData = snippet;
-                }
-              }
-            });
-          });
-
-          if (matchedSnippetData) {
-            console.log('Found matching snippet:', matchedSnippetData);
-            setMatchedSnippet({
-              content: matchedSnippetData.content,
-              targetElement: target,
-              insert: false
-            });
-            setIsDialogOpen(true);
-
-            // 移除 shortcut
-            const newValue = currentValue.slice(
-              0,
-              currentValue.length - matchedSnippetData.shortcut.length
-            );
-            target.value = newValue;
-          }
+  // 使用 useMemo 優化 snippet 查找
+  const snippetMap = useMemo(() => {
+    const map = new Map<string, Snippet>();
+    folders.forEach(folder => {
+      folder.snippets.forEach(snippet => {
+        if (snippet.shortcut.startsWith('/')) {
+          map.set(snippet.shortcut, snippet);
         }
-      }
-    };
+      });
+    });
+    return map;
+  }, [folders])
 
+  useEffect(() => {
+    const handleKeyUp = (e: Event) => {
+      if (!isEditableElement(e.target)) return;
+      // const target = e.target as HTMLInputElement;
+      const target = e.target as HTMLInputElement;
+      const cursorPosition = target.selectionStart || 0;
+      const textBeforeCursor = target.value.substring(0, cursorPosition);
+      // 檢查是否包含 shortcut
+      const matchedSnippet = findMatchingSnippet(textBeforeCursor, snippetMap);
+      if (matchedSnippet) {
+        console.log('Found matching snippet:', matchedSnippet);
+        setMatchedSnippet({
+          content: matchedSnippet.content,
+          targetElement: target,
+          insert: false,
+          shortcut: matchedSnippet.shortcut
+        });
+        setIsDialogOpen(true);
+      }
+
+    };
     document.addEventListener('keyup', handleKeyUp);
     return () => document.removeEventListener('keyup', handleKeyUp);
   }, [folders]);
+
+  const isEditableElement = (element: EventTarget | null): element is HTMLInputElement | HTMLTextAreaElement => {
+    if (!element) return false;
+    console.log('element:', element.tagName);
+    const tagName = (element as HTMLElement).tagName;
+    return tagName === 'INPUT' || tagName === 'TEXTAREA';
+  };
+
+
+  const findMatchingSnippet = (text: string, snippetMap: Map<string, Snippet>): Snippet | null => {
+    let longestMatch: Snippet | null = null;
+
+    for (const [shortcut, snippet] of snippetMap.entries()) {
+      if (text.endsWith(shortcut)) {
+        if (!longestMatch || shortcut.length > longestMatch.shortcut.length) {
+          longestMatch = snippet;
+        }
+      }
+    }
+
+    return longestMatch;
+  };
+  // Add new useEffect for shortcut detection
+  // useEffect(() => {
+  //   const handleKeyUp = (e: KeyboardEvent) => {
+  //     const target = e.target as HTMLInputElement;
+
+  //     // 只處理 input 和 textarea，且必須有值
+  //     if ((target.tagName === 'INPUT' || target.tagName === 'TEXTAREA')) {
+  //       const currentValue = target.value;
+
+  //       // 只在輸入 "/" 時才進行檢查
+  //       if (e.key === '/' || currentValue.includes('/')) {
+  //         let matchedSnippetData: Snippet | null = null;
+
+  //         folders.forEach(folder => {
+  //           folder.snippets.forEach(snippet => {
+  //             // 確保 shortcut 是以 "/" 開頭
+  //             if (snippet.shortcut.startsWith('/') &&
+  //               currentValue.endsWith(snippet.shortcut)) {
+  //               if (!matchedSnippetData ||
+  //                 snippet.shortcut.length > matchedSnippetData.shortcut.length) {
+  //                 matchedSnippetData = snippet;
+  //               }
+  //             }
+  //           });
+  //         });
+
+  //         if (matchedSnippetData) {
+  //           console.log('Found matching snippet:', matchedSnippetData);
+  //           setMatchedSnippet({
+  //             content: matchedSnippetData.content,
+  //             targetElement: target,
+  //             insert: false
+  //           });
+  //           setIsDialogOpen(true);
+
+  //           // 移除 shortcut
+  //           const newValue = currentValue.slice(
+  //             0,
+  //             currentValue.length - matchedSnippetData.shortcut.length
+  //           );
+  //           target.value = newValue;
+  //         }
+  //       }
+  //     }
+  //   };
+
+  //   document.addEventListener('keyup', handleKeyUp);
+  //   return () => document.removeEventListener('keyup', handleKeyUp);
+  // }, [folders]);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {

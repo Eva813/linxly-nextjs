@@ -32,45 +32,56 @@ const TextInputNode = ({ data }: CustomNodeData) => {
   // }, [data.label, data.inputContent]);
   // 監聽 matchedSnippet 的變化
   const updateNodeData = useCallback((newValue: string) => {
-      setInputValue(newValue);
-      setNodes((nodes) =>
-        nodes.map((node) => {
-          if (node.id === data.id) {
-            return {
-              ...node,
-              data: {
-                ...node.data,
-                label: newValue,
-                inputContent: newValue,
-              },
-            };
-          }
-          return node;
-        })
-      );
-    }, [data.id, setNodes]);
+    setInputValue(newValue);
+    setNodes((nodes) =>
+      nodes.map((node) => {
+        if (node.id === data.id) {
+          return {
+            ...node,
+            data: {
+              ...node.data,
+              label: newValue,
+              inputContent: newValue,
+            },
+          };
+        }
+        return node;
+      })
+    );
+  }, [data.id, setNodes]);
 
   useEffect(() => {
-    console.log('matchedSnippet', matchedSnippet);
     if (matchedSnippet?.content && textareaRef.current && matchedSnippet.insert) {
-      console.log('matchedSnippet', matchedSnippet);
       const textarea = textareaRef.current;
       const start = textarea.selectionStart;
       const end = textarea.selectionEnd;
       const currentValue = textarea.value;
+      console.log('Current value:', currentValue);
+      console.log('Shortcut:', matchedSnippet.shortcut);
+      console.log('Selection start:', start);
 
-      // 組合新的內容：前面的文字 + snippet content + 後面的文字
-      const newValue = currentValue.slice(0, start) + matchedSnippet.content + currentValue.slice(end);
+      const shortcutStart = currentValue.lastIndexOf(matchedSnippet.shortcut, start);
+      // 計算 shortcut 結束的位置
+      const shortcutEnd = shortcutStart + matchedSnippet.shortcut.length;
 
-      updateNodeData(newValue);
+      console.log('Shortcut start position:', shortcutStart);
+      if (shortcutStart !== -1) {
+        const newValue =
+          currentValue.slice(0, shortcutStart) +
+          matchedSnippet.content +
+          currentValue.slice(shortcutEnd);
 
-      // 更新光標位置到插入內容之後
-      const newPosition = start + matchedSnippet.content.length;
-      textarea.setSelectionRange(newPosition, newPosition);
+        updateNodeData(newValue);
+
+        // 直接設置光標位置
+        const newPosition = shortcutStart + matchedSnippet.content.length;
+        textarea.focus();
+        textarea.setSelectionRange(newPosition, newPosition);
+
+        setMatchedSnippet({ content: '', targetElement: null, insert: false, shortcut: '' });
+      }
     }
-  }, [matchedSnippet,setMatchedSnippet, updateNodeData]);
-
-
+  }, [matchedSnippet, setMatchedSnippet, updateNodeData]);
 
 
 

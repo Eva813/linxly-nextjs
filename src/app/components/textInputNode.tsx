@@ -1,8 +1,8 @@
 import { Handle, Position, useReactFlow } from '@xyflow/react';
-import { useState, memo, useEffect, useRef, useCallback } from 'react';
+import { useState, memo, useRef, useCallback } from 'react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { useSnippets } from '@/contexts/SnippetsContext';
-
+// import { useSnippets } from '@/contexts/SnippetsContext';
+import { useSnippetInsertion } from '@/lib/useSnippetInsertion'
 
 interface CustomNodeData {
   data: {
@@ -21,16 +21,7 @@ const TextInputNode = ({ data }: CustomNodeData) => {
   const [inputValue, setInputValue] = useState(data.label || '');
   const { setNodes, deleteElements, getNodes, addNodes } = useReactFlow();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const { matchedSnippet, setMatchedSnippet } = useSnippets();
-  // 監聽 data.label 的變化
-  // useEffect(() => {
-  //   const newValue = data.label || data.inputContent || '';
-  //   if (newValue !== inputValue) {
-  //     // 是否執行 handleChage 儲存？
-  //     setInputValue(newValue);
-  //   }
-  // }, [data.label, data.inputContent]);
-  // 監聽 matchedSnippet 的變化
+
   const updateNodeData = useCallback((newValue: string) => {
     setInputValue(newValue);
     setNodes((nodes) =>
@@ -49,41 +40,6 @@ const TextInputNode = ({ data }: CustomNodeData) => {
       })
     );
   }, [data.id, setNodes]);
-
-  useEffect(() => {
-    if (matchedSnippet?.content && textareaRef.current && matchedSnippet.insert) {
-      const textarea = textareaRef.current;
-      const start = textarea.selectionStart;
-      const end = textarea.selectionEnd;
-      const currentValue = textarea.value;
-      console.log('Current value:', currentValue);
-      console.log('Shortcut:', matchedSnippet.shortcut);
-      console.log('Selection start:', start);
-
-      const shortcutStart = currentValue.lastIndexOf(matchedSnippet.shortcut, start);
-      // 計算 shortcut 結束的位置
-      const shortcutEnd = shortcutStart + matchedSnippet.shortcut.length;
-
-      console.log('Shortcut start position:', shortcutStart);
-      if (shortcutStart !== -1) {
-        const newValue =
-          currentValue.slice(0, shortcutStart) +
-          matchedSnippet.content +
-          currentValue.slice(shortcutEnd);
-
-        updateNodeData(newValue);
-
-        // 直接設置光標位置
-        const newPosition = shortcutStart + matchedSnippet.content.length;
-        textarea.focus();
-        textarea.setSelectionRange(newPosition, newPosition);
-
-        setMatchedSnippet({ content: '', targetElement: null, insert: false, shortcut: '' });
-      }
-    }
-  }, [matchedSnippet, setMatchedSnippet, updateNodeData]);
-
-
 
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     updateNodeData(e.target.value);
@@ -137,6 +93,11 @@ const TextInputNode = ({ data }: CustomNodeData) => {
       addNodes(newNode);
     }
   };
+
+  useSnippetInsertion({
+    inputRef: textareaRef,
+    onInsert: updateNodeData
+  });
 
   return (
     <div className="relative p-2 bg-white rounded-md border border-gray-300 w-[16rem] dark:bg-flow-darker">

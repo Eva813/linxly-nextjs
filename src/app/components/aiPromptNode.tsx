@@ -1,9 +1,10 @@
 import { Handle, Position, useUpdateNodeInternals, useStore, useReactFlow } from '@xyflow/react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { MdSend } from "react-icons/md";
 import TextContentDialog from './ui/textContentDialog'; // 引入 CustomDialog 組件
 import ReactMarkdown from 'react-markdown';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { useSnippetInsertion } from '@/lib/useSnippetInsertion'
 
 interface CustomNodeData {
   data: {
@@ -31,6 +32,9 @@ export default function CustomNode({ data }: CustomNodeData) {
   const [handles, setHandles] = useState<{ id: string; label: string }[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [edgeCount, setEdgeCount] = useState(0);
+  const systemPromptRef = useRef<HTMLTextAreaElement>(null);
+  const userPromptRef = useRef<HTMLTextAreaElement>(null);
+
   // 獲取所有連接到這個節點的邊
   const edges = useStore((s) => s.edges.filter((e) => e.target === data.id));
   // 更新節點並處理連線變化
@@ -230,6 +234,52 @@ export default function CustomNode({ data }: CustomNodeData) {
       addNodes(newNode);
     }
   };
+  // 更新 systemPrompt 的處理函數
+  const handleSystemPromptUpdate = useCallback((newValue: string) => {
+    setSystemPrompt(newValue);
+    setNodes((nodes) => {
+      return nodes.map((node) => {
+        if (node.id === data.id) {
+          return {
+            ...node,
+            data: {
+              ...node.data,
+              systemPrompt: newValue,
+            },
+          };
+        }
+        return node;
+      });
+    });
+  }, [data.id, setNodes]);
+  const handleUserPromptUpdate = useCallback((newValue: string) => {
+    setUserPrompt(newValue);
+    setNodes((nodes) => {
+      return nodes.map((node) => {
+        if (node.id === data.id) {
+          return {
+            ...node,
+            data: {
+              ...node.data,
+              userPrompt: newValue,
+            },
+          };
+        }
+        return node;
+      });
+    });
+  }, [data.id, setNodes]);
+  // 為兩個 textarea 添加 snippet 功能
+  useSnippetInsertion({
+    inputRef: systemPromptRef,
+    onInsert: handleSystemPromptUpdate
+  });
+
+  useSnippetInsertion({
+    inputRef: userPromptRef,
+    onInsert: handleUserPromptUpdate
+  });
+
 
   return (
     <div className="p-2 bg-white rounded-md border border-gray-300 w-[16rem] dark:bg-flow-darker">
@@ -268,17 +318,19 @@ export default function CustomNode({ data }: CustomNodeData) {
       {/* System Prompt */}
       <label className="block text-sm font-medium text-gray-700 mb-1 dark:text-white">System Prompt</label>
       <textarea
+        ref={systemPromptRef}
         className="border border-gray-300 p-1 rounded w-full resize-y nodrag nowheel focus:outline-none focus:border-gray-600 focus:ring-0.5 focus:ring-gray-600 dark:bg-flow-darker"
         value={systemPrompt}
-        onChange={handleSystemPromptChange}
+        onChange={(e) => handleSystemPromptUpdate(e.target.value)}
         rows={2}
       />
       {/* User Prompt */}
       <label className="block text-sm font-medium text-gray-700 mb-1 dark:text-white">User Prompt</label>
       <textarea
+        ref={userPromptRef}
         className="border border-gray-300 p-1 rounded w-full resize-y nodrag nowheel focus:outline-none focus:border-gray-600 focus:ring-0.5 focus:ring-gray-600 dark:bg-flow-darker"
         value={userPrompt}
-        onChange={handleUserPromptChange}
+        onChange={(e) => handleUserPromptUpdate(e.target.value)}
         rows={2}
       />
 

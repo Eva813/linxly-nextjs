@@ -9,7 +9,7 @@ export function useSnippetTrigger() {
   const [triggerPosition, setTriggerPosition] = useState({ x: 0, y: 0 });
   const [matchedSnippet, setMatchedSnippet] = useState<{
     content: string;
-    targetElement: HTMLElement | null;
+    targetElement: HTMLInputElement | HTMLTextAreaElement | null;
   }>({
     content: '',
     targetElement: null

@@ -57,7 +57,7 @@ export const useSnippetInsertion = ({ inputRef, onInsert }: UseSnippetInsertionP
         });
       }
     }
-  }, [inputRef, setMatchedSnippet, setIsDialogOpen, snippetMap]);
+  }, [inputRef, snippetMap]);
 
   useEffect(() => {
     const currentInput = inputRef.current;

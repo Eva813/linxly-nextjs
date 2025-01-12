@@ -227,8 +227,9 @@ const Sidebar = () => {
                           className={`flex items-center justify-between px-2 py-1 w-full block rounded hover:bg-gray-100 dark:hover:text-black ${pathname === `/snippets/snippet/${snippet.id}` ? 'bg-slate-100 dark:text-black' : 'bg-transparent'
                             }`}
                         >
-                          <Link className="flex-1 block" href={`/snippets/snippet/${snippet.id}`}>
+                          <Link className="flex-1 flex justify-between block" href={`/snippets/snippet/${snippet.id}`}>
                             {snippet.name}
+                            <span className='inline-flex items-center px-3 py-1 border border-blue-300 text-sm h-6 font-medium  rounded-full'>{snippet.shortcut}</span>
                           </Link>
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>

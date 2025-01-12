@@ -30,6 +30,7 @@ const SnippetPage = ({ params }: SnippetPageProps) => {
   const [name, setName] = useState('')
   const [shortcut, setShortcut] = useState('')
   const [content, setContent] = useState('')
+  const [shortcutError, setShortcutError] = useState<string | null>(null);
 
   // 透過 ref 持有 editor 實例
   const editorRef = useRef<Editor | null>(null)
@@ -138,6 +139,20 @@ const SnippetPage = ({ params }: SnippetPageProps) => {
     setContent(editor.getHTML())
     setIsDialogOpen(false)
   }
+  const handleShortcutChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newShortcut = e.target.value;
+    setShortcut(newShortcut);
+    // 檢查是否與現有的 shortcut 發生衝突
+    const conflictingSnippet = folders.flatMap(folder => folder.snippets).find(s =>
+      newShortcut.startsWith(s.shortcut) || s.shortcut.startsWith(newShortcut)
+    );
+    if (conflictingSnippet) {
+      setShortcutError(`Conflicting shortcut with ${conflictingSnippet.shortcut}. Please choose a unique shortcut.`);
+    } else {
+      setShortcutError(null); // 清除錯誤信息
+    }
+
+  }
 
   return (
     <div className='flex'>
@@ -149,8 +164,9 @@ const SnippetPage = ({ params }: SnippetPageProps) => {
             <FaTag className="absolute left-0 top-0 m-2.5 h-4 w-4 text-muted-foreground" />
           </div>
           <div className="relative col-span-1">
-            <Input className="pl-9" placeholder="Add a shortcut..." value={shortcut} onChange={(e) => setShortcut(e.target.value)} />
+            <Input className="pl-9" placeholder="Add a shortcut..." value={shortcut} onChange={handleShortcutChange} />
             <FaKeyboard className="absolute left-0 top-0 m-2.5 h-4 w-4 text-muted-foreground" />
+            {shortcutError && <p className="text-red-500">{shortcutError}</p>} {/* 顯示錯誤信息 */}
           </div>
         </div>
         <TipTapEditor

@@ -11,7 +11,8 @@ import { Button } from "@/components/ui/button"
 import { FaBold, FaItalic, FaList, FaListOl, FaAlignCenter, FaAlignLeft, FaAlignRight } from "react-icons/fa6";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover"
 import { ImFontSize } from "react-icons/im";
-import { FormTextNode } from './FormTextNode'
+import { FormTextNode } from './tipTapCustomNode/FormTextNode'
+import { FormMenuNode } from './tipTapCustomNode/FormMenuNode'
 interface TipTapEditorProps {
   value: string;
   height?: string;
@@ -23,7 +24,16 @@ interface TipTapEditorProps {
     pos: number
     label: string
     defaultValue: string
-  }) => void
+  }) => void;
+  onFormMenuNodeClick?: (params: {
+    pos: number;
+    name: string;
+    defaultValue: string;    // 改為必需
+    options: string;         // 改為必需
+    multiple: boolean;
+    // defaultOptionValues: string[]
+    // selectedValue: string | string[]
+  }) => void;
 }
 const TipTapEditor = ({
   value,
@@ -31,7 +41,8 @@ const TipTapEditor = ({
   isRequired = false,
   onChange,
   onEditorReady,
-  onFormTextNodeClick
+  onFormTextNodeClick,
+  onFormMenuNodeClick
 }: TipTapEditorProps) => {
   const [hasError, setHasError] = useState(false);
   // const [currentColor, setCurrentColor] = useState('');
@@ -59,11 +70,17 @@ const TipTapEditor = ({
       FontSize.configure({ types: ['textStyle'] }),
       TextAlign.configure({ types: ['heading', 'paragraph'] }),
        // 在這裡將 FormTextNode 配置 onFormTextClick
-       FormTextNode.configure({
+      FormTextNode.configure({
         onFormTextClick: (params) => {
           onFormTextNodeClick?.(params)
         },
       }),
+      FormMenuNode.configure({
+        onFormMenuClick: (params) => {
+          onFormMenuNodeClick?.(params)
+        },
+      }),
+
       // Color,
     ],
   });

@@ -145,7 +145,7 @@ const handleInsertMenuFieldClick = () => {
   const handleFormMenuNodeClick = ({
     pos,
     name,
-    defaultValue,
+    defaultValue, // 會是呈現預選好的選項
     options,  
     multiple,
   }: {    
@@ -155,15 +155,15 @@ const handleInsertMenuFieldClick = () => {
     options: string
     multiple: boolean  
   }) => {
-    console.log('傳入',pos,'and',name,'and',defaultValue,'and',options,'and',multiple)
+    console.log('傳入',pos,'and',name,'default',defaultValue,'and',options,'and',multiple)
     // 對應 dialog 中的變數名稱傳入
     const optionsArray = options.split(',').map(opt => opt.trim());
-    // 設定 defaultValue 為陣列或字串
+    // 設定 selectedValue 為陣列或字串
     const processedDefaultValue = multiple 
       ? defaultValue.split(',').map(val => val.trim())
       : defaultValue;
       console.log('傳入2',pos,'and',name,'and',processedDefaultValue,'and',optionsArray,'and',multiple)
-     setDropdownEditInfo({ 
+    setDropdownEditInfo({ 
       type: 'dropdown', 
       pos,
       name, 
@@ -317,13 +317,6 @@ const handleDropDownMenuInsert = (name: string, values: string[], selectedValues
         defaultDefaultValue={editNodeInfo?.defaultValue || ''}
       />
       <InsertDropdownMenuDialog
-        // isOpen={isDropdownDialogOpen}
-        // onClose={() => setIsDropdownDialogOpen(false)}
-        // onInsert={handleDropDownMenuInsert}
-        // // 帶入目前要編輯的資料；若是 null 就表示新增
-        // defaultName={dropdownEditInfo?.name || ''}
-        // defaultValues={dropdownEditInfo?.options?.split(',') || []}
-        // defaultMultiple={dropdownEditInfo?.multiple === false}
           isOpen={isDropdownDialogOpen}
           onClose={() => setIsDropdownDialogOpen(false)}
           onInsert={handleDropDownMenuInsert}

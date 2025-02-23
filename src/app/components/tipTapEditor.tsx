@@ -30,6 +30,7 @@ interface TipTapEditorProps {
     name: string;
     defaultValue: string;    // 改為必需
     options: string;         // 改為必需
+    // boolean / string
     multiple: boolean;
     // defaultOptionValues: string[]
     // selectedValue: string | string[]

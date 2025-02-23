@@ -31,7 +31,6 @@ export default function InsertDropdownMenuDialog({
   const [name, setName] = useState(defaultName);
   const [values, setValues] = useState<string[]>(defaultValues);
   const [multiple, setMultiple] = useState(defaultMultiple);
-  
   const [selectedValues, setSelectedValues] = useState<string | string[]>(selectedValue);
 
   useEffect(() => {

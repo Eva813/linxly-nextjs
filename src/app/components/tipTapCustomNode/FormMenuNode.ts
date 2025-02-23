@@ -9,7 +9,7 @@ interface FormMenuOptions {
     name: string
     defaultValue: string
     options: string
-    multiple: string
+    multiple: boolean
   }) => void
 }
 
@@ -40,7 +40,7 @@ export const FormMenuNode = Node.create<FormMenuOptions>({
       },
       multiple: {
         // 預設為 'no'，當值為 'yes' 表示可以多選
-        default: 'no',
+        default: false,
       },
     }
   },

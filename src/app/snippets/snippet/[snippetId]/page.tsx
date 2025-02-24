@@ -29,6 +29,8 @@ interface Snippet {
 interface TextInputEditInfo {
   type: 'text';
   pos: number;
+  label: string;
+  defaultValue: string;
   attrs?: {
     name?: string;
     required?: string;
@@ -36,15 +38,6 @@ interface TextInputEditInfo {
 }
 
 interface DropdownEditInfo {
-//   type: 'dropdown';
-//   pos: number;
-//   name?: string;
-//   defaultValue?: string;
-//   options?: string;
-//   multiple?: boolean;
-//   defaultOptionValues?: string[];
-//   selectedValue?: string | string[];
-// }
   type: 'dropdown'
   pos: number;
   name: string;
@@ -63,21 +56,11 @@ const SnippetPage = ({ params }: SnippetPageProps) => {
 
   // 透過 ref 持有 editor 實例
   const editorRef = useRef<Editor | null>(null)
-
   // 對話框相關
   const [textInputEditInfo, setTextInputEditInfo] = useState<TextInputEditInfo | null>(null);
   const [dropdownEditInfo, setDropdownEditInfo] = useState<DropdownEditInfo | null>(null);
   const [isTextDialogOpen, setIsTextDialogOpen] = useState(false);
   const [isDropdownDialogOpen, setIsDropdownDialogOpen] = useState(false);
-
-
-  const [isDialogOpen, setIsDialogOpen] = useState(false)
-  // 若 editNodeInfo 為 null，就代表是「新增」；若有值，就代表「編輯」
-  const [editNodeInfo, setEditNodeInfo] = useState<{
-    pos: number
-    label: string
-    defaultValue: string
-  } | null>(null)
 
   // 查找對應的 snippet
   let currentSnippet: Snippet | null = null
@@ -114,10 +97,10 @@ const SnippetPage = ({ params }: SnippetPageProps) => {
     }
   }
 
-  // 按下 sidebar 的「新增欄位」按鈕
+  // 按下 sidebar 的 TextField
   const handleInsertTextFieldClick = () => {
-    setEditNodeInfo(null) // 表示「插入」模式
-    setIsDialogOpen(true)
+    setTextInputEditInfo(null)
+    setIsTextDialogOpen(true)
   }
 const handleInsertMenuFieldClick = () => {
   setDropdownEditInfo(null); // 清除編輯狀態
@@ -134,12 +117,8 @@ const handleInsertMenuFieldClick = () => {
     label: string
     defaultValue: string
   }) => {
-    setEditNodeInfo({ pos, label, defaultValue }) // 進入「編輯」模式
-    setIsDialogOpen(true)
-  }
-
-  const handleDialogClose = () => {
-    setIsDialogOpen(false)
+    setTextInputEditInfo({ type: 'text',  pos, label, defaultValue })
+    setIsTextDialogOpen(true)
   }
 
   const handleFormMenuNodeClick = ({
@@ -153,9 +132,9 @@ const handleInsertMenuFieldClick = () => {
     name: string
     defaultValue: string
     options: string
-    multiple: boolean  
+    multiple: string
   }) => {
-    console.log('傳入',pos,'and',name,'default',defaultValue,'and',options,'and',multiple)
+    console.log('傳入',pos,'and',name,'default',defaultValue,'options',options,'and',multiple)
     // 對應 dialog 中的變數名稱傳入
     const optionsArray = options.split(',').map(opt => opt.trim());
     // 設定 selectedValue 為陣列或字串
@@ -168,18 +147,18 @@ const handleInsertMenuFieldClick = () => {
       pos,
       name, 
       defaultOptionValues: optionsArray,       
-      selectedValue: processedDefaultValue, // 改為 selectedValue
-      multiple 
+      selectedValue: processedDefaultValue,
+      multiple: multiple === 'true' ? true : false,
     });
     setIsDropdownDialogOpen(true);
   }
 
-  // 對話框點擊「確認」時
+  // 對話框點擊「確認」時，將資料 insert
   const handleTextFieldInsert = (label: string, defaultValue: string) => {
     const editor = editorRef.current
     if (!editor) return
 
-    if (!editNodeInfo) {
+    if (!textInputEditInfo) {
       // === 新增 ===
       editor
         .chain()
@@ -194,7 +173,7 @@ const handleInsertMenuFieldClick = () => {
         .run()
     } else {
       // === 編輯 ===
-      const { pos } = editNodeInfo
+      const { pos } = textInputEditInfo
       const { doc } = editor.state
       const nodeSelection = NodeSelection.create(doc, pos)
       const tr = editor.state.tr.setSelection(nodeSelection)
@@ -208,7 +187,7 @@ const handleInsertMenuFieldClick = () => {
 
     // 立即更新 content 狀態
     setContent(editor.getHTML())
-    setIsDialogOpen(false)
+    setIsTextDialogOpen(false)
   }
 
 const handleDropDownMenuInsert = (name: string, values: string[], selectedValues:string | string[], multiple: boolean) => {
@@ -224,9 +203,12 @@ const handleDropDownMenuInsert = (name: string, values: string[], selectedValues
         type: 'formMenu',
         attrs: {
           name,
-          options: values.join(','), // 將選項陣列轉為字串
-          multiple: multiple ? true : false,
-          defaultValue: selectedValues
+          options: values.join(','),
+          // 傳給 editor 的 extension
+          multiple: multiple === true ? 'true' : 'false',
+          defaultValue: Array.isArray(selectedValues) 
+            ? selectedValues.join(',') 
+            : selectedValues
         },
       })
       .run();
@@ -237,22 +219,24 @@ const handleDropDownMenuInsert = (name: string, values: string[], selectedValues
     const nodeSelection = NodeSelection.create(doc, pos);
     const tr = editor.state.tr.setSelection(nodeSelection);
     editor.view.dispatch(tr);
-
+    console.log('傳入Editt',name,'option',values,selectedValues, 'multiple',multiple)
     editor
       .chain()
       .focus()
       .updateAttributes('formMenu', {
         name,
         options: values.join(','),
-        multiple: multiple ? 'yes' : 'no', 
-        default: selectedValues
+        // 傳給 editor 的 extension
+        multiple: multiple === true ? 'true' : 'false',
+        defaultValue: Array.isArray(selectedValues) 
+          ? selectedValues.join(',') 
+          : selectedValues
       })
       .run();
   }
 
   // 立即更新 content 狀態
   setContent(editor.getHTML());
-  // setIsDialogOpen(false);
   setIsDropdownDialogOpen(false);
   setDropdownEditInfo(null); // 重要：清除編輯狀態
 };
@@ -309,19 +293,19 @@ const handleDropDownMenuInsert = (name: string, values: string[], selectedValues
         onInsertMenuFieldClick={handleInsertMenuFieldClick} />
       </div>
       <InsertTextFieldDialog
-        isOpen={isDialogOpen}
-        onClose={handleDialogClose}
+        isOpen={isTextDialogOpen}
+        onClose={() => setIsTextDialogOpen(false)}
         onInsert={handleTextFieldInsert}
         // 帶入目前要編輯的資料；若是 null 就表示新增
-        defaultLabel={editNodeInfo?.label || ''}
-        defaultDefaultValue={editNodeInfo?.defaultValue || ''}
+        defaultLabel={textInputEditInfo?.label || ''}
+        defaultDefaultValue={textInputEditInfo?.defaultValue || ''}
       />
       <InsertDropdownMenuDialog
           isOpen={isDropdownDialogOpen}
           onClose={() => setIsDropdownDialogOpen(false)}
           onInsert={handleDropDownMenuInsert}
           defaultName={dropdownEditInfo?.name}
-          defaultValues={dropdownEditInfo?.defaultOptionValues}
+          defaultOptionValues={dropdownEditInfo?.defaultOptionValues}
           defaultMultiple={dropdownEditInfo?.multiple}
           selectedValue={dropdownEditInfo?.selectedValue}
       />

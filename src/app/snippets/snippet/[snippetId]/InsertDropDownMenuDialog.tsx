@@ -14,7 +14,7 @@ interface InsertDropdownMenuDialogProps {
   onClose: () => void;
   onInsert: (name: string, values: string[], defaultValue: string | string[], multiple: boolean) => void;
   defaultName?: string;
-  defaultValues?: string[]; //option Value
+  defaultOptionValues?: string[]; //option Value
   defaultMultiple?: boolean;
   selectedValue?: string | string[]; // 預設選中的值
 }
@@ -24,23 +24,36 @@ export default function InsertDropdownMenuDialog({
   onClose,
   onInsert,
   defaultName = '',
-  defaultValues = [],
+  defaultOptionValues = [], //option Value  
   defaultMultiple = false,
   selectedValue = defaultMultiple ? [] : '',
 }: InsertDropdownMenuDialogProps) {
   const [name, setName] = useState(defaultName);
-  const [values, setValues] = useState<string[]>(defaultValues);
+  const [values, setValues] = useState<string[]>(defaultOptionValues);
   const [multiple, setMultiple] = useState(defaultMultiple);
   const [selectedValues, setSelectedValues] = useState<string | string[]>(selectedValue);
 
-  useEffect(() => {
-    if (isOpen) {
+    useEffect(() => {
+      if (!isOpen) return;
+      const newValues = Array.isArray(defaultOptionValues) ? defaultOptionValues : [];
+      const isMultiple = Boolean(defaultMultiple);
+      console.log('selectedValue',selectedValue,'isMultiple',isMultiple)
+      let newSelectedValues: string | string[] = '';
+      if (isMultiple) {
+        newSelectedValues = Array.isArray(selectedValue) 
+          ? selectedValue 
+          : (typeof selectedValue === 'string' ? selectedValue.split(',') : []);
+      } else {
+        newSelectedValues = selectedValue.toString();
+      }
+      console.log('newValues',newValues,'isMultiple',isMultiple,'newSelectedValues',newSelectedValues)
+  
       setName(defaultName);
-      setValues(defaultValues);
-      setMultiple(defaultMultiple);
-      setSelectedValues(selectedValue);
-    }
-  }, [isOpen]);
+      setValues(newValues);
+      setMultiple(isMultiple);
+      setSelectedValues(newSelectedValues);
+    }, [isOpen]);
+  
 
   const handleAddValue = () => {
     setValues([...values, `Choice ${values.length + 1}`]);

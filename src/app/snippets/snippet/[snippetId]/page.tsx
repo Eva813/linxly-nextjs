@@ -132,7 +132,7 @@ const handleInsertMenuFieldClick = () => {
     name: string
     defaultValue: string
     options: string
-    multiple: string
+    multiple: boolean
   }) => {
     console.log('傳入',pos,'and',name,'default',defaultValue,'options',options,'and',multiple)
     // 對應 dialog 中的變數名稱傳入
@@ -148,7 +148,7 @@ const handleInsertMenuFieldClick = () => {
       name, 
       defaultOptionValues: optionsArray,       
       selectedValue: processedDefaultValue,
-      multiple: multiple === 'true' ? true : false,
+      multiple
     });
     setIsDropdownDialogOpen(true);
   }
@@ -205,7 +205,7 @@ const handleDropDownMenuInsert = (name: string, values: string[], selectedValues
           name,
           options: values.join(','),
           // 傳給 editor 的 extension
-          multiple: multiple === true ? 'true' : 'false',
+          multiple: multiple,
           defaultValue: Array.isArray(selectedValues) 
             ? selectedValues.join(',') 
             : selectedValues
@@ -227,7 +227,7 @@ const handleDropDownMenuInsert = (name: string, values: string[], selectedValues
         name,
         options: values.join(','),
         // 傳給 editor 的 extension
-        multiple: multiple === true ? 'true' : 'false',
+        multiple: multiple ,
         defaultValue: Array.isArray(selectedValues) 
           ? selectedValues.join(',') 
           : selectedValues

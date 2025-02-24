@@ -53,7 +53,7 @@ export default function FormTextView(props: FormTextViewProps) {
     return (
         <NodeViewWrapper
             as="span"
-            className="form-text-field"
+            className="form-text-field text-sm"
             data-type="formtext"
             role="button"
             contentEditable={false}

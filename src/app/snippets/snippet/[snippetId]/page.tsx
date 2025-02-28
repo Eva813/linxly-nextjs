@@ -287,10 +287,11 @@ const handleDropDownMenuInsert = (name: string, values: string[], selectedValues
         />
         <Button className='w-20' onClick={handleSave}>Save</Button>
       </div>
-      <div className="flex-1 border-l pl-4">
+      {/* 右側編輯欄位 */}
+      <div className="flex-1 border-l">
         <Sidebar 
-        onInsertTextFieldClick={handleInsertTextFieldClick} 
-        onInsertMenuFieldClick={handleInsertMenuFieldClick} />
+            onInsertTextFieldClick={handleInsertTextFieldClick} 
+            onInsertMenuFieldClick={handleInsertMenuFieldClick} />
       </div>
       <InsertTextFieldDialog
         isOpen={isTextDialogOpen}

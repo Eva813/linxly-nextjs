@@ -5,12 +5,12 @@ import { Input } from "@/components/ui/input"; // shadcn/ui 的 Input
 interface EditPanelFieldProps {
   title: string; // This will be the key (e.g., 'name')
   description: string;
-  type: string;
+  type?: string | number | boolean;
   value: string;
   onChange: (key: string, newValue: string) => void; // Update this line
 }
 
-const EditPanelField: React.FC<EditPanelFieldProps> = React.memo(({ title, description, type, value, onChange }) => {
+const EditPanelField: React.FC<EditPanelFieldProps> = React.memo(({ title, description, value, onChange }) => {
   return (
     <div className="w-full max-w-sm bg-white px-4 pt-2 pb-4 border-b border-gray-200">
       <div className="flex items-center justify-between pb-3">
@@ -35,5 +35,5 @@ const EditPanelField: React.FC<EditPanelFieldProps> = React.memo(({ title, descr
     </div>
   );
 });
-
+EditPanelField.displayName = 'EditPanelField';
 export default EditPanelField;

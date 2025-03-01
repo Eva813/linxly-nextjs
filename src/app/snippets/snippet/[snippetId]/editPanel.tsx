@@ -3,19 +3,52 @@ import EditPanelField from '@/app/snippets/components/editPanelField'
 import { formTextSpec } from '@/lib/specs/formTextSpec'
 
 
+export interface FormFieldSpec {
+  priority: number;
+  description: string;
+  placeholder?: string;
+  type: string;
+  static?: boolean;
+  constant?: boolean;
+}
+
+
+export interface FormTextSpec {
+  positional: number[];
+  named: Record<string, FormFieldSpec>;
+}
+
+
+export type InputInfo = Record<string, string>;
+
+
+export interface OrganizedField {
+  value: string ;
+  description: string;
+  priority: number;
+  placeholder?: string;
+  type: string;
+  static?: boolean;
+  constant?: boolean;
+}
+
 interface SidebarProps {
   onInsertTextFieldClick: () => void;
   onInsertMenuFieldClick: () => void;
-  editInfo: Record<string, any>
+  editInfo: InputInfo;
   onChange: (key: string, newValue: string) => void;
 }
+
 
 export default function EditPanel({ editInfo, onChange }: SidebarProps) {
 
   console.log('editInfo', editInfo)
   // 通用整理输入对象的函数
-  const organizeFormInput = (input: Record<string, any>, spec: Record<string, any>) => {
-    const organizedInput: Record<string, any> = {};
+  const organizeFormInput = (
+    input: InputInfo,
+    spec: FormTextSpec
+  ): Record<string, OrganizedField> => {
+    const organizedInput: Record<string, OrganizedField> = {};
 
     // 遍历规格中的每个字段
     for (const key in spec.named) {

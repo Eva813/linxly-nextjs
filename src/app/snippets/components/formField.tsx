@@ -21,9 +21,9 @@ export function FormField({
   onClick
 }: IconTitleDescriptionProps) {
   return (
-    <div onClick={onClick} className="flex gap-3 py-2 px-2 cursor-pointer hover:bg-gray-100 transition-colors">
+    <div onClick={onClick} className="flex gap-3 py-2 px-4 cursor-pointer hover:bg-gray-100 transition-colors">
       {/* 左側 Icon */}
-      <div className="flex flex-col justify-center  text-gray-600 ">
+      <div className="flex flex-col justify-center text-gray-600 ">
         {icon}
       </div>
 

@@ -35,6 +35,7 @@ interface TipTapEditorProps {
     // defaultOptionValues: string[]
     // selectedValue: string | string[]
   }) => void;
+  onEditorClick?: () => void;
 }
 const TipTapEditor = ({
   value,
@@ -43,7 +44,8 @@ const TipTapEditor = ({
   onChange,
   onEditorReady,
   onFormTextNodeClick,
-  onFormMenuNodeClick
+  onFormMenuNodeClick,
+  onEditorClick
 }: TipTapEditorProps) => {
   const [hasError, setHasError] = useState(false);
   // const [currentColor, setCurrentColor] = useState('');
@@ -70,9 +72,10 @@ const TipTapEditor = ({
       TextStyle,
       FontSize.configure({ types: ['textStyle'] }),
       TextAlign.configure({ types: ['heading', 'paragraph'] }),
-       // 在這裡將 FormTextNode 配置 onFormTextClick
+      // 在這裡將 FormTextNode 配置 onFormTextClick
       FormTextNode.configure({
         onFormTextClick: (params) => {
+          console.log('inset 給 form text node', params)
           onFormTextNodeClick?.(params)
         },
       }),
@@ -233,6 +236,7 @@ const TipTapEditor = ({
         editor={editor}
         className={`border tiptap-container ${hasError ? 'border-red-500' : 'border-gray-300'}`}
         style={{ height }}
+        onClick={onEditorClick}
       />
       {hasError && <div className="text-red-500 text-sm">This field is required.</div>}
     </div>

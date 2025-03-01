@@ -8,10 +8,11 @@ interface SidebarProps {
   onInsertMenuFieldClick: () => void;
 }
 
-export default function EditorSidebar({ onInsertTextFieldClick, onInsertMenuFieldClick }: SidebarProps) {
+const EditorSidebar: React.FC<SidebarProps> = React.memo(({ onInsertTextFieldClick, onInsertMenuFieldClick }) => {
+  console.log('EditorSidebar rendered');
   return (
     <div>
-      <h2 className="font-bold px-2 py-2">Tools</h2>
+      <h2 className="font-bold px-4 py-2">Tools</h2>
       <FormField
         icon={<MdOutlineShortText className="h-8 w-8 text-grey-500" />}
         title="Text field"
@@ -28,4 +29,6 @@ export default function EditorSidebar({ onInsertTextFieldClick, onInsertMenuFiel
       />
     </div>
   )
-}
+})
+EditorSidebar.displayName = 'EditorSidebar';
+export default EditorSidebar;

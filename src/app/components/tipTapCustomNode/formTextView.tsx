@@ -1,6 +1,7 @@
 // FormTextView.tsx
 import React, { useCallback, MouseEvent } from 'react'
 import { NodeViewWrapper, NodeViewProps } from '@tiptap/react'
+import { DynamicChip } from './dynamicChip'
 
 // 我們再擴充一下 options 裡可能用到的 onFormTextClick
 interface FormTextNodeOptions {
@@ -24,7 +25,9 @@ type FormTextViewProps = NodeViewProps & {
 
 export default function FormTextView(props: FormTextViewProps) {
     const { node, getPos, extension } = props
-    const { label, defaultValue } = node.attrs
+    const snippetData = node.attrs.snippetData || {}
+    const { name: label, default: defaultValue } = snippetData
+
 
     const handleClick = useCallback(
         (event: MouseEvent<HTMLSpanElement>) => {
@@ -45,21 +48,24 @@ export default function FormTextView(props: FormTextViewProps) {
         [extension, getPos, label, defaultValue],
     )
 
-    let textContent = `name: ${label}`
-    if (defaultValue) {
-        textContent = `name: ${label}, default: ${defaultValue}`
-    }
-
     return (
         <NodeViewWrapper
             as="span"
-            className="form-text-field text-sm"
+            className=" text-sm"
             data-type="formtext"
             role="button"
             contentEditable={false}
             onClick={handleClick}
         >
-            {textContent}
+            {/* {textContent} */}
+            <DynamicChip
+                prefix="="
+                data={snippetData}
+                // onPrefixClick={() => alert("點擊了 prefix")}
+                onBlockClick={(key, value) =>
+                    alert(`點擊了區塊：${key} ${value}`)
+                }
+            />
         </NodeViewWrapper>
     )
 }

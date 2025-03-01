@@ -31,7 +31,9 @@ interface TextInputEditInfo {
   pos: number;
   name: string;
   defaultValue: string;
+  [key: string]: string | number;
 }
+// export type TextInputEditInfo = Record<string, string>;
 
 
 interface DropdownEditInfo {
@@ -181,20 +183,6 @@ const SnippetPage = ({ params }: SnippetPageProps) => {
       // 立即更新 content 狀態
       setContent(editor.getHTML())
       setIsTextDialogOpen(false)
-    } else {
-      // // === 編輯 ===
-      // const { pos } = textInputEditInfo
-      // const { doc } = editor.state
-      // const nodeSelection = NodeSelection.create(doc, pos)
-      // const tr = editor.state.tr.setSelection(nodeSelection)
-      // editor.view.dispatch(tr)
-
-      // editor.chain().focus().updateAttributes('formtext', {
-      //   label,
-      //   defaultValue,
-      // }).run()
-      // setContent(editor.getHTML())
-      // // setIsEditPanelVisible(true);
     }
   }
 
@@ -278,11 +266,6 @@ const SnippetPage = ({ params }: SnippetPageProps) => {
         [key]: newValue, // Update the specific field based on the key
       };
 
-      // Ensure that label is always mapped to name
-      // if (key === 'name') {
-      //   updatedEditInfo.label = newValue; // Update label when name changes
-      // }
-
       setTextInputEditInfo(updatedEditInfo);
       console.log('updatedEditInfo', updatedEditInfo)
 
@@ -298,9 +281,8 @@ const SnippetPage = ({ params }: SnippetPageProps) => {
       // Update the editor attributes based on the updated edit info
       editor.chain().updateAttributes('formtext', {
         snippetData: {
-          // 一下 label, 一下 name 要調整才行
-          name: updatedEditInfo.name, // Update label based on the name field
-          default: updatedEditInfo.defaultValue, // Update defaultValue
+          name: updatedEditInfo.name, 
+          default: updatedEditInfo.defaultValue, 
         }
 
       }).run();

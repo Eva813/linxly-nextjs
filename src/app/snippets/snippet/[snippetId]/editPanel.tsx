@@ -23,7 +23,7 @@ export type InputInfo = Record<string, string>;
 
 
 export interface OrganizedField {
-  value: string ;
+  value: string;
   description: string;
   priority: number;
   placeholder?: string;
@@ -35,7 +35,7 @@ export interface OrganizedField {
 interface SidebarProps {
   onInsertTextFieldClick: () => void;
   onInsertMenuFieldClick: () => void;
-  editInfo: InputInfo;
+  editInfo: InputInfo | null;
   onChange: (key: string, newValue: string) => void;
 }
 
@@ -75,10 +75,10 @@ export default function EditPanel({ editInfo, onChange }: SidebarProps) {
   const cleanedEditInfo = { ...editInfo };
   delete cleanedEditInfo.type; // 去除 type
   delete cleanedEditInfo.pos;   // 去除 pos
-  if (cleanedEditInfo.label) {
-    cleanedEditInfo.name = cleanedEditInfo.label; // 将 label 改为 name
-    delete cleanedEditInfo.label; // 去除原来的 label
-  }
+  // if (cleanedEditInfo.label) {
+  //   cleanedEditInfo.name = cleanedEditInfo.label; // 将 label 改为 name
+  //   delete cleanedEditInfo.label; // 去除原来的 label
+  // }
 
   // 使用 organizeFormInput 函数整理 editInfo
   const organizedEditInfo = organizeFormInput(cleanedEditInfo, formTextSpec);
@@ -92,7 +92,7 @@ export default function EditPanel({ editInfo, onChange }: SidebarProps) {
   return (
     <div>
       <h2 className="font-bold px-4 py-2">Edit Panel</h2>
-      <div className='px-4 py-2'>{editInfo.type}</div>
+      <div className='px-4 py-2'>{editInfo?.type}</div>
       {/* <EditPanelField /> */}
       {Object.entries(organizedEditInfo).map(([key, { value, description }]) => {
         return (
@@ -100,7 +100,7 @@ export default function EditPanel({ editInfo, onChange }: SidebarProps) {
             key={key} // Ensure a unique key for each EditPanelField
             title={key}
             description={description}
-            type={editInfo.type}
+            type={editInfo?.type}
             value={value} // 使用整理后的 value
             onChange={handleChange}
           />

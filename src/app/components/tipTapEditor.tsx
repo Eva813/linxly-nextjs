@@ -22,7 +22,7 @@ interface TipTapEditorProps {
   // 當用戶點擊自訂 Node 時的回呼
   onFormTextNodeClick?: (params: {
     pos: number
-    label: string
+    name: string
     defaultValue: string
   }) => void;
   onFormMenuNodeClick?: (params: {
@@ -74,8 +74,7 @@ const TipTapEditor = ({
       TextAlign.configure({ types: ['heading', 'paragraph'] }),
       // 在這裡將 FormTextNode 配置 onFormTextClick
       FormTextNode.configure({
-        onFormTextClick: (params) => {
-          console.log('inset 給 form text node', params)
+        onFormTextClick: (params: { pos: number; name: string; defaultValue: string }) => {
           onFormTextNodeClick?.(params)
         },
       }),

@@ -5,8 +5,8 @@ import { Input } from "@/components/ui/input"; // shadcn/ui 的 Input
 interface EditPanelFieldProps {
   title: string; // This will be the key (e.g., 'name')
   description: string;
-  type?: string | number | boolean;
-  value: string;
+  type?: string | number ;
+  value: string | number;
   onChange: (key: string, newValue: string) => void; // Update this line
 }
 

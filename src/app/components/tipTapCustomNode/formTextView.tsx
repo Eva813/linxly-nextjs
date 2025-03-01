@@ -7,14 +7,14 @@ import { DynamicChip } from './dynamicChip'
 interface FormTextNodeOptions {
     onFormTextClick?: (data: {
         pos: number
-        label: string
+        name: string
         defaultValue: string
     }) => void
 }
 
 /**
  * Tiptap 會把 node, editor, extension, getPos 等都注入進來
- * - node.attrs 會是我們的 { label, defaultValue }
+ * - node.attrs 會是我們的 { name, defaultValue }
  * - extension.options 會是 { onFormTextClick: ... }
  */
 type FormTextViewProps = NodeViewProps & {
@@ -26,7 +26,7 @@ type FormTextViewProps = NodeViewProps & {
 export default function FormTextView(props: FormTextViewProps) {
     const { node, getPos, extension } = props
     const snippetData = node.attrs.snippetData || {}
-    const { name: label, default: defaultValue } = snippetData
+    const { name, default: defaultValue } = snippetData
 
 
     const handleClick = useCallback(
@@ -40,12 +40,12 @@ export default function FormTextView(props: FormTextViewProps) {
             if (extension?.options?.onFormTextClick) {
                 extension.options.onFormTextClick({
                     pos,
-                    label,
+                    name,
                     defaultValue,
                 })
             }
         },
-        [extension, getPos, label, defaultValue],
+        [extension, getPos, name, defaultValue],
     )
 
     return (

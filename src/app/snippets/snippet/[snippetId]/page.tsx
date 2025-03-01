@@ -29,13 +29,10 @@ interface Snippet {
 interface TextInputEditInfo {
   type: 'formtext';
   pos: number;
-  label: string;
+  name: string;
   defaultValue: string;
-  attrs?: {
-    name?: string;
-    required?: string;
-  };
 }
+
 
 interface DropdownEditInfo {
   type: 'dropdown'
@@ -112,15 +109,15 @@ const SnippetPage = ({ params }: SnippetPageProps) => {
   // 當用戶在編輯器裡點擊自訂 Node
   const handleFormTextNodeClick = ({
     pos,
-    label,
+    name,
     defaultValue,
   }: {
     pos: number
-    label: string
+    name: string
     defaultValue: string
   }) => {
     console.log('fix 修改')
-    setTextInputEditInfo({ type: 'formtext', pos, label, defaultValue })
+    setTextInputEditInfo({ type: 'formtext', pos, name, defaultValue })
     setIsEditPanelVisible(true);
   }
 
@@ -162,7 +159,7 @@ const SnippetPage = ({ params }: SnippetPageProps) => {
   }
 
   // 對話框點擊「確認」時，將資料 insert
-  const handleTextFieldInsert = (label: string, defaultValue: string) => {
+  const handleTextFieldInsert = (name: string, defaultValue: string) => {
     const editor = editorRef.current
     if (!editor) return
 
@@ -175,7 +172,7 @@ const SnippetPage = ({ params }: SnippetPageProps) => {
           type: 'formtext',
           attrs: {
             snippetData: {
-              name: label,         // 使用者輸入的 label
+              name: name,         // 使用者輸入的 label
               default: defaultValue, // 使用者輸入的 defaultValue
             },
           },
@@ -282,9 +279,9 @@ const SnippetPage = ({ params }: SnippetPageProps) => {
       };
 
       // Ensure that label is always mapped to name
-      if (key === 'name') {
-        updatedEditInfo.label = newValue; // Update label when name changes
-      }
+      // if (key === 'name') {
+      //   updatedEditInfo.label = newValue; // Update label when name changes
+      // }
 
       setTextInputEditInfo(updatedEditInfo);
       console.log('updatedEditInfo', updatedEditInfo)
@@ -302,7 +299,7 @@ const SnippetPage = ({ params }: SnippetPageProps) => {
       editor.chain().updateAttributes('formtext', {
         snippetData: {
           // 一下 label, 一下 name 要調整才行
-          name: updatedEditInfo.label, // Update label based on the name field
+          name: updatedEditInfo.name, // Update label based on the name field
           default: updatedEditInfo.defaultValue, // Update defaultValue
         }
 
@@ -354,7 +351,7 @@ const SnippetPage = ({ params }: SnippetPageProps) => {
         onClose={() => setIsTextDialogOpen(false)}
         onInsert={handleTextFieldInsert}
         // 帶入目前要編輯的資料；若是 null 就表示新增
-        defaultLabel={textInputEditInfo?.label || ''}
+        defaultLabel={textInputEditInfo?.name || ''}
         defaultDefaultValue={textInputEditInfo?.defaultValue || ''}
       />
       <InsertDropdownMenuDialog

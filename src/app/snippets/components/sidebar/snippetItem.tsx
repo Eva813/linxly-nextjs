@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { SnippetItemProps } from "@/types/snippets";
 
-const SnippetItem: React.FC<SnippetItemProps> = ({
+const SnippetItem: React.FC<SnippetItemProps> = React.memo(({
   snippet,
   folderId,
   activeSnippetMenu,
@@ -69,6 +69,7 @@ const SnippetItem: React.FC<SnippetItemProps> = ({
       </div>
     </li>
   );
-};
+});
 
+SnippetItem.displayName = "SnippetItem";
 export default SnippetItem;

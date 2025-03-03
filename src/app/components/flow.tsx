@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect, useMemo } from 'react';
 import {
-  ReactFlow, Background, Controls, Panel, applyNodeChanges,
+  ReactFlow, Background, Controls, applyNodeChanges,
   applyEdgeChanges
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
@@ -18,17 +18,9 @@ import {
 import TextInputNode from './textInputNode'; // 導入 TextInputNode
 import AiPromptNode from './aiPromptNode';  // 導入 AiPromptNode
 import FileUploadNode from './FileUploadNode'; // 導入 FileUploadNode
-import { LuText } from "react-icons/lu";
-import { GiArtificialHive } from "react-icons/gi";
-import { LuFileUp } from "react-icons/lu";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip"
 import { useTheme } from 'next-themes'
-import { LuSave } from "react-icons/lu";
+import { useLocalFlowData } from '@/lib/useLocalFlowData';
+import FlowControlPanel from './flowControlPanel';
 // https://reactflow.dev/learn/getting-started/adding-interactivity
 // https://reactflow.dev/learn/advanced-use/typescript
 // 有不同的 custom node 類型，可以在 nodeTypes 中設定
@@ -36,9 +28,16 @@ import { LuSave } from "react-icons/lu";
 const initialNodes: Node[] = [];
 const initialEdges: Edge[] = [];
 
+// const TextInputNode = dynamic(() => import('./textInputNode'), { ssr: false });
+// const AiPromptNode = dynamic(() => import('./aiPromptNode'), { ssr: false });
+// const FileUploadNode = dynamic(() => import('./FileUploadNode'), { ssr: false });
 export default function Flow({ boardId }: { boardId: string; }) {
   const [nodes, setNodes] = useState<Node[]>(initialNodes);
   const [edges, setEdges] = useState<Edge[]>(initialEdges);
+  const { theme } = useTheme()
+  const [rfInstance, setRfInstance] = useState<ReactFlowInstance | null>(null); // 用於儲存 ReactFlow 實例
+  // 引入 useLocalFlowData
+  const { getFlowData, saveFlowData } = useLocalFlowData(boardId);
 
   const onNodesChange: OnNodesChange = useCallback(
     (changes) => setNodes((nds) => applyNodeChanges(changes, nds)),
@@ -48,32 +47,20 @@ export default function Flow({ boardId }: { boardId: string; }) {
     (changes) => setEdges((eds) => applyEdgeChanges(changes, eds)),
     [setEdges],
   );
-  const { theme } = useTheme()
-  const [rfInstance, setRfInstance] = useState<ReactFlowInstance | null>(null); // 用於儲存 ReactFlow 實例
-
-  const getFlowData = (boardId: string) => {
-    try {
-      return JSON.parse(localStorage.getItem(`flowData-${boardId}`) || '{}');
-    } catch (error) {
-      console.error(`Failed to parse flowData for board ${boardId}:`, error);
-      return {}; // 避免應用崩潰
-    }
-  };
-  
-  // 用 useMemo 預先解析，避免多次讀取 localStorage
-  const savedFlowData = useMemo(() => getFlowData(boardId), [boardId]);
-
   const onConnect: OnConnect = useCallback(
     (params) => setEdges((eds) => addEdge(params, eds)),
     [setEdges]
   );
 
-  // 自定義節點類型
-  const nodeTypes = useMemo(() => ({
-    textInputNode: TextInputNode,
-    aiPromptNode: AiPromptNode,
-    fileUploadNode: FileUploadNode
-  }), []);
+    // 自定義節點類型
+    const nodeTypes = useMemo(() => ({
+      textInputNode: TextInputNode,
+      aiPromptNode: AiPromptNode,
+      fileUploadNode: FileUploadNode
+    }), []);
+  
+  // 用 useMemo 預先解析，避免多次讀取 localStorage
+  const savedFlowData = useMemo(() => getFlowData(), [getFlowData]);
 
   // 找到最後一個 textInputNode 的位置
   const getNewNodePosition = useCallback(() => {
@@ -155,8 +142,7 @@ export default function Flow({ boardId }: { boardId: string; }) {
       const flowData = rfInstance.toObject();
 
       // 儲存到 localStorage（或發送至後端 API）
-      localStorage.setItem(`flowData-${boardId}`, JSON.stringify(flowData));
-
+      saveFlowData(flowData);
 
       // 假設要發送至後端 API
       // try {
@@ -180,26 +166,24 @@ export default function Flow({ boardId }: { boardId: string; }) {
       //   alert('儲存過程中出現錯誤');
       // }
     }
-  }, [rfInstance, boardId]);
+  }, [rfInstance, saveFlowData]);
 
   // 定義 onRestore 函數，用於恢復已保存的流程圖
   const onRestore = useCallback(() => {
-    const savedFlowData = JSON.parse(localStorage.getItem(`flowData-${boardId}`) || '{}');
+    const savedFlowData = getFlowData();;
     console.log('savedFlowData', savedFlowData);
 
     if (savedFlowData.nodes?.length || savedFlowData.edges?.length) {
       const { nodes = [], edges = [], viewport } = savedFlowData;
-
       setNodes(nodes);
       setEdges(edges);
-
       if (viewport && rfInstance) {
         rfInstance.setViewport(viewport);
       }
     } else {
       console.log('No saved flow data found, skipping restore.');
     }
-  }, [rfInstance, boardId]);
+  }, [rfInstance, getFlowData]);
   
   
   // 頁面加載
@@ -256,72 +240,12 @@ export default function Flow({ boardId }: { boardId: string; }) {
         <Background />
         <Controls />
         {/* <MiniMap /> */}
-        <Panel position="top-left" className="bg-white p-2 shadow-sm flex flex-col dark:bg-flow-dark" style={{ position: 'fixed', top: '120px', left: '10px', zIndex: 100 }} >
-          <TooltipProvider delayDuration={200}>
-            <Tooltip>
-              {/* 按鈕 1: 增加文字輸入框的節點 */}
-              <TooltipTrigger asChild>
-                <button
-                  className="px-2 py-1 border border-gray-300 rounded p-1 hover:bg-gray-200 mb-2  hover:border-gray-200 transition-colors dark:hover:bg-flow-dark-hover"
-                  onClick={addTextInputNode}
-                >
-                  <LuText className="text-black dark:text-white" />
-                </button>
-              </TooltipTrigger>
-              <TooltipContent side="right" align="center">
-                <p>Add Text Input Node</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-          <TooltipProvider delayDuration={200}>
-            <Tooltip>
-              {/* 按鈕 2: 增加 AI prompt 節點 */}
-              <TooltipTrigger asChild>
-                <button
-                  className="px-2 py-1 border border-gray-300 rounded p-1 hover:bg-gray-200 mb-2  hover:border-gray-200 transition-colors dark:hover:bg-flow-dark-hover"
-                  onClick={addAiPromptNode}
-                >
-                  <GiArtificialHive className="text-black dark:text-white" />
-                </button>
-              </TooltipTrigger>
-              <TooltipContent side="right" align="center">
-                <p>Add AI Prompt Node</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-          <TooltipProvider delayDuration={200}>
-            <Tooltip>
-              {/* 按鈕 3: 增加 上傳 txt 檔案 節點 */}
-              <TooltipTrigger asChild>
-                <button
-                  className="px-2 py-1 border border-gray-300 rounded p-1 hover:bg-gray-200 mb-2 hover:border-gray-200 transition-colors dark:hover:bg-flow-dark-hover"
-                  onClick={addFileUploadNode}
-                >
-                  <LuFileUp className="text-black dark:text-white" />
-                </button>
-              </TooltipTrigger>
-              <TooltipContent side="right" align="center">
-                <p>Add File Upload Node</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-          <TooltipProvider delayDuration={200}>
-            <Tooltip>
-              {/* 按鈕 3: 增加 上傳 txt 檔案 節點 */}
-              <TooltipTrigger asChild>
-                <button
-                  className="px-2 py-1 border border-gray-300 rounded p-1 hover:bg-gray-200 mb-2 hover:border-gray-200 transition-colors dark:hover:bg-flow-dark-hover"
-                  onClick={onSave}
-                >
-                  <LuSave className="text-black dark:text-white" />
-                </button>
-              </TooltipTrigger>
-              <TooltipContent side="right" align="center">
-                <p>Save Board</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-        </Panel>
+        <FlowControlPanel 
+          onAddText={addTextInputNode}
+          onAddAi={addAiPromptNode}
+          onAddFile={addFileUploadNode}
+          onSave={onSave}
+          />
       </ReactFlow>
     </div >
   );

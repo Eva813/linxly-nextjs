@@ -28,9 +28,6 @@ import FlowControlPanel from './flowControlPanel';
 const initialNodes: Node[] = [];
 const initialEdges: Edge[] = [];
 
-// const TextInputNode = dynamic(() => import('./textInputNode'), { ssr: false });
-// const AiPromptNode = dynamic(() => import('./aiPromptNode'), { ssr: false });
-// const FileUploadNode = dynamic(() => import('./FileUploadNode'), { ssr: false });
 export default function Flow({ boardId }: { boardId: string; }) {
   const [nodes, setNodes] = useState<Node[]>(initialNodes);
   const [edges, setEdges] = useState<Edge[]>(initialEdges);

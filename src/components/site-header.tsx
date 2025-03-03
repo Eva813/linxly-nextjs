@@ -4,7 +4,6 @@ import { siteConfig } from "@/config/site"
 // import { buttonVariants } from "@/components/ui/dialog"
 // import { Icons } from "@/components/icons"
 import { MainNav } from "@/components/main-nav"
-import { cn } from '@/lib/utils';
 import { FaGithub } from "react-icons/fa";
 import { ThemeToggle } from "@/components/theme-toggle";
 export function SiteHeader() {

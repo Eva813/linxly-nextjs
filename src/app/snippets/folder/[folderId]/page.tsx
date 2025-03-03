@@ -33,15 +33,10 @@ const FolderPage = ({ params }: FolderPageProps) => {
   }
 
   const handleSave = () => {
-    if (currentFolder) {
-      const updatedFolder = {
-        ...currentFolder,
-        name,
-        description,
-      };
-      console.log('Updating folder:', updatedFolder);
-      updateFolder(folderId, updatedFolder);
-    }
+    updateFolder(folderId, {
+      name,
+      description,
+    });
   };
 
   return (

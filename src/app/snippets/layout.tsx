@@ -1,4 +1,4 @@
-import Sidebar from '@/app/snippets/components/sidebar';
+import Sidebar from '@/app/snippets/components/sidebar/sidebar';
 import { ReactNode } from 'react';
 
 export default function SnippetsLayout({ children }: { children: ReactNode }) {

@@ -29,6 +29,7 @@ const FolderItem: React.FC<FolderItemProps> = ({
     <li className="mb-2">
       {/* 資料夾本身的連結區塊 */}
       <Link
+        prefetch
         className={`px-2 py-1 w-full block rounded hover:bg-gray-100 dark:hover:text-black flex items-center justify-between text-lg ${
           isActiveFolder ? "bg-slate-100 dark:text-black" : ""
         }`}

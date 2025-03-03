@@ -51,6 +51,18 @@ export default function Flow({ boardId }: { boardId: string; }) {
   const { theme } = useTheme()
   const [rfInstance, setRfInstance] = useState<ReactFlowInstance | null>(null); // 用於儲存 ReactFlow 實例
 
+  const getFlowData = (boardId: string) => {
+    try {
+      return JSON.parse(localStorage.getItem(`flowData-${boardId}`) || '{}');
+    } catch (error) {
+      console.error(`Failed to parse flowData for board ${boardId}:`, error);
+      return {}; // 避免應用崩潰
+    }
+  };
+  
+  // 用 useMemo 預先解析，避免多次讀取 localStorage
+  const savedFlowData = useMemo(() => getFlowData(boardId), [boardId]);
+
   const onConnect: OnConnect = useCallback(
     (params) => setEdges((eds) => addEdge(params, eds)),
     [setEdges]
@@ -188,13 +200,14 @@ export default function Flow({ boardId }: { boardId: string; }) {
       console.log('No saved flow data found, skipping restore.');
     }
   }, [rfInstance, boardId]);
+  
+  
   // 頁面加載
   useEffect(() => {
     if (!rfInstance) return; // 确保 ReactFlow 实例存在
-    const savedFlowData = JSON.parse(localStorage.getItem(`flowData-${boardId}`) || '{}');
     console.log('savedFlowData', savedFlowData);
     // 區分保存的空數據和完全沒有數據的情況
-    if (savedFlowData && 'nodes' in savedFlowData && 'edges' in savedFlowData) {
+    if (savedFlowData.nodes?.length || savedFlowData.edges?.length) {
       // user 保存了流程（包括空節點和edge）
       console.log('Restoring saved flow data...');
       setNodes(savedFlowData.nodes || []);

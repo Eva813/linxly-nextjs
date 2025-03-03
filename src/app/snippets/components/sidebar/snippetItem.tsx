@@ -29,6 +29,7 @@ const SnippetItem: React.FC<SnippetItemProps> = ({
         }`}
       >
         <Link
+          prefetch
           className="flex-1 flex justify-between block"
           href={`/snippets/snippet/${snippet.id}`}
         >

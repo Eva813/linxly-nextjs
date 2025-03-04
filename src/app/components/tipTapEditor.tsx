@@ -79,7 +79,7 @@ const TipTapEditor = ({
         },
       }),
       FormMenuNode.configure({
-        onFormMenuClick: (params) => {
+        onFormMenuClick: (params: { pos: number; name: string; defaultValue: string; options: string; multiple: boolean }) => {
           onFormMenuNodeClick?.(params)
         },
       }),

@@ -32,8 +32,11 @@ export const FormTextNode = Node.create({
             return {}
           }
         },
-        renderHTML: (attributes: any) => {
-          console.log('attributes:', attributes)
+        renderHTML: (attributes: { snippetData?: { type?: string } }) => {
+          console.log('attributes Form:', attributes)
+          if (attributes.snippetData && attributes.snippetData.type === 'formtext') {
+            console.log('attributes Form:', attributes);
+          }
           if (!attributes.snippetData) return {}
           // 將物件序列化為字串
           return {

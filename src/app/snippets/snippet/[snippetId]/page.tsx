@@ -3,7 +3,7 @@ import { useSnippets } from '@/contexts/SnippetsContext';
 import { Input } from "@/components/ui/input";
 import { FaTag } from "react-icons/fa6";
 import { FaKeyboard } from "react-icons/fa6";
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import TipTapEditor from '@/app/components/tipTapEditor';
 import Sidebar from '@/app/snippets/snippet/[snippetId]/editorSidebar'
@@ -33,18 +33,21 @@ interface TextInputEditInfo {
   defaultValue: string;
   [key: string]: string | number;
 }
-// export type TextInputEditInfo = Record<string, string>;
-
-
 interface DropdownEditInfo {
-  type: 'dropdown'
+  type: 'formmenu'
   pos: number;
   name: string;
-  defaultValues?: string[];
+  defaultValue: string | string[];
   defaultOptionValues: string[];
   selectedValue: string | string[];
   multiple: boolean;
 }
+type UpdateHandler = {
+  getAttributes: (editInfo: any, key: string, newValue: string | string[]) => any;
+  getNodeType: () => string;
+};
+type EditInfo = TextInputEditInfo | DropdownEditInfo
+
 const SnippetPage = ({ params }: SnippetPageProps) => {
   const { snippetId } = params
   const { folders, updateSnippet } = useSnippets()
@@ -141,23 +144,26 @@ const SnippetPage = ({ params }: SnippetPageProps) => {
     options: string
     multiple: boolean
   }) => {
-    console.log('傳入', pos, 'and', name, 'default', defaultValue, 'options', options, 'and', multiple)
-    // 對應 dialog 中的變數名稱傳入
+    // 清除 textInputEditInfo，避免干擾
+    setTextInputEditInfo(null);
     const optionsArray = options.split(',').map(opt => opt.trim());
     // 設定 selectedValue 為陣列或字串
     const processedDefaultValue = multiple
       ? defaultValue.split(',').map(val => val.trim())
       : defaultValue;
     console.log('傳入2', pos, 'and', name, 'and', processedDefaultValue, 'and', optionsArray, 'and', multiple)
+    console.log('processedDefaultValue', processedDefaultValue)
     setDropdownEditInfo({
-      type: 'dropdown',
+      type: 'formmenu',
       pos,
       name,
+      defaultValue: processedDefaultValue,
       defaultOptionValues: optionsArray,
       selectedValue: processedDefaultValue,
       multiple
     });
-    setIsDropdownDialogOpen(true);
+    setIsEditPanelVisible(true);
+    // setIsDropdownDialogOpen(true);
   }
 
   // 對話框點擊「確認」時，將資料 insert
@@ -196,15 +202,16 @@ const SnippetPage = ({ params }: SnippetPageProps) => {
         .chain()
         .focus()
         .insertContent({
-          type: 'formMenu',
+          type: 'formmenu',
           attrs: {
-            name,
-            options: values.join(','),
-            // 傳給 editor 的 extension
-            multiple: multiple,
-            defaultValue: Array.isArray(selectedValues)
-              ? selectedValues.join(',')
-              : selectedValues
+            snippetData: {
+              name: name,         // 使用者輸入的 label
+              options: values.join(','),
+              multiple: multiple,
+              defaultValue: Array.isArray(selectedValues)
+                ? selectedValues.join(',')
+                : selectedValues
+            },
           },
         })
         .run();
@@ -219,7 +226,7 @@ const SnippetPage = ({ params }: SnippetPageProps) => {
       editor
         .chain()
         .focus()
-        .updateAttributes('formMenu', {
+        .updateAttributes('formmenu', {
           name,
           options: values.join(','),
           // 傳給 editor 的 extension
@@ -257,38 +264,127 @@ const SnippetPage = ({ params }: SnippetPageProps) => {
     }
 
   }
+  const updateHandlers: Record<string, UpdateHandler> = {
+    formtext: {
+      getAttributes: (editInfo, key, newValue) => ({
+        snippetData: {
+          name: key === 'name' ? newValue : editInfo.name,
+          default: key === 'defaultValue' ? newValue : editInfo.defaultValue,
+        }
+      }),
+      getNodeType: () => 'formtext'
+    },
+    'formmnue': {
+      getAttributes: (editInfo, key, newValue) => ({
+        name: key === 'name' ? newValue : editInfo.name,
+        options: key === 'defaultOptionValues'
+          ? (Array.isArray(newValue) ? newValue.join(',') : newValue)
+          : (Array.isArray(editInfo.defaultOptionValues) ? editInfo.defaultOptionValues.join(',') : editInfo.defaultOptionValues),
+        multiple: editInfo.multiple,
+        defaultValue: key === 'selectedValue'
+          ? (Array.isArray(newValue) ? newValue.join(',') : newValue)
+          : (Array.isArray(editInfo.selectedValue) ? editInfo.selectedValue.join(',') : editInfo.selectedValue)
+      }),
+      getNodeType: () => 'formmenu'
+    }
+  };
 
-  const handleTextInputChange = (key: string, newValue: string) => {
-    console.log('Field:', key, 'New Value:', newValue);
+  // const handleTextInputChange = (key: string, newValue: string) => {
+  //   if (textInputEditInfo) {
+  //     const updatedEditInfo = {
+  //       ...textInputEditInfo,
+  //       [key]: newValue, // Update the specific field based on the key
+  //     };
+
+  //     setTextInputEditInfo(updatedEditInfo);
+  //     console.log('updatedEditInfo', updatedEditInfo)
+
+  //     const editor = editorRef.current;
+  //     if (!editor) return;
+
+  //     const { pos } = textInputEditInfo;
+  //     const { doc } = editor.state;
+  //     const nodeSelection = NodeSelection.create(doc, pos);
+  //     const tr = editor.state.tr.setSelection(nodeSelection);
+  //     editor.view.dispatch(tr);
+
+  //     // Update the editor attributes based on the updated edit info
+  //     editor.chain().updateAttributes('formtext', {
+  //       snippetData: {
+  //         name: updatedEditInfo.name,
+  //         default: updatedEditInfo.defaultValue,
+  //       }
+
+  //     }).run();
+
+  //     setContent(editor.getHTML());
+  //     // 更新本地狀態
+  //     setTextInputEditInfo(prev => prev ? {
+  //       ...prev,
+  //       [key]: newValue
+  //     } : null);
+  //   }
+  // };
+
+  // 取得當前的編輯資訊
+  const getActiveEditInfo = (textInputEditInfo: TextInputEditInfo | null, dropdownEditInfo: DropdownEditInfo | null): EditInfo | null => {
+    const editInfoList = [textInputEditInfo, dropdownEditInfo];
+
+    return editInfoList.find(editInfo => editInfo?.type === 'formtext' || editInfo?.type === 'formmenu') || null;
+  };
+  const activeEditInfo = useMemo(() => getActiveEditInfo(textInputEditInfo, dropdownEditInfo), [textInputEditInfo, dropdownEditInfo]);
+
+  const handleTextInputChange = (key: string, newValue: string | string[]) => {
+    const editor = editorRef.current;
+    if (!editor) return;
+
+    // 分開處理兩種編輯狀態
     if (textInputEditInfo) {
-      const updatedEditInfo = {
+      // 處理 FormText 節點
+      const handler = updateHandlers.formtext;
+      const processedValue = Array.isArray(newValue) ? newValue.join(',') : newValue;
+
+      const updatedEditInfo: TextInputEditInfo = {
         ...textInputEditInfo,
-        [key]: newValue, // Update the specific field based on the key
+        [key]: processedValue, // 確保符合 `string`
       };
 
       setTextInputEditInfo(updatedEditInfo);
-      console.log('updatedEditInfo', updatedEditInfo)
-
-      const editor = editorRef.current;
-      if (!editor) return;
 
       const { pos } = textInputEditInfo;
       const { doc } = editor.state;
       const nodeSelection = NodeSelection.create(doc, pos);
-      const tr = editor.state.tr.setSelection(nodeSelection);
-      editor.view.dispatch(tr);
+      editor.view.dispatch(editor.state.tr.setSelection(nodeSelection));
 
-      // Update the editor attributes based on the updated edit info
-      editor.chain().updateAttributes('formtext', {
-        snippetData: {
-          name: updatedEditInfo.name, 
-          default: updatedEditInfo.defaultValue, 
-        }
+      editor.chain()
+        .updateAttributes(
+          handler.getNodeType(),
+          handler.getAttributes(updatedEditInfo, key, newValue)
+        )
+        .run();
+    } else if (dropdownEditInfo) {
+      // 處理 FormMenu 節點
+      const handler = updateHandlers.formmnue;
+      const updatedEditInfo = {
+        ...dropdownEditInfo,
+        [key]: newValue,
+      };
+      setDropdownEditInfo(updatedEditInfo);
 
-      }).run();
+      const { pos } = dropdownEditInfo;
+      const { doc } = editor.state;
+      const nodeSelection = NodeSelection.create(doc, pos);
+      editor.view.dispatch(editor.state.tr.setSelection(nodeSelection));
 
-      setContent(editor.getHTML());
+      editor.chain()
+        .updateAttributes(
+          handler.getNodeType(),
+          handler.getAttributes(updatedEditInfo, key, newValue)
+        )
+        .run();
     }
+
+    setContent(editor.getHTML());
   };
 
   return (
@@ -319,8 +415,9 @@ const SnippetPage = ({ params }: SnippetPageProps) => {
       </div>
       {/* 右側編輯欄位 */}
       <div className="flex-1 border-l">
-        {isEditPanelVisible ? ( // 根據狀態顯示不同的面板
-          <EditPanel editInfo={textInputEditInfo} onChange={handleTextInputChange} />
+        {isEditPanelVisible ? (
+          // 明天需要處理，因為在 EditPanel 型別有問題
+          <EditPanel editInfo={activeEditInfo} onChange={handleTextInputChange} />
         ) : (
           <Sidebar
             onInsertTextFieldClick={handleInsertTextFieldClick}

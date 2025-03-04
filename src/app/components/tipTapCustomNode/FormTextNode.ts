@@ -33,9 +33,10 @@ export const FormTextNode = Node.create({
           }
         },
         renderHTML: (attributes: { snippetData?: { type?: string } }) => {
-          console.log('attributes Form:', attributes)
-          if (attributes.snippetData && attributes.snippetData.type === 'formtext') {
-            console.log('attributes Form:', attributes);
+          console.log('attributes Form1:', attributes)
+          // 只處理 formtext 類型的節點
+          if (!attributes.snippetData || attributes.snippetData.type !== 'formtext') {
+            return {}
           }
           if (!attributes.snippetData) return {}
           // 將物件序列化為字串

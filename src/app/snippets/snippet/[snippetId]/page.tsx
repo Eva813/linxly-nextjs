@@ -67,14 +67,31 @@ const SnippetPage = ({ params }: SnippetPageProps) => {
 
 
   // 查找對應的 snippet
-  let currentSnippet: Snippet | null = null
-  for (const folder of folders) {
-    const snippet = folder.snippets.find((s: Snippet) => s.id === snippetId)
-    if (snippet) {
-      currentSnippet = snippet
-      break
+  // let currentSnippet: Snippet | null = null
+  // for (const folder of folders) {
+  //   const snippet = folder.snippets.find((s: Snippet) => s.id === snippetId)
+  //   if (snippet) {
+  //     currentSnippet = snippet
+  //     break
+  //   }
+  // }
+  const currentSnippet = useMemo(() => {
+    for (const folder of folders) {
+      const snippet = folder.snippets.find((s: Snippet) => s.id === snippetId);
+      if (snippet) {
+        return snippet;
+      }
     }
-  }
+    return null;
+  }, [folders, snippetId]);
+  // 取得當前的編輯資訊
+  const getActiveEditInfo = (textInputEditInfo: TextInputEditInfo | null, dropdownEditInfo: DropdownEditInfo | null): EditInfo | null => {
+    const editInfoList = [textInputEditInfo, dropdownEditInfo];
+
+    return editInfoList.find(editInfo => editInfo?.type === 'formtext' || editInfo?.type === 'formmenu') || null;
+  };
+
+  const activeEditInfo = useMemo(() => getActiveEditInfo(textInputEditInfo, dropdownEditInfo), [textInputEditInfo, dropdownEditInfo]);
 
   useEffect(() => {
     if (currentSnippet) {
@@ -274,69 +291,29 @@ const SnippetPage = ({ params }: SnippetPageProps) => {
       }),
       getNodeType: () => 'formtext'
     },
-    'formmnue': {
+    formmenu: {
       getAttributes: (editInfo, key, newValue) => ({
-        name: key === 'name' ? newValue : editInfo.name,
-        options: key === 'defaultOptionValues'
-          ? (Array.isArray(newValue) ? newValue.join(',') : newValue)
-          : (Array.isArray(editInfo.defaultOptionValues) ? editInfo.defaultOptionValues.join(',') : editInfo.defaultOptionValues),
-        multiple: editInfo.multiple,
-        defaultValue: key === 'selectedValue'
-          ? (Array.isArray(newValue) ? newValue.join(',') : newValue)
-          : (Array.isArray(editInfo.selectedValue) ? editInfo.selectedValue.join(',') : editInfo.selectedValue)
+        snippetData: {  // 直接在這裡加入 type
+          name: key === 'name' ? newValue : editInfo.name,
+          options: key === 'defaultOptionValues'
+            ? (Array.isArray(newValue) ? newValue.join(',') : newValue)
+            : (Array.isArray(editInfo.defaultOptionValues) ? editInfo.defaultOptionValues.join(',') : editInfo.defaultOptionValues),
+          multiple: editInfo.multiple,
+          defaultValue: key === 'selectedValue'
+            ? (Array.isArray(newValue) ? newValue.join(',') : newValue)
+            : (Array.isArray(editInfo.selectedValue) ? editInfo.selectedValue.join(',') : editInfo.selectedValue)
+        }
       }),
       getNodeType: () => 'formmenu'
     }
   };
 
-  // const handleTextInputChange = (key: string, newValue: string) => {
-  //   if (textInputEditInfo) {
-  //     const updatedEditInfo = {
-  //       ...textInputEditInfo,
-  //       [key]: newValue, // Update the specific field based on the key
-  //     };
 
-  //     setTextInputEditInfo(updatedEditInfo);
-  //     console.log('updatedEditInfo', updatedEditInfo)
-
-  //     const editor = editorRef.current;
-  //     if (!editor) return;
-
-  //     const { pos } = textInputEditInfo;
-  //     const { doc } = editor.state;
-  //     const nodeSelection = NodeSelection.create(doc, pos);
-  //     const tr = editor.state.tr.setSelection(nodeSelection);
-  //     editor.view.dispatch(tr);
-
-  //     // Update the editor attributes based on the updated edit info
-  //     editor.chain().updateAttributes('formtext', {
-  //       snippetData: {
-  //         name: updatedEditInfo.name,
-  //         default: updatedEditInfo.defaultValue,
-  //       }
-
-  //     }).run();
-
-  //     setContent(editor.getHTML());
-  //     // 更新本地狀態
-  //     setTextInputEditInfo(prev => prev ? {
-  //       ...prev,
-  //       [key]: newValue
-  //     } : null);
-  //   }
-  // };
-
-  // 取得當前的編輯資訊
-  const getActiveEditInfo = (textInputEditInfo: TextInputEditInfo | null, dropdownEditInfo: DropdownEditInfo | null): EditInfo | null => {
-    const editInfoList = [textInputEditInfo, dropdownEditInfo];
-
-    return editInfoList.find(editInfo => editInfo?.type === 'formtext' || editInfo?.type === 'formmenu') || null;
-  };
-  const activeEditInfo = useMemo(() => getActiveEditInfo(textInputEditInfo, dropdownEditInfo), [textInputEditInfo, dropdownEditInfo]);
 
   const handleTextInputChange = (key: string, newValue: string | string[]) => {
     const editor = editorRef.current;
     if (!editor) return;
+    console.log('as', textInputEditInfo)
 
     // 分開處理兩種編輯狀態
     if (textInputEditInfo) {
@@ -355,7 +332,6 @@ const SnippetPage = ({ params }: SnippetPageProps) => {
       const { doc } = editor.state;
       const nodeSelection = NodeSelection.create(doc, pos);
       editor.view.dispatch(editor.state.tr.setSelection(nodeSelection));
-
       editor.chain()
         .updateAttributes(
           handler.getNodeType(),
@@ -364,12 +340,13 @@ const SnippetPage = ({ params }: SnippetPageProps) => {
         .run();
     } else if (dropdownEditInfo) {
       // 處理 FormMenu 節點
-      const handler = updateHandlers.formmnue;
+      const handler = updateHandlers.formmenu;
       const updatedEditInfo = {
         ...dropdownEditInfo,
         [key]: newValue,
       };
       setDropdownEditInfo(updatedEditInfo);
+      console.log('dropDown', updatedEditInfo)
 
       const { pos } = dropdownEditInfo;
       const { doc } = editor.state;

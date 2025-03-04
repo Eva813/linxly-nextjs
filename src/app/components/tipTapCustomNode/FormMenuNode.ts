@@ -1,46 +1,47 @@
-// FormMenuNode.ts
+// FormTextNode.ts
 import { Node, mergeAttributes } from '@tiptap/core'
 import { ReactNodeViewRenderer } from '@tiptap/react'
 import FormMenuView from './formMenuView'
 
-interface FormMenuOptions {
-  onFormMenuClick?: (data: {
-    pos: number
-    name: string
-    defaultValue: string
-    options: string
-    multiple: boolean
-  }) => void
-}
-
-export const FormMenuNode = Node.create<FormMenuOptions>({
-  name: 'formMenu',
+export const FormMenuNode = Node.create({
+  name: 'formmenu',
 
   group: 'inline',
   inline: true,
   selectable: true,
   draggable: true,
 
-  addOptions() {
-    return {
-      onFormMenuClick: undefined,
-    }
-  },
-
   addAttributes() {
     return {
-      name: {
-        default: 'menu',
-      },
-      defaultValue: {
-        default: '',
-      },
-      options: {
-        default: '',
-      },
-      multiple: {
-        // 預設為 'no'，當值為 'yes' 表示可以多選
-        default: false,
+      /**
+       * 用來存放像 {{ default: ddd, name: HJ, cols: 10 }} 這種結構
+       * 也可以是單純一個物件 { default: 'ddd', name: 'HJ', cols: 10 }
+       */
+      snippetData: {
+        default: {}, // 預設是空物件
+        parseHTML: (element: HTMLElement) => {
+          // 假設我們把 data-snippet 存在 DOM attribute
+          const data = element.getAttribute('data-snippet')
+          if (!data) return {}
+
+          try {
+            // 假設 data 是字串化後的 JSON
+            return JSON.parse(data)
+          } catch (error) {
+            console.error('parse snippetData error:', error)
+            return {}
+          }
+        },
+        renderHTML: (attributes: { snippetData?: { type?: string } }) => {
+          if (attributes.snippetData && attributes.snippetData.type === 'formmenu') {
+            console.log('attributes Menu:', attributes);
+          }
+          if (!attributes.snippetData) return {}
+          // 將物件序列化為字串
+          return {
+            'data-snippet': JSON.stringify(attributes.snippetData),
+          }
+        },
       },
     }
   },
@@ -53,34 +54,25 @@ export const FormMenuNode = Node.create<FormMenuOptions>({
     ]
   },
 
-  renderHTML({ node, HTMLAttributes }) {
-    const { name, defaultValue, options, multiple } = node.attrs
-    // 若只用文字呈現，可用簡單文本組合（通常在非 NodeView 模式下會用到）
-    let textContent = `name: ${name}`
-    if (defaultValue) {
-      textContent += `, default: ${defaultValue}`
-    }
-    if (options) {
-      textContent += `, options: ${options}`
-    }
-    if (multiple) {
-      textContent += `, multiple: ${multiple}`
-    }
+  /**
+   * 這裡只負責產出最外層 <span>，真正在 React 中如何顯示 chip 交給 NodeView
+   */
+  renderHTML({ HTMLAttributes }) {
     return [
       'span',
       mergeAttributes(
         {
           'data-type': 'formmenu',
-          class: 'form-menu-field',
-          contenteditable: 'false',
-          role: 'button',
         },
         HTMLAttributes,
       ),
-      textContent,
+      // 0, // 讓子節點可以繼續渲染 (inline node 內容)
     ]
   },
 
+  /**
+   * 使用 React NodeView 來渲染
+   */
   addNodeView() {
     return ReactNodeViewRenderer(FormMenuView)
   },

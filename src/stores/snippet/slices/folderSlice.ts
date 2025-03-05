@@ -6,7 +6,7 @@ export interface FolderSlice {
   folders: Folder[];
   setFolders: (folders: Folder[]) => void;
   updateFolder: (id: string, updates: Partial<Folder>) => void;
-  addFolder: (folder: Omit<Folder, 'id'>) => void;
+  addFolder: (folder: Omit<Folder, "id">, index?: number) => Folder;
   deleteFolder: (id: string) => void;
 }
 
@@ -53,10 +53,20 @@ export const createFolderSlice: StateCreator<FolderSlice> = (set, get) => ({
         folder.id === id ? { ...folder, ...updates } : folder
       ),
     }),
-  addFolder: (folder) => {
-    const newFolder = { ...folder, id: `folder-${Date.now()}` };
-    set({ folders: [...get().folders, newFolder] });
-  },
+    addFolder: (folder, index) => {
+      const newFolder: Folder = { ...folder, id: `folder-${Date.now()}` };
+      set((state) => ({
+        folders:
+          typeof index === "number"
+            ? [
+                ...state.folders.slice(0, index),
+                newFolder,
+                ...state.folders.slice(index),
+              ]
+            : [...state.folders, newFolder],
+      }));
+      return newFolder;
+    },
   deleteFolder: (id) =>
     set({
       folders: get().folders.filter((folder) => folder.id !== id),

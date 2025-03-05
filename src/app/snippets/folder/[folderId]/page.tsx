@@ -1,6 +1,6 @@
 "use client";
 import { Button } from '@/components/ui/button';
-import { useSnippets } from '@/contexts/SnippetsContext';
+import { useSnippetStore } from "@/stores/snippet";
 import { useState, useEffect } from 'react';
 import { Textarea } from "@/components/ui/textarea"
 
@@ -12,7 +12,7 @@ interface FolderPageProps {
 
 const FolderPage = ({ params }: FolderPageProps) => {
   const { folderId } = params;
-  const { folders, updateFolder } = useSnippets();
+  const { folders, updateFolder } = useSnippetStore();
 
   const currentFolder = folders.find(folder => folder.id === folderId);
 
@@ -50,8 +50,8 @@ const FolderPage = ({ params }: FolderPageProps) => {
       <Textarea
         value={description}
         rows={4}
-        className=' hover:ring-1 hover:ring-gray-400 p-2 rounded mb-2'
-        onChange={(e) => { setDescription(e.target.value) }}
+        className='hover:ring-1 hover:ring-gray-400 p-2 rounded mb-2'
+        onChange={(e) => setDescription(e.target.value)}
         placeholder="input description"
       />
       <Button className='w-20' onClick={handleSave}>Save</Button>

@@ -1,18 +1,26 @@
+// Sidebar.tsx (修改後)
 "use client";
 
 import React, { useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import dynamic from "next/dynamic";
-import { useSnippets } from "@/contexts/SnippetsContext";
+import { useSnippetStore } from "@/stores/snippet";
 import { Button } from "@/components/ui/button";
 import { FaFolderPlus, FaFileMedical } from "react-icons/fa";
 
-// 動態載入
+// 動態載入 FolderItem 與 SnippetItem
 const FolderItem = dynamic(() => import("./folderItem"), { ssr: false });
 const SnippetItem = dynamic(() => import("./snippetItem"), { ssr: false });
 
 const Sidebar = () => {
-  const { folders, setFolders } = useSnippets();
+  const {
+    folders,
+    addFolder,
+    addSnippetToFolder,
+    deleteFolder,
+    deleteSnippetFromFolder,
+  } = useSnippetStore();
+
   const router = useRouter();
   const pathname = usePathname();
 
@@ -20,11 +28,11 @@ const Sidebar = () => {
   const [collapsedFolders, setCollapsedFolders] = useState<Set<string>>(new Set());
   const [activeSnippetMenu, setActiveSnippetMenu] = useState<string | null>(null);
 
-  // 取得當前路徑資訊 (/snippets/folder/[folderId] or /snippets/snippet/[snippetId])
+  // 解析目前路由資訊 (/snippets/folder/[folderId] 或 /snippets/snippet/[snippetId])
   const getCurrentContext = () => {
     const segments = (pathname ?? "").split("/").filter(Boolean);
-    let mode = null;
-    let id = null;
+    let mode: "folder" | "snippet" | null = null;
+    let id: string | null = null;
     if (segments.length >= 3 && segments[1] === "folder") {
       mode = "folder";
       id = segments[2];
@@ -36,7 +44,7 @@ const Sidebar = () => {
   };
   const { mode, id } = getCurrentContext();
 
-  // 找出當前 folder / snippet 的索引，以便插入新資料
+  // 找出目前 folder 與 snippet 的索引（決定插入位置）
   let currentFolderIndex = -1;
   let currentSnippetIndex = -1;
   if (mode === "folder") {
@@ -52,62 +60,65 @@ const Sidebar = () => {
     }
   }
 
-  // 新增 Folder
-  const addFolder = () => {
-    const newFolder = {
-      id: `folder-${Date.now()}`,
-      name: "New folder",
-      description: "",
-      snippets: [],
-    };
-    const newFolders = [...folders];
-
-    if (mode === "folder" && currentFolderIndex !== -1) {
-      newFolders.splice(currentFolderIndex + 1, 0, newFolder);
-    } else if (mode === "snippet" && currentFolderIndex !== -1) {
-      newFolders.splice(currentFolderIndex + 1, 0, newFolder);
-    } else {
-      newFolders.push(newFolder);
+  // 新增 Folder，將插入位置邏輯封裝進 store API
+  const handleAddFolder = () => {
+    let insertIndex: number | undefined;
+    if ((mode === "folder" || mode === "snippet") && currentFolderIndex !== -1) {
+      insertIndex = currentFolderIndex + 1;
     }
-
-    setFolders(newFolders);
+    const newFolder = addFolder(
+      {
+        name: "New folder",
+        description: "",
+        snippets: [],
+      },
+      insertIndex
+    );
     router.push(`/snippets/folder/${newFolder.id}`);
   };
 
-  // 新增 Snippet
-  const addSnippet = () => {
-    const newSnippet = {
-      id: `snippet-${Date.now()}`,
-      name: "New snippet",
-      content: "New snippet content",
-      shortcut: "",
-    };
-    const newFolders = [...folders];
-
+  // 新增 Snippet（這裡不做插入位置，僅調用 store API，若有類似邏輯可同理封裝）
+  const handleAddSnippet = () => {
+    let newSnippet;
     if (mode === "folder" && currentFolderIndex !== -1) {
-      newFolders[currentFolderIndex].snippets.push(newSnippet);
-      setFolders(newFolders);
+      newSnippet = addSnippetToFolder(folders[currentFolderIndex].id, {
+        name: "New snippet",
+        content: "New snippet content",
+        shortcut: "",
+      });
       router.push(`/snippets/snippet/${newSnippet.id}`);
     } else if (mode === "snippet" && currentFolderIndex !== -1 && currentSnippetIndex !== -1) {
-      newFolders[currentFolderIndex].snippets.splice(currentSnippetIndex + 1, 0, newSnippet);
-      setFolders(newFolders);
+      newSnippet = addSnippetToFolder(folders[currentFolderIndex].id, {
+        name: "New snippet",
+        content: "New snippet content",
+        shortcut: "",
+      });
       router.push(`/snippets/snippet/${newSnippet.id}`);
-    } else {
-      if (folders.length > 0) {
-        newFolders[0].snippets.push(newSnippet);
-        setFolders(newFolders);
-        router.push(`/snippets/snippet/${newSnippet.id}`);
-      }
+    } else if (folders.length > 0) {
+      newSnippet = addSnippetToFolder(folders[0].id, {
+        name: "New snippet",
+        content: "New snippet content",
+        shortcut: "",
+      });
+      router.push(`/snippets/snippet/${newSnippet.id}`);
     }
   };
 
   // 刪除 Folder
-  const deleteFolder = (folderId: string) => {
-    const updatedFolders = folders.filter((folder) => folder.id !== folderId);
-    setFolders(updatedFolders);
+  const handleDeleteFolder = (folderId: string) => {
+    deleteFolder(folderId);
     setActiveFolderMenu(null);
     if (mode === "folder" && id === folderId) {
       router.push("/snippets");
+    }
+  };
+
+  // 刪除 Snippet
+  const handleDeleteSnippet = (folderId: string, snippetId: string) => {
+    deleteSnippetFromFolder(folderId, snippetId);
+    setActiveSnippetMenu(null);
+    if (mode === "snippet") {
+      router.push(`/snippets/folder/${folderId}`);
     }
   };
 
@@ -122,32 +133,14 @@ const Sidebar = () => {
     setCollapsedFolders(newCollapsed);
   };
 
-  // 刪除 Snippet
-  const deleteFile = (folderId: string, snippetId: string) => {
-    const updatedFolders = folders.map((folder) => {
-      if (folder.id === folderId) {
-        return {
-          ...folder,
-          snippets: folder.snippets.filter((snippet) => snippet.id !== snippetId),
-        };
-      }
-      return folder;
-    });
-    setFolders(updatedFolders);
-    setActiveSnippetMenu(null);
-    if (mode === "snippet") {
-      router.push(`/snippets/folder/${folderId}`);
-    }
-  };
-
   return (
     <div className="w-1/4 h-screen p-4 flex flex-col border-r border-gray-300">
       <div className="grid grid-cols-2 gap-x-4 mb-4">
-        <Button onClick={addFolder}>
+        <Button onClick={handleAddFolder}>
           <FaFolderPlus />
           Add Folder
         </Button>
-        <Button onClick={addSnippet}>
+        <Button onClick={handleAddSnippet}>
           <FaFileMedical />
           Add Snippet
         </Button>
@@ -162,12 +155,14 @@ const Sidebar = () => {
               setActiveFolderMenu={setActiveFolderMenu}
               collapsedFolders={collapsedFolders}
               toggleCollapse={toggleCollapse}
-              deleteFolder={deleteFolder}
+              deleteFolder={handleDeleteFolder}
               pathname={pathname ?? ""}
             >
               <ul className="ml-4 mt-1">
                 {folder.snippets.length === 0 ? (
-                  <span className="ml-2 text-gray-500">No snippets in the folder</span>
+                  <span className="ml-2 text-gray-500">
+                    No snippets in the folder
+                  </span>
                 ) : (
                   folder.snippets.map((snippet) => (
                     <SnippetItem
@@ -176,7 +171,7 @@ const Sidebar = () => {
                       folderId={folder.id}
                       activeSnippetMenu={activeSnippetMenu}
                       setActiveSnippetMenu={setActiveSnippetMenu}
-                      deleteFile={deleteFile}
+                      deleteFile={handleDeleteSnippet}
                       pathname={pathname ?? ""}
                     />
                   ))

@@ -2,11 +2,11 @@
 // index.js
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation'
-import { useSnippets } from "@/contexts/SnippetsContext";
+import { useSnippetStore } from "@/stores/snippet";
 
 const Snippets = () => {
   const router = useRouter();
-  const { folders } = useSnippets();
+  const { folders } = useSnippetStore();
 
   useEffect(() => {
     // 如果 folders 有資料，就跳轉到第一個 folder

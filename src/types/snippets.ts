@@ -13,6 +13,13 @@ export interface Folder {
   snippets: Snippet[];
 }
 
+export interface MatchedSnippet {
+  content: string;
+  targetElement: HTMLInputElement | HTMLTextAreaElement | null;
+  insert: boolean;
+  shortcut: string;
+}
+
 /**
  * FolderItem 元件的 Props
  */

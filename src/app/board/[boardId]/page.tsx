@@ -2,7 +2,7 @@
 
 import dynamic from 'next/dynamic';
 import { useParams } from 'next/navigation';
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect} from 'react';
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 
@@ -25,11 +25,15 @@ const FlowWithNoSSR = dynamic(() => import('../../components/flow'), {
 
 export default function BoardPage() {
   const [boardName, setBoardName] = useState<string>('');
+  const [boards, setBoards] = useState<Board[]>([]);
   const params = useParams();
   const boardId = params?.boardId as string;
 
-  const boards = useMemo(() => {
-    return JSON.parse(localStorage.getItem('boards') || '[]');
+  useEffect(() => {
+    const storedBoards = localStorage.getItem('boards');
+    if (storedBoards) {
+      setBoards(JSON.parse(storedBoards));
+    }
   }, []);
 
   useEffect(() => {
@@ -50,7 +54,7 @@ export default function BoardPage() {
     localStorage.setItem(`boardName-${boardId}`, boardName);
     console.log('Board name saved:', boardName);
 
-    // 直接更新 useMemo 內的 boards，避免再次解析 JSON
+    // 更新 boards 並存回 localStorage
     const updatedBoards = boards.map((board: Board) =>
       board.id === boardId ? { ...board, name: boardName } : board
     );

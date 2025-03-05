@@ -25,7 +25,7 @@ export const formTextSpec = {
     //   priority: -10,
     //   type: "number"
     // },
-    defaultValue: {
+    default: {
       type: "string",
       constant: true,
       priority: 2,

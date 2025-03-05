@@ -7,7 +7,7 @@ interface FormMenuNodeOptions {
   onFormMenuClick?: (data: {
     pos: number
     name: string
-    defaultValue: string | string[]
+    default: string | string[]
     options: string
     multiple: boolean
   }) => void
@@ -22,7 +22,7 @@ type FormMenuViewProps = NodeViewProps & {
 export default function FormMenuView(props: FormMenuViewProps) {
   const { node, getPos, extension } = props
   const snippetData = node.attrs.snippetData || {}
-  const { name, default: defaultValue, options, multiple } = snippetData
+  const { name, default: defaultValue,options, multiple } = snippetData
 
   const handleClick = useCallback(
     (event: MouseEvent<HTMLSpanElement>) => {
@@ -36,7 +36,7 @@ export default function FormMenuView(props: FormMenuViewProps) {
         extension.options.onFormMenuClick({
           pos,
           name,
-          defaultValue,
+          default: defaultValue,
           options,
           multiple,
         })

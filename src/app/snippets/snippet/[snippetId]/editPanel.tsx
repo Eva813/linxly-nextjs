@@ -20,7 +20,7 @@ export interface FormTextSpec {
 export interface InputInfo {
   pos: number;
   name: string;
-  defaultValue: string;
+  default: string;
   type: string;
   // formmenu 特有屬性：
   options?: string[];
@@ -115,8 +115,6 @@ export default function EditPanel({ editInfo, onChange }: SidebarProps) {
   const currentSpec = mapping.spec;
 
   const organizedEditInfo = organizeFormInput({ ...transformedInput } as CleanedInputInfo, currentSpec);
-
-  console.log('editInfo', editInfo);
   console.log('organizedEditInfo', organizedEditInfo);
 
   return (

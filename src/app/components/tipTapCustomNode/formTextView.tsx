@@ -8,13 +8,13 @@ interface FormTextNodeOptions {
     onFormTextClick?: (data: {
         pos: number
         name: string
-        defaultValue: string
+        default: string
     }) => void
 }
 
 /**
  * Tiptap 會把 node, editor, extension, getPos 等都注入進來
- * - node.attrs 會是我們的 { name, defaultValue }
+ * - node.attrs 會是我們的 { name, default }
  * - extension.options 會是 { onFormTextClick: ... }
  */
 type FormTextViewProps = NodeViewProps & {
@@ -41,7 +41,7 @@ export default function FormTextView(props: FormTextViewProps) {
                 extension.options.onFormTextClick({
                     pos,
                     name,
-                    defaultValue,
+                    default: defaultValue,
                 })
             }
         },

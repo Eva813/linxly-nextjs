@@ -8,7 +8,7 @@ export const formMenuSpec = {
       type: "string",
       static: true
     },
-    defaultValue: {
+    default: {
       type: "string",
       constant: true,
       priority: 2,

@@ -23,12 +23,12 @@ interface TipTapEditorProps {
   onFormTextNodeClick?: (params: {
     pos: number
     name: string
-    defaultValue: string
+    default: string
   }) => void;
   onFormMenuNodeClick?: (params: {
     pos: number;
     name: string;
-    defaultValue: string;    // 改為必需
+    default: string;    // 改為必需
     options: string;         // 改為必需
     // boolean / string
     multiple: boolean;
@@ -74,12 +74,12 @@ const TipTapEditor = ({
       TextAlign.configure({ types: ['heading', 'paragraph'] }),
       // 在這裡將 FormTextNode 配置 onFormTextClick
       FormTextNode.configure({
-        onFormTextClick: (params: { pos: number; name: string; defaultValue: string }) => {
+        onFormTextClick: (params: { pos: number; name: string; default: string }) => {
           onFormTextNodeClick?.(params)
         },
       }),
       FormMenuNode.configure({
-        onFormMenuClick: (params: { pos: number; name: string;  options: string; defaultValue: string; multiple: boolean }) => {
+        onFormMenuClick: (params: { pos: number; name: string;  options: string; default: string; multiple: boolean }) => {
           onFormMenuNodeClick?.(params)
         },
       }),

@@ -8,7 +8,7 @@ import { useSnippetStore } from "@/stores/snippet";
 interface FormField {
   id: string;  // 新增 id 欄位
   label: string;
-  defaultValue: string;
+  default: string;
   currentValue: string;
 }
 
@@ -63,8 +63,8 @@ const SnippetDialog = () => {
           newFormFields[fieldId] = {
             id: fieldId,
             label: span.getAttribute('label') || '',
-            defaultValue: span.getAttribute('defaultvalue') || '',
-            currentValue: span.getAttribute('defaultvalue') || ''
+            default: span.getAttribute('default') || '',
+            currentValue: span.getAttribute('default') || ''
           };
 
           // 添加字段標記

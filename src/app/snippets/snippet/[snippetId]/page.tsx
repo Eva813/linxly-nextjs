@@ -32,10 +32,15 @@ interface DropdownEditInfo {
   type: "formmenu";
   pos: number;
   name: string;
-  defaultValue: string | string[];
-  defaultOptionValues: string[];
-  selectedValue: string | string[];
+  options: string[];
   multiple: boolean;
+  defaultValue: string | string[];
+  // pos: number;
+  // name: string;
+  // defaultValue: string | string[];
+  // defaultOptionValues: string[];
+  // selectedValue: string | string[];
+  // multiple: boolean;
 }
 type UpdateHandler = {
   getAttributes: (
@@ -142,7 +147,6 @@ const SnippetPage = ({ params }: SnippetPageProps) => {
     name: string;
     defaultValue: string;
   }) => {
-    console.log("fix 修改");
     setTextInputEditInfo({ type: "formtext", pos, name, defaultValue });
     setIsEditPanelVisible(true);
   };
@@ -154,34 +158,29 @@ const SnippetPage = ({ params }: SnippetPageProps) => {
   const handleFormMenuNodeClick = ({
     pos,
     name,
-    defaultValue,
+    defaultValue,  // 這裡預期收到的是 defaultValue（由 FormMenuNode 回呼轉換）
     options,
     multiple,
   }: {
     pos: number;
     name: string;
     defaultValue: string;
-    options: string;
+    options: string; // 傳入的是逗號分隔的字串
     multiple: boolean;
   }) => {
     setTextInputEditInfo(null);
+    // 將 options 轉成陣列
     const optionsArray = options.split(",").map((opt) => opt.trim());
-    const processedDefaultValue = multiple
-      ? defaultValue.split(",").map((val) => val.trim())
-      : defaultValue;
-    console.log("傳入2", pos, "and", name, "and", processedDefaultValue, "and", optionsArray, "and", multiple);
     setDropdownEditInfo({
       type: "formmenu",
       pos,
       name,
-      defaultValue: processedDefaultValue,
-      defaultOptionValues: optionsArray,
-      selectedValue: processedDefaultValue,
+      defaultValue,
+      options: optionsArray,
       multiple,
     });
     setIsEditPanelVisible(true);
   };
-
   const handleTextFieldInsert = (name: string, defaultValue: string) => {
     const editor = editorRef.current;
     if (!editor) return;
@@ -224,35 +223,36 @@ const SnippetPage = ({ params }: SnippetPageProps) => {
               name: name,
               options: values.join(","),
               multiple: multiple,
-              defaultValue: Array.isArray(selectedValues)
+              default: Array.isArray(selectedValues)
                 ? selectedValues.join(",")
                 : selectedValues,
             },
           },
         })
         .run();
-    } else {
-      const { pos } = dropdownEditInfo;
-      const { doc } = editor.state;
-      const nodeSelection = NodeSelection.create(doc, pos);
-      const tr = editor.state.tr.setSelection(nodeSelection);
-      editor.view.dispatch(tr);
-      editor
-        .chain()
-        .focus()
-        .updateAttributes("formmenu", {
-          name,
-          options: values.join(","),
-          multiple: multiple,
-          defaultValue: Array.isArray(selectedValues)
-            ? selectedValues.join(",")
-            : selectedValues,
-        })
-        .run();
-    }
+    } 
+    // else {
+    //   const { pos } = dropdownEditInfo;
+    //   const { doc } = editor.state;
+    //   const nodeSelection = NodeSelection.create(doc, pos);
+    //   const tr = editor.state.tr.setSelection(nodeSelection);
+    //   editor.view.dispatch(tr);
+    //   editor
+    //     .chain()
+    //     .focus()
+    //     .updateAttributes("formmenu", {
+    //       name,
+    //       options: values.join(","),
+    //       multiple: multiple,
+    //       defaultValue: Array.isArray(selectedValues)
+    //         ? selectedValues.join(",")
+    //         : selectedValues,
+    //     })
+    //     .run();
+    // }
     setContent(editor.getHTML());
     setIsDropdownDialogOpen(false);
-    setDropdownEditInfo(null);
+    // setDropdownEditInfo(null);
   };
 
   const handleShortcutChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -288,28 +288,32 @@ const SnippetPage = ({ params }: SnippetPageProps) => {
       getNodeType: () => "formtext",
     },
     formmenu: {
-      getAttributes: (editInfo, key, newValue) => ({
-        snippetData: {
-          name: key === "name" ? newValue : editInfo.name,
-          options:
-            key === "defaultOptionValues"
-              ? Array.isArray(newValue)
-                ? newValue.join(",")
-                : newValue
-              : Array.isArray(editInfo.defaultOptionValues)
-              ? editInfo.defaultOptionValues.join(",")
-              : editInfo.defaultOptionValues,
-          multiple: editInfo.multiple,
-          defaultValue:
-            key === "selectedValue"
-              ? Array.isArray(newValue)
-                ? newValue.join(",")
-                : newValue
-              : Array.isArray(editInfo.selectedValue)
-              ? editInfo.selectedValue.join(",")
-              : editInfo.selectedValue,
-        },
-      }),
+      getAttributes: (editInfo, key, newValue) => {
+        console.log('fix', editInfo);
+        return {
+          snippetData: {
+            name: key === "name" ? newValue : editInfo.name,
+            options:
+              key === "options"
+                ? Array.isArray(newValue)
+                  ? newValue.join(",")
+                  : newValue
+                : Array.isArray(editInfo.options)
+                ? editInfo.options.join(",")
+                : editInfo.options,
+            multiple: editInfo.multiple,
+            default:
+              // 如果 key 為 "defaultValue" 或 "selectedValue"，都視為更新 defaultValue
+              (key === "defaultValue")
+                ? Array.isArray(newValue)
+                  ? newValue.join(",")
+                  : newValue
+                : Array.isArray(editInfo.defaultValue)
+                ? editInfo.defaultValue.join(",")
+                : editInfo.defaultValue,
+          },
+        };
+      },
       getNodeType: () => "formmenu",
     },
   };
@@ -414,9 +418,9 @@ const SnippetPage = ({ params }: SnippetPageProps) => {
         onClose={() => setIsDropdownDialogOpen(false)}
         onInsert={handleDropDownMenuInsert}
         defaultName={dropdownEditInfo?.name}
-        defaultOptionValues={dropdownEditInfo?.defaultOptionValues}
+        defaultOptionValues={dropdownEditInfo?.options}
         defaultMultiple={dropdownEditInfo?.multiple}
-        selectedValue={dropdownEditInfo?.selectedValue}
+        selectedValue={dropdownEditInfo?.defaultValue}
       />
     </div>
   );

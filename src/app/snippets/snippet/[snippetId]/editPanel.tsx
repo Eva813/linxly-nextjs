@@ -68,6 +68,8 @@ export default function EditPanel({ editInfo, onChange }: SidebarProps) {
   };
 
   const organizedEditInfo = organizeFormInput({...editInfo}, formTextSpec);
+  console.log('editInfo',editInfo )
+  console.log('organizedEditInfo',organizedEditInfo)
   const handleChange = useCallback((key: string, newValue: string) => {
     console.log('Updating field:', key, 'with new value:', newValue);
     onChange(key, newValue);

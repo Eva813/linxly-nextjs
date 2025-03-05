@@ -1,11 +1,9 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
-// import { NodeProvider } from '@/contexts/NodeContext';
 import { SiteHeader } from '@/components/site-header';
 import { ThemeProvider } from "@/components/theme-provider";
 import SnippetDialog from "@/app/components/snippetDialog";
-// import { SnippetsProvider } from '@/contexts/SnippetsContext';
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -34,13 +32,9 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-          {/* <NodeProvider> */}
-            {/* <SnippetsProvider> */}
               <SiteHeader />
               {children}
               <SnippetDialog />
-            {/* </SnippetsProvider> */}
-          {/* </NodeProvider> */}
         </ThemeProvider>
       </body>
     </html>

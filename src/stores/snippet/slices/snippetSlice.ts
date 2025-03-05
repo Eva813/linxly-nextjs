@@ -1,4 +1,3 @@
-// src/stores/slices/snippetSlice.ts
 import { StateCreator } from 'zustand';
 import { Snippet } from '@/types/snippets';
 import { FolderSlice } from './folderSlice';

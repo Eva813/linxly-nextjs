@@ -12,7 +12,6 @@ export const useSnippetInsertion = ({ inputRef, onInsert }: UseSnippetInsertionP
     folders,
     matchedSnippet,
     setMatchedSnippet,
-    // snippetMap,
     setIsDialogOpen, // UI 狀態控制
   } = useSnippetStore();
 

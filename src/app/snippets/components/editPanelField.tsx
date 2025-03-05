@@ -1,6 +1,6 @@
 import React from 'react';
-import { Check, X } from "lucide-react"; // 圖示
-import { Input } from "@/components/ui/input"; // shadcn/ui 的 Input
+import { Check, X } from "lucide-react"; 
+import { Input } from "@/components/ui/input"; 
 
 interface EditPanelFieldProps {
   title: string; // This will be the key (e.g., 'name')

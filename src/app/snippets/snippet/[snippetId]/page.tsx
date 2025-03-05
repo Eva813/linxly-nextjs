@@ -12,17 +12,12 @@ import InsertDropdownMenuDialog from '@/app/snippets/snippet/[snippetId]/InsertD
 import { Editor } from '@tiptap/react'
 import { NodeSelection } from 'prosemirror-state'
 import EditPanel from './editPanel'
+import { Snippet } from '@/types/snippets'
 
 interface SnippetPageProps {
   params: {
     snippetId: string;
   };
-}
-interface Snippet {
-  id: string;
-  name: string;
-  shortcut: string;
-  content: string;
 }
 
 // 1. 定義個別的編輯狀態介面

@@ -1,4 +1,4 @@
-export const formTextSpec = {
+export const formMenuSpec = {
   positional: [0, 0],
   named: {
     name: {

@@ -25,27 +25,37 @@ type FormTextViewProps = NodeViewProps & {
 
 export default function FormTextView(props: FormTextViewProps) {
     const { node, getPos, extension } = props
-    const snippetData = node.attrs.snippetData || {}
-    const { name, default: defaultValue } = snippetData
+    const snippetData = node.attrs.snippetData
 
+    const chipData = (snippetData.attributes as Array<{ name: string; value: string }>).reduce<Record<string, string>>((acc, cur) => {
+      acc[cur.name] = cur.value;
+      return acc;
+    }, {});
 
+    // 從 attributes 陣列中找出對應的欄位
+    const nameAttr = snippetData.attributes.find((attr: {name: string}) => attr.name === 'name')
+    const defaultAttr = snippetData.attributes.find((attr: {name: string}) => attr.name === 'default')
+  
+    const name = nameAttr ? nameAttr.value : ''
+    const defaultValue = defaultAttr ? defaultAttr.value : ''
+  
     const handleClick = useCallback(
-        (event: MouseEvent<HTMLSpanElement>) => {
-            event.preventDefault()
-            event.stopPropagation()
-
-            if (!getPos) return
-            const pos = getPos()
-
-            if (extension?.options?.onFormTextClick) {
-                extension.options.onFormTextClick({
-                    pos,
-                    name,
-                    default: defaultValue,
-                })
-            }
-        },
-        [extension, getPos, name, defaultValue],
+      (event: MouseEvent<HTMLSpanElement>) => {
+        event.preventDefault()
+        event.stopPropagation()
+  
+        if (!getPos) return
+        const pos = getPos()
+  
+        if (extension?.options?.onFormTextClick) {
+          extension.options.onFormTextClick({
+            pos,
+            name,
+            default: defaultValue,
+          })
+        }
+      },
+      [extension, getPos, name, defaultValue],
     )
 
     return (
@@ -56,11 +66,12 @@ export default function FormTextView(props: FormTextViewProps) {
             role="button"
             contentEditable={false}
             onClick={handleClick}
+            data-snippet={JSON.stringify(node.attrs.snippetData)}
         >
             {/* {textContent} */}
             <DynamicChip
                 prefix="="
-                data={snippetData}
+                data={chipData}
                 // onPrefixClick={() => alert("點擊了 prefix")}
                 onBlockClick={(key, value) =>
                     alert(`點擊了區塊：${key} ${value}`)

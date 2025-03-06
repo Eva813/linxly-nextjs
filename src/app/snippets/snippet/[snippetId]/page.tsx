@@ -13,9 +13,10 @@ import { Editor } from '@tiptap/react'
 import { NodeSelection } from 'prosemirror-state'
 import EditPanel from './editPanel'
 import { Snippet } from '@/types/snippets'
-
+import { formTextSpec } from "@/lib/specs/formTextSpec";
+import { buildFormData, IBuiltFormData } from '@/lib/buildFormData'
 interface SnippetDataMapping {
-  formtext: { name: string; default: string };
+  formtext: IBuiltFormData<typeof formTextSpec>;
   formmenu: { name: string; options: string; multiple: boolean; default: string };
 }
 interface SnippetPageProps {
@@ -196,6 +197,7 @@ const SnippetPage = ({ params }: SnippetPageProps) => {
     });
     setIsEditPanelVisible(true);
   };
+
   const handleTextFieldInsert = (name: string, defaultValue: string) => {
     const editor = editorRef.current;
     if (!editor) return;
@@ -205,11 +207,17 @@ const SnippetPage = ({ params }: SnippetPageProps) => {
         .focus()
         .insertContent({
           type: "formtext",
+          // attrs: {
+          //   snippetData: {
+          //     name: name,
+          //     default: defaultValue,
+          //   },
+          // },
           attrs: {
-            snippetData: {
+            snippetData: buildFormData(formTextSpec, 'formtext', {
               name: name,
               default: defaultValue,
-            },
+            }),
           },
         })
         .run();
@@ -298,10 +306,14 @@ const SnippetPage = ({ params }: SnippetPageProps) => {
   } = {
     formtext: {
       getAttributes: (editInfo, key, newValue) => ({
-        snippetData: {
+        snippetData: buildFormData(formTextSpec, 'formtext', {
           name: key === "name" ? newValue as string : editInfo.name,
           default: key === "default" ? newValue as string : editInfo.default,
-        },
+        }),
+        // {
+        //   name: key === "name" ? newValue as string : editInfo.name,
+        //   default: key === "default" ? newValue as string : editInfo.default,
+        // },
       }),
       getNodeType: () => "formtext",
     },

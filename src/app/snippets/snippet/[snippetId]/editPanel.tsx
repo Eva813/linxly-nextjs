@@ -93,6 +93,7 @@ const specMapping: SpecMapping = {
 };
 
 export default function EditPanel({ editInfo, onChange }: SidebarProps) {
+  console.log('edit', editInfo)
   // 先定義所有的 Hook（這裡 useCallback 必定會被呼叫）
   const handleChange = useCallback((key: string, newValue: string) => {
     console.log('Updating field:', key, 'with new value:', newValue);

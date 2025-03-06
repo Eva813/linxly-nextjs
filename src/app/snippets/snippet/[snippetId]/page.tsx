@@ -14,43 +14,58 @@ import { NodeSelection } from 'prosemirror-state'
 import EditPanel from './editPanel'
 import { Snippet } from '@/types/snippets'
 
+interface SnippetDataMapping {
+  formtext: { name: string; default: string };
+  formmenu: { name: string; options: string; multiple: boolean; default: string };
+}
 interface SnippetPageProps {
   params: {
     snippetId: string;
   };
 }
 
-// 1. 定義個別的編輯狀態介面
-interface TextInputEditInfo {
+// // 1. 定義個別的編輯狀態介面
+export interface InputInfo {
+  pos: number;
+  name: string;
+  default: string | string[];
+  type: string;
+  // formmenu 特有屬性：
+  options?: string[];
+  multiple?: boolean;
+  // 若有其他屬性
+  [key: string]: string | number | boolean | string[] | undefined;
+}
+
+export interface TextInputEditInfo extends InputInfo {
   type: "formtext";
   pos: number;
   name: string;
   default: string;
-  [key: string]: string | number;
 }
-interface DropdownEditInfo {
+
+export interface DropdownEditInfo extends InputInfo {
   type: "formmenu";
   pos: number;
   name: string;
   options: string[];
   multiple: boolean;
   default: string | string[];
-  // pos: number;
-  // name: string;
-  // default: string | string[];
-  // defaultOptionValues: string[];
-  // selectedValue: string | string[];
-  // multiple: boolean;
 }
-type UpdateHandler = {
-  getAttributes: (
-    editInfo: any,
-    key: string,
-    newValue: string | string[]
-  ) => any;
-  getNodeType: () => string;
-};
+
 type EditInfo = TextInputEditInfo | DropdownEditInfo;
+
+// 使用泛型並依據傳入的 type 取得對應的 snippetData 型別
+type UpdateHandler<T extends EditInfo> = {
+  getAttributes: (
+    editInfo: T,
+    key: keyof T,
+    newValue: string | string[]
+  ) => {
+    snippetData: SnippetDataMapping[T["type"]];
+  };
+  getNodeType: () => T["type"];
+};
 
 const SnippetPage = ({ params }: SnippetPageProps) => {
   const { snippetId } = params;
@@ -277,43 +292,42 @@ const SnippetPage = ({ params }: SnippetPageProps) => {
     }
   };
 
-  const updateHandlers: Record<string, UpdateHandler> = {
+  const updateHandlers: {
+    formtext: UpdateHandler<TextInputEditInfo>;
+    formmenu: UpdateHandler<DropdownEditInfo>;
+  } = {
     formtext: {
       getAttributes: (editInfo, key, newValue) => ({
         snippetData: {
-          name: key === "name" ? newValue : editInfo.name,
-          default: key === "default" ? newValue : editInfo.default,
+          name: key === "name" ? newValue as string : editInfo.name,
+          default: key === "default" ? newValue as string : editInfo.default,
         },
       }),
       getNodeType: () => "formtext",
     },
     formmenu: {
-      getAttributes: (editInfo, key, newValue) => {
-        console.log('fix', editInfo);
-        return {
-          snippetData: {
-            name: key === "name" ? newValue : editInfo.name,
-            options:
-              key === "options"
-                ? Array.isArray(newValue)
-                  ? newValue.join(",")
-                  : newValue
-                : Array.isArray(editInfo.options)
-                ? editInfo.options.join(",")
-                : editInfo.options,
-            multiple: editInfo.multiple,
-            default:
-              // 如果 key 為 "default" 或 "selectedValue"，都視為更新 default
-              (key === "default")
-                ? Array.isArray(newValue)
-                  ? newValue.join(",")
-                  : newValue
-                : Array.isArray(editInfo.default)
-                ? editInfo.default.join(",")
-                : editInfo.default,
-          },
-        };
-      },
+      getAttributes: (editInfo, key, newValue) => ({
+        snippetData: {
+          name: key === "name" ? newValue as string : editInfo.name,
+          options:
+            key === "options"
+              ? Array.isArray(newValue)
+                ? newValue.join(",")
+                : newValue
+              : Array.isArray(editInfo.options)
+              ? editInfo.options.join(",")
+              : editInfo.options,
+          multiple: editInfo.multiple,
+          default:
+            key === "default"
+              ? Array.isArray(newValue)
+                ? newValue.join(",")
+                : newValue
+              : Array.isArray(editInfo.default)
+              ? editInfo.default.join(",")
+              : editInfo.default,
+        },
+      }),
       getNodeType: () => "formmenu",
     },
   };
@@ -397,7 +411,7 @@ const SnippetPage = ({ params }: SnippetPageProps) => {
         </Button>
       </div>
       <div className="flex-1 border-l">
-        {isEditPanelVisible ? (
+        {isEditPanelVisible && activeEditInfo ?  (
           <EditPanel editInfo={activeEditInfo} onChange={handleTextInputChange} />
         ) : (
           <Sidebar

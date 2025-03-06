@@ -216,7 +216,7 @@ export default function Flow({ boardId }: { boardId: string; }) {
       ];
       setNodes(initialDefaultNodes);
     }
-  }, [rfInstance, boardId, onRestore]);
+  }, [rfInstance, boardId, onRestore, savedFlowData]);
 
 
   return (

@@ -20,7 +20,7 @@ export interface FormTextSpec {
 export interface InputInfo {
   pos: number;
   name: string;
-  default: string;
+  default: string | string[];
   type: string;
   // formmenu 特有屬性：
   options?: string[];
@@ -28,6 +28,24 @@ export interface InputInfo {
   // 若有其他屬性
   [key: string]: string | number | boolean | string[] | undefined;
 }
+
+export interface TextInputEditInfo extends InputInfo {
+  type: "formtext";
+  pos: number;
+  name: string;
+  default: string;
+}
+
+export interface DropdownEditInfo extends InputInfo {
+  type: "formmenu";
+  pos: number;
+  name: string;
+  options: string[];
+  multiple: boolean;
+  default: string | string[];
+}
+
+type EditInfo = TextInputEditInfo | DropdownEditInfo;
 
 export interface OrganizedField {
   value: string;
@@ -43,7 +61,7 @@ export interface OrganizedField {
 type CleanedInputInfo = Omit<InputInfo, 'type' | 'pos'>;
 
 interface SidebarProps {
-  editInfo: InputInfo | null;
+  editInfo: EditInfo;
   onChange: (key: string, newValue: string) => void;
 }
 

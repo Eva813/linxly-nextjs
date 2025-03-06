@@ -14,47 +14,18 @@ import { NodeSelection } from 'prosemirror-state'
 import EditPanel from './editPanel'
 import { Snippet } from '@/types/snippets'
 import { formTextSpec } from "@/lib/specs/formTextSpec";
+import { formMenuSpec } from "@/lib/specs/formMenuSpec"; 
 import { buildFormData, IBuiltFormData } from '@/lib/buildFormData'
+import { DropdownEditInfo, TextInputEditInfo, EditInfo } from '@/types/snippets'
 interface SnippetDataMapping {
   formtext: IBuiltFormData<typeof formTextSpec>;
-  formmenu: { name: string; options: string; multiple: boolean; default: string };
+  formmenu: IBuiltFormData<typeof formMenuSpec>;
 }
 interface SnippetPageProps {
   params: {
     snippetId: string;
   };
 }
-
-// // 1. 定義個別的編輯狀態介面
-export interface InputInfo {
-  pos: number;
-  name: string;
-  default: string | string[];
-  type: string;
-  // formmenu 特有屬性：
-  options?: string[];
-  multiple?: boolean;
-  // 若有其他屬性
-  [key: string]: string | number | boolean | string[] | undefined;
-}
-
-export interface TextInputEditInfo extends InputInfo {
-  type: "formtext";
-  pos: number;
-  name: string;
-  default: string;
-}
-
-export interface DropdownEditInfo extends InputInfo {
-  type: "formmenu";
-  pos: number;
-  name: string;
-  options: string[];
-  multiple: boolean;
-  default: string | string[];
-}
-
-type EditInfo = TextInputEditInfo | DropdownEditInfo;
 
 // 使用泛型並依據傳入的 type 取得對應的 snippetData 型別
 type UpdateHandler<T extends EditInfo> = {
@@ -180,19 +151,19 @@ const SnippetPage = ({ params }: SnippetPageProps) => {
   }: {
     pos: number;
     name: string;
-    default: string;
-    options: string; // 傳入的是逗號分隔的字串
+    default: string | string[];
+    options: string[]; // 傳入的是逗號分隔的字串
     multiple: boolean;
   }) => {
     setTextInputEditInfo(null);
     // 將 options 轉成陣列
-    const optionsArray = options.split(",").map((opt) => opt.trim());
+    console.log('傳入', options)
     setDropdownEditInfo({
       type: "formmenu",
       pos,
       name,
       default: defaultValue,
-      options: optionsArray,
+      options: options,
       multiple,
     });
     setIsEditPanelVisible(true);
@@ -241,38 +212,30 @@ const SnippetPage = ({ params }: SnippetPageProps) => {
         .focus()
         .insertContent({
           type: "formmenu",
+          // attrs: {
+          //   snippetData: {
+          //     name: name,
+          //     options: values.join(","),
+          //     multiple: multiple,
+          //     default: Array.isArray(selectedValues)
+          //       ? selectedValues.join(",")
+          //       : selectedValues,
+          //   },
+          // },
           attrs: {
-            snippetData: {
+            snippetData: buildFormData(formMenuSpec, 'formmenu', {
               name: name,
               options: values.join(","),
               multiple: multiple,
               default: Array.isArray(selectedValues)
                 ? selectedValues.join(",")
                 : selectedValues,
-            },
+            }),
           },
         })
         .run();
     } 
-    // else {
-    //   const { pos } = dropdownEditInfo;
-    //   const { doc } = editor.state;
-    //   const nodeSelection = NodeSelection.create(doc, pos);
-    //   const tr = editor.state.tr.setSelection(nodeSelection);
-    //   editor.view.dispatch(tr);
-    //   editor
-    //     .chain()
-    //     .focus()
-    //     .updateAttributes("formmenu", {
-    //       name,
-    //       options: values.join(","),
-    //       multiple: multiple,
-    //       default: Array.isArray(selectedValues)
-    //         ? selectedValues.join(",")
-    //         : selectedValues,
-    //     })
-    //     .run();
-    // }
+  
     setContent(editor.getHTML());
     setIsDropdownDialogOpen(false);
     // setDropdownEditInfo(null);
@@ -310,35 +273,29 @@ const SnippetPage = ({ params }: SnippetPageProps) => {
           name: key === "name" ? newValue as string : editInfo.name,
           default: key === "default" ? newValue as string : editInfo.default,
         }),
-        // {
-        //   name: key === "name" ? newValue as string : editInfo.name,
-        //   default: key === "default" ? newValue as string : editInfo.default,
-        // },
       }),
       getNodeType: () => "formtext",
     },
     formmenu: {
       getAttributes: (editInfo, key, newValue) => ({
-        snippetData: {
+        snippetData: buildFormData(formMenuSpec, 'formmenu', {
           name: key === "name" ? newValue as string : editInfo.name,
-          options:
-            key === "options"
-              ? Array.isArray(newValue)
-                ? newValue.join(",")
-                : newValue
-              : Array.isArray(editInfo.options)
-              ? editInfo.options.join(",")
-              : editInfo.options,
+          options: key === "options"
+                ? Array.isArray(newValue)
+                  ? newValue.join(",")
+                  : newValue
+                : Array.isArray(editInfo.options)
+                ? editInfo.options.join(",")
+                : editInfo.options,
           multiple: editInfo.multiple,
-          default:
-            key === "default"
+          default: key === "default"
               ? Array.isArray(newValue)
                 ? newValue.join(",")
                 : newValue
               : Array.isArray(editInfo.default)
               ? editInfo.default.join(",")
               : editInfo.default,
-        },
+        }),
       }),
       getNodeType: () => "formmenu",
     },

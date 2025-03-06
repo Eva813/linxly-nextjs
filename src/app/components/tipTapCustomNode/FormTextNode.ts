@@ -68,7 +68,6 @@ export const FormTextNode = Node.create({
         },
         HTMLAttributes,
       ),
-      // 0, // 讓子節點可以繼續渲染 (inline node 內容)
     ]
   },
 

@@ -45,3 +45,43 @@ export interface SnippetItemProps {
   deleteFile: (folderId: string, snippetId: string) => void;
   pathname: string;
 }
+
+
+export interface FormMenuData {
+  pos: number;
+  name: string;
+  default: string | string[];
+  options: string[];
+  multiple: boolean;
+}
+
+export type FormMenuClickHandler = (data: FormMenuData) => void;
+
+
+
+export interface InputInfo {
+  pos: number;
+  name: string;
+  default: string | string[];
+  type: string;
+  multiple?: boolean;
+  [key: string]: string | number | boolean | string[] | undefined;
+}
+
+export interface TextInputEditInfo extends InputInfo {
+  type: "formtext";
+  pos: number;
+  name: string;
+  default: string;
+}
+
+export interface DropdownEditInfo extends InputInfo {
+  type: "formmenu";
+  pos: number;
+  name: string;
+  options: string[]; // 統一用複數且必填
+  multiple: boolean;
+  default: string | string[];
+}
+
+export type EditInfo = TextInputEditInfo | DropdownEditInfo;

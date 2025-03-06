@@ -13,6 +13,7 @@ import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover
 import { ImFontSize } from "react-icons/im";
 import { FormTextNode } from './tipTapCustomNode/FormTextNode'
 import { FormMenuNode } from './tipTapCustomNode/FormMenuNode'
+import { FormMenuClickHandler, FormMenuData } from '@/types/snippets'
 interface TipTapEditorProps {
   value: string;
   height?: string;
@@ -25,16 +26,7 @@ interface TipTapEditorProps {
     name: string
     default: string
   }) => void;
-  onFormMenuNodeClick?: (params: {
-    pos: number;
-    name: string;
-    default: string;    // 改為必需
-    options: string;         // 改為必需
-    // boolean / string
-    multiple: boolean;
-    // defaultOptionValues: string[]
-    // selectedValue: string | string[]
-  }) => void;
+  onFormMenuNodeClick?: FormMenuClickHandler;
   onEditorClick?: () => void;
 }
 const TipTapEditor = ({
@@ -79,7 +71,7 @@ const TipTapEditor = ({
         },
       }),
       FormMenuNode.configure({
-        onFormMenuClick: (params: { pos: number; name: string;  options: string; default: string; multiple: boolean }) => {
+        onFormMenuClick: (params: FormMenuData) => {
           onFormMenuNodeClick?.(params)
         },
       }),

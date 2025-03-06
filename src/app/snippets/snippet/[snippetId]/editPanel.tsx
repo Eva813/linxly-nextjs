@@ -2,6 +2,7 @@ import React, { useCallback } from 'react'
 import EditPanelField from '@/app/snippets/components/editPanelField'
 import { formTextSpec } from '@/lib/specs/formTextSpec'
 import { formMenuSpec } from '@/lib/specs/formMenuSpec'
+import { InputInfo, EditInfo } from '@/types/snippets'
 
 export interface FormFieldSpec {
   priority: number;
@@ -16,36 +17,6 @@ export interface FormTextSpec {
   positional: number[];
   named: Record<string, FormFieldSpec>;
 }
-
-export interface InputInfo {
-  pos: number;
-  name: string;
-  default: string | string[];
-  type: string;
-  // formmenu 特有屬性：
-  options?: string[];
-  multiple?: boolean;
-  // 若有其他屬性
-  [key: string]: string | number | boolean | string[] | undefined;
-}
-
-export interface TextInputEditInfo extends InputInfo {
-  type: "formtext";
-  pos: number;
-  name: string;
-  default: string;
-}
-
-export interface DropdownEditInfo extends InputInfo {
-  type: "formmenu";
-  pos: number;
-  name: string;
-  options: string[];
-  multiple: boolean;
-  default: string | string[];
-}
-
-type EditInfo = TextInputEditInfo | DropdownEditInfo;
 
 export interface OrganizedField {
   value: string;
@@ -134,6 +105,7 @@ export default function EditPanel({ editInfo, onChange }: SidebarProps) {
   const currentSpec = mapping.spec;
 
   const organizedEditInfo = organizeFormInput({ ...transformedInput } as CleanedInputInfo, currentSpec);
+  // formmnue 組合更新會有錯誤
   console.log('organizedEditInfo', organizedEditInfo);
 
   return (

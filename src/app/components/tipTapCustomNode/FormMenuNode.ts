@@ -13,10 +13,6 @@ export const FormMenuNode = Node.create({
 
   addAttributes() {
     return {
-      /**
-       * 用來存放像 {{ default: ddd, name: HJ, cols: 10 }} 這種結構
-       * 也可以是單純一個物件 { default: 'ddd', name: 'HJ', cols: 10 }
-       */
       snippetData: {
         default: {}, // 預設是空物件
         parseHTML: (element: HTMLElement) => {
@@ -66,7 +62,6 @@ export const FormMenuNode = Node.create({
         },
         HTMLAttributes,
       ),
-      // 0, // 讓子節點可以繼續渲染 (inline node 內容)
     ]
   },
 

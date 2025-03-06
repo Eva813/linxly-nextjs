@@ -157,7 +157,7 @@ const SnippetPage = ({ params }: SnippetPageProps) => {
   }) => {
     setTextInputEditInfo(null);
     // 將 options 轉成陣列
-    console.log('傳入', options)
+    console.log('傳入', options, 'multiple', multiple)
     setDropdownEditInfo({
       type: "formmenu",
       pos,

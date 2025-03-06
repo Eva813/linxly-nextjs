@@ -55,7 +55,7 @@ const specMapping: SpecMapping = {
     transform: (input: InputInfo) => {
       // 將傳入的 options 陣列轉換成逗號分隔的字串，對應 spec 中定義的 "option" 欄位
       if (input.options) {
-        return { ...input, option: Array.isArray(input.options) ? input.options.join(",") : input.options };
+        return { ...input, options: Array.isArray(input.options) ? input.options.join(",") : input.options };
       }
       return input;
     }

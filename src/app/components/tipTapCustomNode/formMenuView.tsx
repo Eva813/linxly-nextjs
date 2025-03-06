@@ -21,16 +21,18 @@ export default function FormMenuView(props: FormMenuViewProps) {
     return acc
   }, {})
 
-  // 從 attributes 陣列中找出對應的欄位
+  // 從 attributes 陣列中找出對應的欄位，這會影響傳入 EditPanel 的資料
   const nameAttr = snippetData.attributes.find((attr: { name: string }) => attr.name === 'name')
   const defaultAttr = snippetData.attributes.find((attr: { name: string }) => attr.name === 'default')
-  const multipleAttr = snippetData.attributes.find((attr: { name: string }) => attr.name === 'multiple')
-  const optionAttr = snippetData.attributes.find((attr: { name: string }) => attr.name === 'option')
+  const multipleAttr = snippetData.attributes.find(
+    (attr: { name: string }) => attr.name === 'multiple'
+  )
+  const optionAttr = snippetData.attributes.find((attr: { name: string }) => attr.name === 'options')
 
   const name = nameAttr ? nameAttr.value : ''
   const defaultValue = defaultAttr ? defaultAttr.value : ''
-  // 將 multiple 字串轉為 boolean，假設 "yes" 為 true
-  const multiple = multipleAttr.toString()
+    // 這邊做個保護，如果沒找到 multipleAttr，就預設 false
+    const multiple = multipleAttr ? Boolean(multipleAttr.value) : false
   // 假設 option 為逗號分隔的字串，拆分成陣列
   const options = useMemo(() => {
     return optionAttr && optionAttr.value
@@ -45,7 +47,7 @@ export default function FormMenuView(props: FormMenuViewProps) {
 
       if (!getPos) return
       const pos = getPos()
-
+      console.log(' nameAttr', nameAttr, 'defaultAttr', defaultAttr, 'multipleAttr', multipleAttr, ' optionAttr',  optionAttr)
       if (extension?.options?.onFormMenuClick) {
         extension.options.onFormMenuClick({
           pos,

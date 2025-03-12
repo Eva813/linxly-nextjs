@@ -29,9 +29,9 @@ export const FormMenuNode = Node.create({
           }
         },
         renderHTML: (attributes: { snippetData?: { type?: string } }) => {
-          if (attributes.snippetData && attributes.snippetData.type === 'formmenu') {
+          // if (attributes.snippetData && attributes.snippetData.type === 'formmenu') {
             console.log('attributes Menu:', attributes);
-          }
+          // }
           if (!attributes.snippetData) return {}
           // 將物件序列化為字串
           return {

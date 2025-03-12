@@ -42,7 +42,7 @@ export function buildFormData<T extends FormSpec>(
     // 如果 userAttrs 提供了，就用它，否則採用 placeholder，若 placeholder 沒有也以空字串作 fallback
     value: userAttrs[key]  || ""
   }))
-  console.log('attri',  attributes )
+  console.log('attri buildFormData',  attributes )
   return {
     type,
     spec,

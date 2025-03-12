@@ -3,6 +3,8 @@ import EditPanelField from '@/app/snippets/components/editPanelField'
 import { formTextSpec } from '@/lib/specs/formTextSpec'
 import { formMenuSpec } from '@/lib/specs/formMenuSpec'
 import { InputInfo, EditInfo } from '@/types/snippets'
+import{ BooleanField} from '@/app/snippets/components/booleanField'
+import { OptionsField } from '@/app/snippets/components/optionsField'
 
 export interface FormFieldSpec {
   priority: number;
@@ -52,13 +54,13 @@ const specMapping: SpecMapping = {
   formtext: { spec: formTextSpec },
   formmenu: {
     spec: formMenuSpec,
-    transform: (input: InputInfo) => {
-      // 將傳入的 options 陣列轉換成逗號分隔的字串，對應 spec 中定義的 "option" 欄位
-      if (input.options) {
-        return { ...input, options: Array.isArray(input.options) ? input.options.join(",") : input.options };
-      }
-      return input;
-    }
+    // transform: (input: InputInfo) => {
+    //   // 將傳入的 options 陣列轉換成逗號分隔的字串，對應 spec 中定義的 "option" 欄位
+    //   if (input.options) {
+    //     return { ...input, options: Array.isArray(input.options) ? input.options.join(",") : input.options };
+    //   }
+    //   return input;
+    // }
   },
   // 未來可加入其他 type 的 mapping
 };
@@ -70,6 +72,13 @@ export default function EditPanel({ editInfo, onChange }: SidebarProps) {
     console.log('Updating field:', key, 'with new value:', newValue);
     onChange(key, newValue);
   }, [onChange]);
+//   const handleChange = useCallback((changes: { [key: string]: string }) => {
+//     console.log('changes', changes);
+//   Object.entries(changes).forEach(([key, newValue]) => {
+//     console.log('Updating field:', key, 'with new value:', newValue);
+//     onChange(key, newValue);
+//   });
+// }, [onChange]);
 
   // 定義一個輔助函式，依據 Spec 與 input 數據建立 OrganizedField 物件
   const organizeFormInput = (
@@ -112,7 +121,7 @@ export default function EditPanel({ editInfo, onChange }: SidebarProps) {
     <div>
       <h2 className="font-bold px-4 py-2">Edit Panel</h2>
       <div className='px-4 py-2'>{editInfo.type}</div>
-      {Object.entries(organizedEditInfo).map(([key, { value, description }]) => (
+      {/* {Object.entries(organizedEditInfo).map(([key, { value, description }]) => (
         <EditPanelField
           key={key}
           title={key}
@@ -121,7 +130,45 @@ export default function EditPanel({ editInfo, onChange }: SidebarProps) {
           value={value}
           onChange={handleChange}
         />
-      ))}
+      ))} */}
+      {/* {Object.entries(organizedEditInfo).map(([key, { value, description }]) => {
+        if (editInfo.options) {
+          return null;
+        }
+        return (
+          <EditPanelField
+            key={key}
+            title={key}
+            description={description}
+            type={editInfo.type}
+            value={value}
+            onChange={handleChange}
+          />
+        );
+      })} */}
+      {/* <BooleanField
+        title="multiple"
+        description="Whether the user can select multiple items"
+        value={editInfo.multiple}
+        onChange={(newValue) => handleChange('static', newValue.toString())}
+      /> */}
+      
+      <OptionsField
+        label="Values"
+        multiple={editInfo.multiple}
+        values={editInfo.options}
+        defaultValue={editInfo.default}
+          onChange={(newValue) => {
+            console.log('newValue', newValue);
+            // 現在只更新收到的屬性，不一次性全部更新
+            if (newValue.values) {
+              handleChange('options', newValue.values);
+            }
+            if (newValue.defaultValue !== undefined) {
+              handleChange('default', newValue.defaultValue);
+            }
+        }}
+      />
     </div>
   );
 }

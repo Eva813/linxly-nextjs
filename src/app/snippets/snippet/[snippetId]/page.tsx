@@ -14,7 +14,7 @@ import { NodeSelection } from 'prosemirror-state'
 import EditPanel from './editPanel'
 import { Snippet } from '@/types/snippets'
 import { formTextSpec } from "@/lib/specs/formTextSpec";
-import { formMenuSpec } from "@/lib/specs/formMenuSpec"; 
+import { formMenuSpec } from "@/lib/specs/formMenuSpec";
 import { buildFormData, IBuiltFormData } from '@/lib/buildFormData'
 import { DropdownEditInfo, TextInputEditInfo, EditInfo } from '@/types/snippets'
 interface SnippetDataMapping {
@@ -157,7 +157,7 @@ const SnippetPage = ({ params }: SnippetPageProps) => {
   }) => {
     setTextInputEditInfo(null);
     // 將 options 轉成陣列
-    console.log('傳入', options, 'multiple', multiple)
+    console.log('傳入', options, 'multiple', multiple, 'default', defaultValue)
     setDropdownEditInfo({
       type: "formmenu",
       pos,
@@ -178,12 +178,6 @@ const SnippetPage = ({ params }: SnippetPageProps) => {
         .focus()
         .insertContent({
           type: "formtext",
-          // attrs: {
-          //   snippetData: {
-          //     name: name,
-          //     default: defaultValue,
-          //   },
-          // },
           attrs: {
             snippetData: buildFormData(formTextSpec, 'formtext', {
               name: name,
@@ -212,16 +206,6 @@ const SnippetPage = ({ params }: SnippetPageProps) => {
         .focus()
         .insertContent({
           type: "formmenu",
-          // attrs: {
-          //   snippetData: {
-          //     name: name,
-          //     options: values.join(","),
-          //     multiple: multiple,
-          //     default: Array.isArray(selectedValues)
-          //       ? selectedValues.join(",")
-          //       : selectedValues,
-          //   },
-          // },
           attrs: {
             snippetData: buildFormData(formMenuSpec, 'formmenu', {
               name: name,
@@ -234,8 +218,8 @@ const SnippetPage = ({ params }: SnippetPageProps) => {
           },
         })
         .run();
-    } 
-  
+    }
+
     setContent(editor.getHTML());
     setIsDropdownDialogOpen(false);
     // setDropdownEditInfo(null);
@@ -277,26 +261,29 @@ const SnippetPage = ({ params }: SnippetPageProps) => {
       getNodeType: () => "formtext",
     },
     formmenu: {
-      getAttributes: (editInfo, key, newValue) => ({
-        snippetData: buildFormData(formMenuSpec, 'formmenu', {
-          name: key === "name" ? newValue as string : editInfo.name,
-          options: key === "options"
-                ? Array.isArray(newValue)
-                  ? newValue.join(",")
-                  : newValue
-                : Array.isArray(editInfo.options)
+      getAttributes: (editInfo, key, newValue) => (
+        console.log('editInfo change ', key, newValue),
+        {
+
+          snippetData: buildFormData(formMenuSpec, 'formmenu', {
+            name: key === "name" ? newValue as string : editInfo.name,
+            options: key === "options"
+              ? Array.isArray(newValue)
+                ? newValue.join(",")
+                : newValue
+              : Array.isArray(editInfo.options)
                 ? editInfo.options.join(",")
                 : editInfo.options,
-          multiple: editInfo.multiple,
-          default: key === "default"
+            multiple: editInfo.multiple,
+            default: key === "default"
               ? Array.isArray(newValue)
                 ? newValue.join(",")
                 : newValue
               : Array.isArray(editInfo.default)
-              ? editInfo.default.join(",")
-              : editInfo.default,
+                ? editInfo.default.join(",")
+                : editInfo.default,
+          }),
         }),
-      }),
       getNodeType: () => "formmenu",
     },
   };
@@ -326,8 +313,16 @@ const SnippetPage = ({ params }: SnippetPageProps) => {
       const handler = updateHandlers.formmenu;
       const updatedEditInfo = {
         ...dropdownEditInfo,
-        [key]: newValue,
+        [key]: newValue
       };
+      // 如果更新的是 options，檢查 default 值是否需要更新
+      // if (key === "options" && Array.isArray(newValue)) {
+      //   const currentDefault = Array.isArray(dropdownEditInfo.default) 
+      //     ? dropdownEditInfo.default 
+      //     : [dropdownEditInfo.default];
+      //   const validDefault = currentDefault.filter(val => newValue.includes(val));
+      //   updatedEditInfo.default = validDefault.length > 0 ? validDefault : [newValue[0]];
+      // }
       setDropdownEditInfo(updatedEditInfo);
       const { pos } = dropdownEditInfo;
       const { doc } = editor.state;
@@ -380,7 +375,7 @@ const SnippetPage = ({ params }: SnippetPageProps) => {
         </Button>
       </div>
       <div className="flex-1 border-l">
-        {isEditPanelVisible && activeEditInfo ?  (
+        {isEditPanelVisible && activeEditInfo ? (
           <EditPanel editInfo={activeEditInfo} onChange={handleTextInputChange} />
         ) : (
           <Sidebar

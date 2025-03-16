@@ -64,7 +64,6 @@ export interface InputInfo {
   name: string;
   default: string | string[];
   type: string;
-  multiple?: boolean;
   [key: string]: string | number | boolean | string[] | undefined;
 }
 

@@ -32,7 +32,7 @@ type UpdateHandler<T extends EditInfo> = {
   getAttributes: (
     editInfo: T,
     key: keyof T,
-    newValue: string | string[]
+    newValue: string | boolean | string[]
   ) => {
     snippetData: SnippetDataMapping[T["type"]];
   };
@@ -273,54 +273,7 @@ const SnippetPage = ({ params }: SnippetPageProps) => {
     },
   };
 
-  // const handleTextInputChange = (key: string, newValue: string | string[]) => {
-  //   const editor = editorRef.current;
-  //   if (!editor) return;
-  //   if (textInputEditInfo) {
-  //     const handler = updateHandlers.formtext;
-  //     const processedValue = Array.isArray(newValue)
-  //       ? newValue.join(",")
-  //       : newValue;
-  //     const updatedEditInfo: TextInputEditInfo = {
-  //       ...textInputEditInfo,
-  //       [key]: processedValue,
-  //     };
-  //     setTextInputEditInfo(updatedEditInfo);
-  //     const { pos } = textInputEditInfo;
-  //     const { doc } = editor.state;
-  //     const nodeSelection = NodeSelection.create(doc, pos);
-  //     editor.view.dispatch(editor.state.tr.setSelection(nodeSelection));
-  //     editor
-  //       .chain()
-  //       .updateAttributes(handler.getNodeType(), handler.getAttributes(updatedEditInfo, key, newValue))
-  //       .run();
-  //   } else if (dropdownEditInfo) {
-  //     const handler = updateHandlers.formmenu;
-  //     const updatedEditInfo = {
-  //       ...dropdownEditInfo,
-  //       [key]: newValue
-  //     };
-  //     // 如果更新的是 options，檢查 default 值是否需要更新
-  //     // if (key === "options" && Array.isArray(newValue)) {
-  //     //   const currentDefault = Array.isArray(dropdownEditInfo.default) 
-  //     //     ? dropdownEditInfo.default 
-  //     //     : [dropdownEditInfo.default];
-  //     //   const validDefault = currentDefault.filter(val => newValue.includes(val));
-  //     //   updatedEditInfo.default = validDefault.length > 0 ? validDefault : [newValue[0]];
-  //     // }
-  //     setDropdownEditInfo(updatedEditInfo);
-  //     const { pos } = dropdownEditInfo;
-  //     const { doc } = editor.state;
-  //     const nodeSelection = NodeSelection.create(doc, pos);
-  //     editor.view.dispatch(editor.state.tr.setSelection(nodeSelection));
-  //     editor
-  //       .chain()
-  //       .updateAttributes(handler.getNodeType(), handler.getAttributes(updatedEditInfo, key, newValue))
-  //       .run();
-  //   }
-  //   setContent(editor.getHTML());
-  // };
-  const handleTextInputChange = (updates: { [key: string]: string | string[] }) => {
+  const handleTextInputChange = (updates: { [key: string]: string | string[] | boolean }) => {
     const editor = editorRef.current;
     if (!editor) return;
 

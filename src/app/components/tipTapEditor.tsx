@@ -13,6 +13,7 @@ import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover
 import { ImFontSize } from "react-icons/im";
 import { FormTextNode } from './tipTapCustomNode/FormTextNode'
 import { FormMenuNode } from './tipTapCustomNode/FormMenuNode'
+import { FormMenuClickHandler, FormMenuData } from '@/types/snippets'
 interface TipTapEditorProps {
   value: string;
   height?: string;
@@ -22,19 +23,11 @@ interface TipTapEditorProps {
   // 當用戶點擊自訂 Node 時的回呼
   onFormTextNodeClick?: (params: {
     pos: number
-    label: string
-    defaultValue: string
+    name: string
+    default: string
   }) => void;
-  onFormMenuNodeClick?: (params: {
-    pos: number;
-    name: string;
-    defaultValue: string;    // 改為必需
-    options: string;         // 改為必需
-    // boolean / string
-    multiple: boolean;
-    // defaultOptionValues: string[]
-    // selectedValue: string | string[]
-  }) => void;
+  onFormMenuNodeClick?: FormMenuClickHandler;
+  onEditorClick?: () => void;
 }
 const TipTapEditor = ({
   value,
@@ -43,7 +36,8 @@ const TipTapEditor = ({
   onChange,
   onEditorReady,
   onFormTextNodeClick,
-  onFormMenuNodeClick
+  onFormMenuNodeClick,
+  onEditorClick
 }: TipTapEditorProps) => {
   const [hasError, setHasError] = useState(false);
   // const [currentColor, setCurrentColor] = useState('');
@@ -70,14 +64,14 @@ const TipTapEditor = ({
       TextStyle,
       FontSize.configure({ types: ['textStyle'] }),
       TextAlign.configure({ types: ['heading', 'paragraph'] }),
-       // 在這裡將 FormTextNode 配置 onFormTextClick
+      // 在這裡將 FormTextNode 配置 onFormTextClick
       FormTextNode.configure({
-        onFormTextClick: (params) => {
+        onFormTextClick: (params: { pos: number; name: string; default: string }) => {
           onFormTextNodeClick?.(params)
         },
       }),
       FormMenuNode.configure({
-        onFormMenuClick: (params) => {
+        onFormMenuClick: (params: FormMenuData) => {
           onFormMenuNodeClick?.(params)
         },
       }),
@@ -233,6 +227,7 @@ const TipTapEditor = ({
         editor={editor}
         className={`border tiptap-container ${hasError ? 'border-red-500' : 'border-gray-300'}`}
         style={{ height }}
+        onClick={onEditorClick}
       />
       {hasError && <div className="text-red-500 text-sm">This field is required.</div>}
     </div>

@@ -1,7 +1,7 @@
 import { Handle, Position, useUpdateNodeInternals, useStore, useReactFlow } from '@xyflow/react';
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, memo } from 'react';
 import { MdSend } from "react-icons/md";
-import TextContentDialog from './ui/textContentDialog'; // 引入 CustomDialog 組件
+import TextContentDialog from './UI/textContentDialog'; // 引入 CustomDialog 組件
 import ReactMarkdown from 'react-markdown';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useSnippetInsertion } from '@/lib/useSnippetInsertion'
@@ -21,7 +21,7 @@ const handleStyle = {
   height: 10,         // Custom height
 };
 
-export default function CustomNode({ data }: CustomNodeData) {
+const AIPromptNode = ({ data }: CustomNodeData)  => {
   const { setNodes, deleteElements, getNodes, addNodes } = useReactFlow();
   const [systemPrompt, setSystemPrompt] = useState(data.systemPrompt || '');
   const [userPrompt, setUserPrompt] = useState(data.userPrompt || '');
@@ -106,48 +106,48 @@ export default function CustomNode({ data }: CustomNodeData) {
   };
 
   // 更新 systemPrompt 的處理函數
-  const handleSystemPromptChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    const newValue = e.target.value;
-    setSystemPrompt(newValue);
+  // const handleSystemPromptChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+  //   const newValue = e.target.value;
+  //   setSystemPrompt(newValue);
 
-    // 更新節點數據
-    setNodes((nodes) => {
-      return nodes.map((node) => {
-        if (node.id === data.id) {
-          return {
-            ...node,
-            data: {
-              ...node.data,
-              systemPrompt: newValue,
-            },
-          };
-        }
-        return node;
-      });
-    });
-  };
+  //   // 更新節點數據
+  //   setNodes((nodes) => {
+  //     return nodes.map((node) => {
+  //       if (node.id === data.id) {
+  //         return {
+  //           ...node,
+  //           data: {
+  //             ...node.data,
+  //             systemPrompt: newValue,
+  //           },
+  //         };
+  //       }
+  //       return node;
+  //     });
+  //   });
+  // };
 
   // 更新 userPrompt 的處理函數
-  const handleUserPromptChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    const newValue = e.target.value;
-    setUserPrompt(newValue);
+  // const handleUserPromptChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+  //   const newValue = e.target.value;
+  //   setUserPrompt(newValue);
 
-    // 更新節點數據
-    setNodes((nodes) => {
-      return nodes.map((node) => {
-        if (node.id === data.id) {
-          return {
-            ...node,
-            data: {
-              ...node.data,
-              userPrompt: newValue,
-            },
-          };
-        }
-        return node;
-      });
-    });
-  };
+  //   // 更新節點數據
+  //   setNodes((nodes) => {
+  //     return nodes.map((node) => {
+  //       if (node.id === data.id) {
+  //         return {
+  //           ...node,
+  //           data: {
+  //             ...node.data,
+  //             userPrompt: newValue,
+  //           },
+  //         };
+  //       }
+  //       return node;
+  //     });
+  //   });
+  // };
 
   // 添加 result 的處理函數
   const handleResultChange = (newResult: string) => {
@@ -368,3 +368,6 @@ export default function CustomNode({ data }: CustomNodeData) {
     </div>
   );
 }
+AIPromptNode.displayName = 'AIPromptNode';
+
+export default memo(AIPromptNode);

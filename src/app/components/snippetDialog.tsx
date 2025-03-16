@@ -1,14 +1,14 @@
 'use client';
-
+import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { useSnippets } from '@/contexts/SnippetsContext';
-import { useState, useEffect } from 'react';
+import { useSnippetStore } from "@/stores/snippet";
+
 
 interface FormField {
   id: string;  // 新增 id 欄位
   label: string;
-  defaultValue: string;
+  default: string;
   currentValue: string;
 }
 
@@ -19,7 +19,8 @@ interface ContentSegment {
 }
 
 const SnippetDialog = () => {
-  const { isDialogOpen, setIsDialogOpen, matchedSnippet, setMatchedSnippet } = useSnippets();
+  // 改用 useSnippetStore 取得 UI 狀態與操作方法
+  const { isDialogOpen, setIsDialogOpen, matchedSnippet, setMatchedSnippet } = useSnippetStore();
   const [formFields, setFormFields] = useState<{ [key: string]: FormField }>({});
   const [contentSegments, setContentSegments] = useState<ContentSegment[]>([]);
 
@@ -62,8 +63,8 @@ const SnippetDialog = () => {
           newFormFields[fieldId] = {
             id: fieldId,
             label: span.getAttribute('label') || '',
-            defaultValue: span.getAttribute('defaultvalue') || '',
-            currentValue: span.getAttribute('defaultvalue') || ''
+            default: span.getAttribute('default') || '',
+            currentValue: span.getAttribute('default') || ''
           };
 
           // 添加字段標記
@@ -158,8 +159,7 @@ const SnippetDialog = () => {
     <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
       <DialogContent className="bg-white">
         <DialogTitle>Insert text field</DialogTitle>
-        <DialogDescription className='hidden'>
-        </DialogDescription>
+        <DialogDescription className="hidden"></DialogDescription>
         <div className="p-4">
           <div className="mb-4">
             <h3 className="text-lg font-medium">Insert Snippet</h3>
@@ -168,9 +168,7 @@ const SnippetDialog = () => {
             </div>
           </div>
           <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={handleCancel}>
-              Cancel
-            </Button>
+            <Button variant="outline" onClick={handleCancel}>Cancel</Button>
             <Button onClick={handleInsert}>Insert</Button>
           </div>
         </div>

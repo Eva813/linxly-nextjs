@@ -8,7 +8,7 @@ const handleStyle = {
   height: 10,         // Custom height
 };
 
-function FileUploadNode({ data, id }: NodeProps) {
+function FileUploadNode({ id }: NodeProps) {
   const [fileName, setFileName] = useState<string>('');
   const [fileContent, setFileContent] = useState<string>('');
   const { setNodes } = useReactFlow();

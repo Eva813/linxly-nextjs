@@ -10,21 +10,21 @@ interface InsertTextFieldDialogProps {
   onInsert: (label: string, defaultValue: string) => void;
   // 如果是編輯，會帶入既有數值
   defaultLabel?: string
-  defaultDefaultValue?: string
+  defaultdefault?: string
 }
 
 export default function InsertTextFieldDialog({ isOpen, onClose, onInsert, defaultLabel = '',
-  defaultDefaultValue = '', }: InsertTextFieldDialogProps) {
+  defaultdefault = '', }: InsertTextFieldDialogProps) {
   const [label, setLabel] = useState(defaultLabel)
-  const [defaultValue, setDefaultValue] = useState('')
+  const [defaultValue, setdefault] = useState('')
 
   // Dialog 每次打開時，重設 state
   useEffect(() => {
     if (isOpen) {
       setLabel(defaultLabel)
-      setDefaultValue(defaultDefaultValue)
+      setdefault(defaultdefault)
     }
-  }, [isOpen, defaultLabel, defaultDefaultValue])
+  }, [isOpen, defaultLabel, defaultdefault])
 
   const handleInsert = () => {
     onInsert(label, defaultValue)
@@ -45,7 +45,7 @@ export default function InsertTextFieldDialog({ isOpen, onClose, onInsert, defau
           </div>
           <div>
             <label className="block text-sm font-medium mb-1">Default (optional)</label>
-            <Input value={defaultValue} onChange={(e) => setDefaultValue(e.target.value)} placeholder="Default value..." />
+            <Input value={defaultValue} onChange={(e) => setdefault(e.target.value)} placeholder="Default value..." />
           </div>
         </div>
         <DialogFooter>

@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useSnippets } from '@/contexts/SnippetsContext';
+import { useSnippetStore } from "@/stores/snippet";
 
 export function useSnippetTrigger() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -15,17 +15,17 @@ export function useSnippetTrigger() {
     targetElement: null
   });
 
-  const { folders } = useSnippets();
+  const { folders } = useSnippetStore ();
 
   useEffect(() => {
     // 找到符合 shortcut 的 snippet
-    const findSnippetByShortcut = (shortcut: string) => {
-      for (const folder of folders) {
-        const snippet = folder.snippets.find(s => s.shortcut === shortcut);
-        if (snippet) return snippet;
-      }
-      return null;
-    };
+    // const findSnippetByShortcut = (shortcut: string) => {
+    //   for (const folder of folders) {
+    //     const snippet = folder.snippets.find(s => s.shortcut === shortcut);
+    //     if (snippet) return snippet;
+    //   }
+    //   return null;
+    // };
 
     // 監聽所有輸入事件
     const handleInput = (e: Event) => {

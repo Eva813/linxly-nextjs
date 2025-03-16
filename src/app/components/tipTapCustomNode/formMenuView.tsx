@@ -1,26 +1,55 @@
 // FormMenuView.tsx
-import React, { useCallback, MouseEvent } from 'react'
+import React, { useCallback, MouseEvent, useMemo } from 'react'
 import { NodeViewWrapper, NodeViewProps } from '@tiptap/react'
+import { DynamicChip } from './dynamicChip'
+import { FormMenuClickHandler } from '@/types/snippets'
 
-interface FormMenuNodeOptions {
-  onFormMenuClick?: (data: {
-    pos: number
-    name: string
-    defaultValue: string | string[]
-    options: string
-    multiple: boolean
-  }) => void
-}
 
 type FormMenuViewProps = NodeViewProps & {
   extension: {
-    options?: FormMenuNodeOptions
+    options?: FormMenuClickHandler
   }
 }
 
 export default function FormMenuView(props: FormMenuViewProps) {
   const { node, getPos, extension } = props
-  const { name, defaultValue, options, multiple } = node.attrs
+  const snippetData = node.attrs.snippetData
+  console.log('FormMenuView rendering with snippetData:', snippetData);
+  // 轉換 attributes 陣列成物件形式
+  const chipData = (snippetData.attributes as Array<{ name: string; value: string }>).reduce<Record<string, string>>((acc, cur) => {
+    acc[cur.name] = cur.value
+    return acc
+  }, {})
+
+  // 從 attributes 陣列中找出對應的欄位，這會影響傳入 EditPanel 的資料
+  const nameAttr = snippetData.attributes.find((attr: { name: string }) => attr.name === 'name')
+  const defaultAttr = snippetData.attributes.find((attr: { name: string }) => attr.name === 'default')
+  const multipleAttr = snippetData.attributes.find(
+    (attr: { name: string }) => attr.name === 'multiple'
+  )
+  const optionAttr = snippetData.attributes.find((attr: { name: string }) => attr.name === 'options')
+
+
+  const name = nameAttr ? nameAttr.value : ''
+  const defaultValue = defaultAttr ? defaultAttr.value : ''
+  // 這邊做個保護，如果沒找到 multipleAttr，就預設 false
+  const multiple = multipleAttr ? Boolean(multipleAttr.value) : false
+  const options = useMemo(() => {
+    if (!optionAttr) return [];
+
+    // 如果 value 已經是陣列，直接使用
+    if (Array.isArray(optionAttr.value)) {
+      return optionAttr.value;
+    }
+  }, [optionAttr?.value]);
+
+  const resolvedDefaultValue = useMemo(() => {
+    if (multiple) {
+      return Array.isArray(defaultValue) ? defaultValue : [defaultValue]
+    } else {
+      return [defaultValue]
+    }
+  }, [defaultValue, multiple]);
 
   const handleClick = useCallback(
     (event: MouseEvent<HTMLSpanElement>) => {
@@ -29,57 +58,35 @@ export default function FormMenuView(props: FormMenuViewProps) {
 
       if (!getPos) return
       const pos = getPos()
-
+      console.log('在 formMenuView: nameAttr', nameAttr, 'defaultAttr', defaultAttr, 'multipleAttr', multipleAttr, ' optionAttr', options)
       if (extension?.options?.onFormMenuClick) {
         extension.options.onFormMenuClick({
           pos,
           name,
-          defaultValue,
-          options,
+          default: resolvedDefaultValue,
           multiple,
+          options: options,
         })
       }
     },
-    [getPos, extension, name, defaultValue, options, multiple],
+    [extension, getPos, name, defaultValue, multiple, options],
   )
 
   return (
     <NodeViewWrapper
       as="span"
-      // 移除原本的 CSS，直接改用 Tailwind
-      className="form-menu-field"
+      className="text-sm"
       data-type="formmenu"
       role="button"
       contentEditable={false}
       onClick={handleClick}
+      data-snippet={JSON.stringify(node.attrs.snippetData)}
     >
-      <svg
-        className="w-5 h-5 text-gray-400 mr-2"
-        fill="none"
-        stroke="currentColor"
-        viewBox="0 0 24 24"
-        aria-hidden="true"
-      >
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth={2}
-          d="M3 18h13v-2H3zm0-5h10v-2H3zm0-7v2h13V6zm18 9.59L17.42 12 21 8.41 19.59 7l-5 5 5 5z"
-        />
-      </svg>
-
-      <span className="text-sm font-medium text-gray-700">
-        Options: <b>{options}</b>
-      </span>
-      <span className="text-sm font-medium text-gray-700 ml-2">
-        Name: <b>{name}</b>
-      </span>
-      <span className="text-sm font-medium text-gray-700 ml-2">
-        Multiple: <b>{multiple.toString()}</b>
-      </span>
-      <span className="text-sm font-medium text-gray-700 ml-2">
-        defaultValue: <b>{defaultValue}</b>
-      </span>
+      <DynamicChip
+        prefix="="
+        data={chipData}
+        onBlockClick={(key, value) => alert(`點擊了區塊：${key} ${value}`)}
+      />
     </NodeViewWrapper>
   )
 }

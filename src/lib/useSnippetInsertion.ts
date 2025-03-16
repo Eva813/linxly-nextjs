@@ -1,5 +1,6 @@
-import { useCallback, useEffect, RefObject } from 'react';
-import { useSnippets } from '@/contexts/SnippetsContext';
+import { useCallback, useEffect, RefObject, useMemo } from 'react';
+import { useSnippetStore } from "@/stores/snippet";
+import { Snippet } from '@/types/snippets'
 
 interface UseSnippetInsertionProps {
   inputRef: RefObject<HTMLInputElement | HTMLTextAreaElement | null>;
@@ -8,56 +9,68 @@ interface UseSnippetInsertionProps {
 
 export const useSnippetInsertion = ({ inputRef, onInsert }: UseSnippetInsertionProps) => {
   const {
+    folders,
     matchedSnippet,
     setMatchedSnippet,
-    snippetMap,
-    setIsDialogOpen, // 添加這個
-  } = useSnippets();
+    setIsDialogOpen, // UI 狀態控制
+  } = useSnippetStore();
+
+    // 根據 folders 計算 snippetMap
+    const snippetMap = useMemo(() => {
+      const map = new Map<string, Snippet>();
+      folders.forEach(folder => {
+        folder.snippets.forEach(snippet => {
+          // 你可以根據需求過濾或加工，例如只處理以 "/" 開頭的 shortcut
+          map.set(snippet.shortcut, snippet);
+        });
+      });
+      return map;
+    }, [folders]);
 
   const handleKeyUp = useCallback((e: KeyboardEvent) => {
     const target = e.target as HTMLInputElement | HTMLTextAreaElement;
-    if (!target || (target !== inputRef.current)) return;
+    if (!target || target !== inputRef.current) return;
 
     const cursorPosition = target.selectionStart || 0;
     const textBeforeCursor = target.value.substring(0, cursorPosition);
 
-    // Find matching snippet
-    let longestMatch = null;
+    // 找出符合條件的 snippet (以 shortcut 為依據)
+    let longestMatch: Snippet | null = null;
     for (const [shortcut, snippet] of snippetMap.entries()) {
       if (textBeforeCursor.endsWith(shortcut)) {
         if (!longestMatch || shortcut.length > longestMatch.shortcut.length) {
           longestMatch = {
             ...snippet,
-            shortcut // 確保 shortcut 也被傳遞
+            shortcut, // 保證 shortcut 也被傳遞
           };
         }
       }
     }
 
     if (longestMatch) {
-      // 檢查是否包含表單欄位
+      // 檢查內容中是否包含表單欄位
       const hasFormFields = longestMatch.content.includes('data-type="formtext"');
 
       if (hasFormFields) {
-        // 如果有表單欄位，顯示 dialog
+        // 若有表單欄位，顯示對話框
         setMatchedSnippet({
           content: longestMatch.content,
           targetElement: target,
           insert: false,
-          shortcut: longestMatch.shortcut
+          shortcut: longestMatch.shortcut,
         });
         setIsDialogOpen(true);
       } else {
-        // 如果沒有表單欄位，直接插入
+        // 若沒有表單欄位，直接標記插入
         setMatchedSnippet({
           content: longestMatch.content,
           targetElement: target,
           insert: true,
-          shortcut: longestMatch.shortcut
+          shortcut: longestMatch.shortcut,
         });
       }
     }
-  }, [inputRef, snippetMap]);
+  }, [inputRef, snippetMap, setMatchedSnippet, setIsDialogOpen]);
 
   useEffect(() => {
     const currentInput = inputRef.current;
@@ -70,13 +83,10 @@ export const useSnippetInsertion = ({ inputRef, onInsert }: UseSnippetInsertionP
   useEffect(() => {
     if (matchedSnippet.insert && inputRef.current === matchedSnippet.targetElement) {
       const input = inputRef.current;
-      const currentValue = input?.value || '';
       if (!input) return;
+      const currentValue = input.value || '';
       const cursorPosition = input.selectionStart || 0;
-
       const shortcutStart = currentValue.lastIndexOf(matchedSnippet.shortcut, cursorPosition);
-      // 計算 shortcut 結束的位置
-      // const shortcutEnd = shortcutStart + matchedSnippet.shortcut.length;
 
       console.log('Shortcut start position:', shortcutStart);
       if (shortcutStart !== -1) {
@@ -88,20 +98,19 @@ export const useSnippetInsertion = ({ inputRef, onInsert }: UseSnippetInsertionP
 
         onInsert(newValue);
 
-        // 直接設置光標位置
+        // 設定新光標位置
         const newPosition = shortcutStart + matchedSnippet.content.length;
         input.focus();
         input.setSelectionRange(newPosition, newPosition);
 
-        // Reset matched snippet
+        // 重設 matchedSnippet 狀態
         setMatchedSnippet({
           content: '',
           targetElement: null,
           insert: false,
-          shortcut: ''
+          shortcut: '',
         });
       }
     }
   }, [matchedSnippet, inputRef, onInsert, setMatchedSnippet]);
-
 };

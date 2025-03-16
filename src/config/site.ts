@@ -10,12 +10,12 @@ export const siteConfig = {
       href: "/",
     },
     {
-      title: "Workspace",
-      href: "/workspace"
-    },
-    {
       title: "Snippets",
       href: "/snippets"
+    },
+    {
+      title: "Workspace",
+      href: "/workspace"
     }
   ],
   links: {

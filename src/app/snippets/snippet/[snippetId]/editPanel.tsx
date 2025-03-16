@@ -15,10 +15,25 @@ export interface FormFieldSpec {
   constant?: boolean;
 }
 
-export interface FormTextSpec {
+// export interface FormTextSpec {
+//   positional: number[];
+//   named: Record<string, FormFieldSpec>;
+// }
+
+// 基礎規格介面
+export interface BaseFormSpec {
   positional: number[];
   named: Record<string, FormFieldSpec>;
 }
+
+// // 讓特定規格型別擴展基礎介面
+// export interface FormTextSpec extends BaseFormSpec {
+//   // 特定於 FormTextSpec 的屬性（如果有的話）
+// }
+
+// export interface FormMenuSpec extends BaseFormSpec {
+//   // 特定於 FormMenuSpec 的屬性（如果有的話）
+// }
 
 export interface OrganizedField {
   value: string;
@@ -35,7 +50,7 @@ type CleanedInputInfo = Omit<InputInfo, 'type' | 'pos'>;
 
 interface SidebarProps {
   editInfo: EditInfo;
-  onChange: (key: string, newValue: string) => void;
+  onChange: (updates: { [key: string]: string | string[] }) => void;
 }
 
 /**
@@ -45,45 +60,71 @@ interface SidebarProps {
  */
 type SpecMapping = {
   [key: string]: {
-    spec: FormTextSpec;
+    spec: BaseFormSpec;  // 使用基礎規格介面
     transform?: (input: InputInfo) => InputInfo;
   }
 };
 
 const specMapping: SpecMapping = {
   formtext: { spec: formTextSpec },
-  formmenu: {
-    spec: formMenuSpec,
-    // transform: (input: InputInfo) => {
-    //   // 將傳入的 options 陣列轉換成逗號分隔的字串，對應 spec 中定義的 "option" 欄位
-    //   if (input.options) {
-    //     return { ...input, options: Array.isArray(input.options) ? input.options.join(",") : input.options };
-    //   }
-    //   return input;
-    // }
-  },
+  formmenu: { spec: formMenuSpec },
   // 未來可加入其他 type 的 mapping
 };
 
 export default function EditPanel({ editInfo, onChange }: SidebarProps) {
   console.log('edit', editInfo)
   // 先定義所有的 Hook（這裡 useCallback 必定會被呼叫）
-  const handleChange = useCallback((key: string, newValue: string) => {
-    console.log('Updating field:', key, 'with new value:', newValue);
-    onChange(key, newValue);
+  const handleChange = useCallback((updates: { [key: string]: string | string[] }) => {
+    console.log('批次更新:', updates);
+    onChange(updates);
   }, [onChange]);
-  //   const handleChange = useCallback((changes: { [key: string]: string }) => {
-  //     console.log('changes', changes);
-  //   Object.entries(changes).forEach(([key, newValue]) => {
-  //     console.log('Updating field:', key, 'with new value:', newValue);
-  //     onChange(key, newValue);
-  //   });
-  // }, [onChange]);
+
+  // 處理 OptionsField 的值變更
+  const handleOptionsChange = useCallback((newValue: {
+    values: string[];
+    defaultValue: string | string[];
+  }) => {
+    console.log('newValue', newValue);
+
+    // 組合更新物件，保留 options 為陣列型態
+    const updatedFields: { [key: string]: string | string[] } = {};
+
+    // 保持 options 為陣列
+    const newOptionsValue = newValue.values || [];
+    if (JSON.stringify(newOptionsValue) !== JSON.stringify(editInfo.options)) {
+      updatedFields.options = newOptionsValue;
+    }
+
+    // 處理 default 欄位：多選時回傳陣列，單選時轉成字串
+    if (newValue.defaultValue !== undefined) {
+      if (editInfo.multiple) {
+        // 多選模式，直接比對陣列內容
+        if (JSON.stringify(newValue.defaultValue) !== JSON.stringify(editInfo.default)) {
+          updatedFields.default = newValue.defaultValue;
+        }
+      } else {
+        // 單選模式，轉為字串後比對
+        const newDefaultString = newValue.defaultValue.toString();
+        const currentDefaultString =
+          typeof editInfo.default === 'string'
+            ? editInfo.default
+            : JSON.stringify(editInfo.default);
+        if (newDefaultString !== currentDefaultString) {
+          updatedFields.default = newDefaultString;
+        }
+      }
+    }
+
+    if (Object.keys(updatedFields).length > 0) {
+      console.log('進行批次更新:', updatedFields);
+      handleChange(updatedFields);
+    }
+  }, [editInfo.default, editInfo.multiple, editInfo.options, handleChange]);
 
   // 定義一個輔助函式，依據 Spec 與 input 數據建立 OrganizedField 物件
-  const organizeFormInput = (
+  const organizeFormInput = <T extends BaseFormSpec>(
     input: CleanedInputInfo,
-    spec: FormTextSpec
+    spec: T
   ): Record<string, OrganizedField> => {
     const organizedInput: Record<string, OrganizedField> = {};
 
@@ -117,6 +158,7 @@ export default function EditPanel({ editInfo, onChange }: SidebarProps) {
   // formmnue 組合更新會有錯誤
   console.log('organizedEditInfo', organizedEditInfo);
 
+
   return (
     <div>
       <h2 className="font-bold px-4 py-2">Edit Panel</h2>
@@ -128,7 +170,9 @@ export default function EditPanel({ editInfo, onChange }: SidebarProps) {
           description={description}
           type={editInfo.type}
           value={value}
-          onChange={handleChange}
+          onChange={(key, newValue) => {
+            handleChange({ [key]: newValue });
+          }}
         />
       ))} */}
       {/* {Object.entries(organizedEditInfo).map(([key, { value, description }]) => {
@@ -155,19 +199,10 @@ export default function EditPanel({ editInfo, onChange }: SidebarProps) {
 
       <OptionsField
         label="Values"
-        multiple={editInfo.multiple}
-        values={editInfo.options}
+        multiple={editInfo.multiple ?? false}
+        values={Array.isArray(editInfo.options) ? editInfo.options : []}
         defaultValue={editInfo.default}
-        onChange={(newValue) => {
-          console.log('newValue', newValue);
-          // 現在只更新收到的屬性，不一次性全部更新
-          if (newValue.values) {
-            handleChange('options', newValue.values);
-          }
-          if (newValue.defaultValue !== undefined) {
-            handleChange('default', newValue.defaultValue);
-          }
-        }}
+        onChange={handleOptionsChange}
       />
     </div>
   );

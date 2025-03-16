@@ -20,7 +20,6 @@ export default function FormMenuView(props: FormMenuViewProps) {
     acc[cur.name] = cur.value
     return acc
   }, {})
-  console.log('chipData', chipData)
 
   // 從 attributes 陣列中找出對應的欄位，這會影響傳入 EditPanel 的資料
   const nameAttr = snippetData.attributes.find((attr: { name: string }) => attr.name === 'name')
@@ -35,19 +34,21 @@ export default function FormMenuView(props: FormMenuViewProps) {
   const defaultValue = defaultAttr ? defaultAttr.value : ''
   // 這邊做個保護，如果沒找到 multipleAttr，就預設 false
   const multiple = multipleAttr ? Boolean(multipleAttr.value) : false
-  // 假設 option 為逗號分隔的字串，拆分成陣列
-  console.log('optionAttr', optionAttr)
   const options = useMemo(() => {
-    return optionAttr && typeof optionAttr.value === 'string'
-      ? optionAttr.value.split(',').map((item: string) => item.trim())
-      : [];
+    if (!optionAttr) return [];
+
+    // 如果 value 已經是陣列，直接使用
+    if (Array.isArray(optionAttr.value)) {
+      return optionAttr.value;
+    }
   }, [optionAttr?.value]);
 
   const resolvedDefaultValue = useMemo(() => {
-    if (multiple && typeof defaultValue === 'string') {
-      return defaultValue.split(',').map((item: string) => item.trim());
+    if (multiple) {
+      return Array.isArray(defaultValue) ? defaultValue : [defaultValue]
+    } else {
+      return [defaultValue]
     }
-    return [defaultValue];
   }, [defaultValue, multiple]);
 
   const handleClick = useCallback(
@@ -57,14 +58,14 @@ export default function FormMenuView(props: FormMenuViewProps) {
 
       if (!getPos) return
       const pos = getPos()
-      console.log(' nameAttr', nameAttr, 'defaultAttr', defaultAttr, 'multipleAttr', multipleAttr, ' optionAttr', optionAttr)
+      console.log('在 formMenuView: nameAttr', nameAttr, 'defaultAttr', defaultAttr, 'multipleAttr', multipleAttr, ' optionAttr', options)
       if (extension?.options?.onFormMenuClick) {
         extension.options.onFormMenuClick({
           pos,
           name,
           default: resolvedDefaultValue,
           multiple,
-          options,
+          options: options,
         })
       }
     },

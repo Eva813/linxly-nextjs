@@ -209,11 +209,9 @@ const SnippetPage = ({ params }: SnippetPageProps) => {
           attrs: {
             snippetData: buildFormData(formMenuSpec, 'formmenu', {
               name: name,
-              options: values.join(","),
+              options: values,
               multiple: multiple,
-              default: Array.isArray(selectedValues)
-                ? selectedValues.join(",")
-                : selectedValues,
+              default: selectedValues,
             }),
           },
         })
@@ -264,24 +262,11 @@ const SnippetPage = ({ params }: SnippetPageProps) => {
       getAttributes: (editInfo, key, newValue) => (
         console.log('editInfo change ', key, newValue),
         {
-
           snippetData: buildFormData(formMenuSpec, 'formmenu', {
             name: key === "name" ? newValue as string : editInfo.name,
-            options: key === "options"
-              ? Array.isArray(newValue)
-                ? newValue.join(",")
-                : newValue
-              : Array.isArray(editInfo.options)
-                ? editInfo.options.join(",")
-                : editInfo.options,
+            options: key === "options" ? newValue : editInfo.options,
             multiple: editInfo.multiple,
-            default: key === "default"
-              ? Array.isArray(newValue)
-                ? newValue.join(",")
-                : newValue
-              : Array.isArray(editInfo.default)
-                ? editInfo.default.join(",")
-                : editInfo.default,
+            default: key === "default" ? newValue : editInfo.default,
           }),
         }),
       getNodeType: () => "formmenu",

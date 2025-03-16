@@ -3,7 +3,7 @@ import EditPanelField from '@/app/snippets/components/editPanelField'
 import { formTextSpec } from '@/lib/specs/formTextSpec'
 import { formMenuSpec } from '@/lib/specs/formMenuSpec'
 import { InputInfo, EditInfo } from '@/types/snippets'
-import{ BooleanField} from '@/app/snippets/components/booleanField'
+import { BooleanField } from '@/app/snippets/components/booleanField'
 import { OptionsField } from '@/app/snippets/components/optionsField'
 
 export interface FormFieldSpec {
@@ -72,13 +72,13 @@ export default function EditPanel({ editInfo, onChange }: SidebarProps) {
     console.log('Updating field:', key, 'with new value:', newValue);
     onChange(key, newValue);
   }, [onChange]);
-//   const handleChange = useCallback((changes: { [key: string]: string }) => {
-//     console.log('changes', changes);
-//   Object.entries(changes).forEach(([key, newValue]) => {
-//     console.log('Updating field:', key, 'with new value:', newValue);
-//     onChange(key, newValue);
-//   });
-// }, [onChange]);
+  //   const handleChange = useCallback((changes: { [key: string]: string }) => {
+  //     console.log('changes', changes);
+  //   Object.entries(changes).forEach(([key, newValue]) => {
+  //     console.log('Updating field:', key, 'with new value:', newValue);
+  //     onChange(key, newValue);
+  //   });
+  // }, [onChange]);
 
   // 定義一個輔助函式，依據 Spec 與 input 數據建立 OrganizedField 物件
   const organizeFormInput = (
@@ -152,21 +152,21 @@ export default function EditPanel({ editInfo, onChange }: SidebarProps) {
         value={editInfo.multiple}
         onChange={(newValue) => handleChange('static', newValue.toString())}
       /> */}
-      
+
       <OptionsField
         label="Values"
         multiple={editInfo.multiple}
         values={editInfo.options}
         defaultValue={editInfo.default}
-          onChange={(newValue) => {
-            console.log('newValue', newValue);
-            // 現在只更新收到的屬性，不一次性全部更新
-            if (newValue.values) {
-              handleChange('options', newValue.values);
-            }
-            if (newValue.defaultValue !== undefined) {
-              handleChange('default', newValue.defaultValue);
-            }
+        onChange={(newValue) => {
+          console.log('newValue', newValue);
+          // 現在只更新收到的屬性，不一次性全部更新
+          if (newValue.values) {
+            handleChange('options', newValue.values);
+          }
+          if (newValue.defaultValue !== undefined) {
+            handleChange('default', newValue.defaultValue);
+          }
         }}
       />
     </div>

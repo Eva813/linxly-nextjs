@@ -25,6 +25,7 @@ export function OptionsField({
   defaultValue,
   onChange,
 }: OptionsFieldProps) {
+  console.log('OptionsField rendering with values:', values, 'defaultValue:', defaultValue)
   const [localValues, setLocalValues] = useState<string[]>(values)
   const [counter, setCounter] = useState(values.length);
 
@@ -46,28 +47,44 @@ export function OptionsField({
     setCounter(newCounter);
     const newValues = [...localValues, `Choice ${newCounter}`];
     setLocalValues(newValues);
-    onChange({ values: newValues })
+    onChange({ values: newValues, defaultValue: selectedValues })
   }
 
+  // const handleRemoveValue = (index: number) => {
+  //   const newValues = localValues.filter((_, i) => i !== index);
+  //   const newSelectedValues = selectedValues.filter((value) => newValues.includes(value));
+  //   setLocalValues(newValues);
+  //   setSelectedValues(newSelectedValues);
+  //   console.log('newValues', newValues, 'newSelectedValues', newSelectedValues)
+  //   onChange({ values: newValues });
+  // }
   const handleRemoveValue = (index: number) => {
     const newValues = localValues.filter((_, i) => i !== index);
     const newSelectedValues = selectedValues.filter((value) => newValues.includes(value));
+
     setLocalValues(newValues);
     setSelectedValues(newSelectedValues);
+
     console.log('newValues', newValues, 'newSelectedValues', newSelectedValues)
-    onChange({ values: newValues });
+
+    // 根據 multiple 屬性決定如何傳遞 defaultValue
+    const updatedDefaultValue = multiple
+      ? newSelectedValues
+      : (newSelectedValues.length > 0 ? newSelectedValues[0] : "");
+
+    onChange({ values: newValues, defaultValue: updatedDefaultValue });
   }
 
   const handleChangeValue = (index: number, newVal: string) => {
     const newValues = [...localValues]
     newValues[index] = newVal
     setLocalValues(newValues)
-    onChange({ defaultValue: selectedValues })
+    onChange({ defaultValue: selectedValues, values: newValues })
   }
 
   const handleSelectSingle = (value: string) => {
     setSelectedValues([value])
-    onChange({ defaultValue: value })
+    onChange({ defaultValue: value, values: localValues })
   }
 
   const handleToggleMultiple = (value: string) => {

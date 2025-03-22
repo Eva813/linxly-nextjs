@@ -1,11 +1,11 @@
 "use client"
 
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect, useCallback } from 'react';
 import { Checkbox } from "@/components/ui/checkbox"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { Plus, Trash, Check, X } from "lucide-react"
+import { Plus, Trash, Check } from "lucide-react"
 
 interface OptionsFieldProps {
   title: string
@@ -44,6 +44,38 @@ export function OptionsField({
     multiple ? (initSelected as string[]) : [initSelected as string]
   )
 
+  // 根據 multiple 決定處理邏輯
+  const normalizeDefaultValue = useCallback(() => {
+    if (multiple) {
+      // 如果 defaultValue 是陣列就直接使用，否則包成陣列（並過濾掉 falsy 值，如 null/undefined/空字串）
+      return Array.isArray(defaultValue)
+        ? defaultValue
+        : [defaultValue].filter(Boolean);
+    }
+    // 若 defaultValue 為非空陣列，取第一個值作為預設
+    if (Array.isArray(defaultValue) && defaultValue.length > 0) {
+      return [defaultValue[0]];
+    }
+
+    if (typeof defaultValue === 'string') {
+      return [defaultValue];
+    }
+
+    return [""];
+  }, [multiple, defaultValue]);
+
+  // 監聽 multiple 屬性的變化
+  useEffect(() => {
+    const newSelectedValues = normalizeDefaultValue();
+    setSelectedValues(newSelectedValues);
+
+    const updatedDefaultValue = multiple
+      ? newSelectedValues
+      : newSelectedValues[0] || "";
+
+    onChange({ values: localValues, defaultValue: updatedDefaultValue });
+  }, [normalizeDefaultValue, localValues, onChange, multiple]);
+
   const handleAddValue = () => {
     const newCounter = counter + 1;
     setCounter(newCounter);
@@ -52,23 +84,12 @@ export function OptionsField({
     onChange({ values: newValues, defaultValue: selectedValues })
   }
 
-  // const handleRemoveValue = (index: number) => {
-  //   const newValues = localValues.filter((_, i) => i !== index);
-  //   const newSelectedValues = selectedValues.filter((value) => newValues.includes(value));
-  //   setLocalValues(newValues);
-  //   setSelectedValues(newSelectedValues);
-  //   console.log('newValues', newValues, 'newSelectedValues', newSelectedValues)
-  //   onChange({ values: newValues });
-  // }
   const handleRemoveValue = (index: number) => {
     const newValues = localValues.filter((_, i) => i !== index);
     const newSelectedValues = selectedValues.filter((value) => newValues.includes(value));
 
     setLocalValues(newValues);
     setSelectedValues(newSelectedValues);
-
-    console.log('newValues', newValues, 'newSelectedValues', newSelectedValues)
-
     // 根據 multiple 屬性決定如何傳遞 defaultValue
     const updatedDefaultValue = multiple
       ? newSelectedValues
@@ -78,6 +99,7 @@ export function OptionsField({
   }
 
   const handleChangeValue = (index: number, newVal: string) => {
+    console.log('Changing value at index:', index, 'to:', newVal);
     const newValues = [...localValues]
     newValues[index] = newVal
     setLocalValues(newValues)
@@ -104,13 +126,6 @@ export function OptionsField({
           <Check className="h-5 w-5 text-gray-500" />
           <span className="font-medium text-gray-800">{title}</span>
         </div>
-        <button
-          type="button"
-          aria-label="Close"
-          className="text-gray-500 hover:text-gray-700"
-        >
-          <X className="h-4 w-4" />
-        </button>
       </div>
 
       {/* 描述文字 */}

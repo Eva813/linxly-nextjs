@@ -6,9 +6,7 @@ import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
 
 interface BooleanFieldProps {
-  /** 例如 "multiple" */
   title: string
-  /** 例如 "Whether the user can select multiple items" */
   description?: string
   /** true 代表 Yes, false 代表 No */
   value: boolean
@@ -16,9 +14,6 @@ interface BooleanFieldProps {
   onChange: (newValue: boolean) => void
 }
 
-/**
- * 類似 Text Blaze 面板中的 Boolean 切換元件
- */
 export function BooleanField({
   title,
   description,

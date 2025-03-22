@@ -133,7 +133,7 @@ const Sidebar = () => {
   };
 
   return (
-    <div className="w-1/4 h-screen p-4 flex flex-col border-r border-gray-300">
+    <div className="w-1/4 p-4 border-r border-gray-300 h-full overflow-y-auto">
       <div className="grid grid-cols-2 gap-x-4 mb-4">
         <Button onClick={handleAddFolder}>
           <FaFolderPlus />
@@ -144,7 +144,7 @@ const Sidebar = () => {
           Add Snippet
         </Button>
       </div>
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1">
         <ul className="dark:text-gray-200">
           {folders.map((folder) => (
             <FolderItem

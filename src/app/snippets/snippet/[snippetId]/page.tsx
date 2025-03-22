@@ -316,8 +316,8 @@ const SnippetPage = ({ params }: SnippetPageProps) => {
   };
 
   return (
-    <div className="flex">
-      <div className="flex-[3] pr-4">
+    <div className="flex h-full">
+      <div className="flex-[3] pr-4 py-4 border-r border-gray-200">
         <div className="grid grid-cols-2 gap-x-4 mb-4">
           <div className="relative col-span-1">
             <Input
@@ -353,7 +353,7 @@ const SnippetPage = ({ params }: SnippetPageProps) => {
           Save
         </Button>
       </div>
-      <div className="flex-1 border-l">
+      <div className="flex-1 overflow-y-auto">
         {isEditPanelVisible && activeEditInfo ? (
           <EditPanel editInfo={activeEditInfo} onChange={handleTextInputChange} />
         ) : (

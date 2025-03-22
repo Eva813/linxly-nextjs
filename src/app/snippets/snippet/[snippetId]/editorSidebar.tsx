@@ -11,8 +11,8 @@ interface SidebarProps {
 const EditorSidebar: React.FC<SidebarProps> = React.memo(({ onInsertTextFieldClick, onInsertMenuFieldClick }) => {
   console.log('EditorSidebar rendered');
   return (
-    <div>
-      <h2 className="font-bold px-4 py-2">Tools</h2>
+    <>
+      <h2 className="font-bold px-4 pt-4 pb-2">Tools</h2>
       <FormField
         icon={<MdOutlineShortText className="h-8 w-8 text-grey-500" />}
         title="Text field"
@@ -27,7 +27,7 @@ const EditorSidebar: React.FC<SidebarProps> = React.memo(({ onInsertTextFieldCli
         pro={false} // 不顯示 PRO 狀態
         onClick={onInsertMenuFieldClick}
       />
-    </div>
+    </>
   )
 })
 EditorSidebar.displayName = 'EditorSidebar';

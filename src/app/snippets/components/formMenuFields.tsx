@@ -9,17 +9,18 @@ import { organizeFormInput, createOptionsChangeHandler } from '@/lib/utils'
 export const FormMenuFields = ({ editInfo, onChange }: FieldGroupProps) => {
   const organizedFields = organizeFormInput(editInfo, formMenuSpec);
   const handleOptionsChange = createOptionsChangeHandler(editInfo, onChange);
+  console.log('FormMenuFields rendering with editInfo:', organizedFields);
 
   const multipleValue = useMemo(() => {
-    // 確保 editInfo.multiple 有值且能轉換為布林值
-    if (editInfo.multiple === undefined || editInfo.multiple === null) {
+    // 確保 organizedFields.multiple.value 有值且能轉換為布林值
+    if (organizedFields.multiple?.value === undefined || organizedFields.multiple?.value === null) {
       return false;
     }
 
-    return typeof editInfo.multiple === 'string'
-      ? editInfo.multiple === 'true'
-      : Boolean(editInfo.multiple);
-  }, [editInfo.multiple]);
+    return typeof organizedFields.multiple.value === 'string'
+      ? organizedFields.multiple.value === 'true'
+      : Boolean(organizedFields.multiple.value);
+  }, [organizedFields.multiple]);
 
   return (
     <>
@@ -40,7 +41,7 @@ export const FormMenuFields = ({ editInfo, onChange }: FieldGroupProps) => {
       {/* 多選開關 */}
       <BooleanField
         title="multiple"
-        description="是否允許多選項目"
+        description={organizedFields.multiple?.description || "是否允許多選項目"}
         value={multipleValue}
         onChange={(newValue) => {
           console.log('布林切換:', newValue);
@@ -50,7 +51,8 @@ export const FormMenuFields = ({ editInfo, onChange }: FieldGroupProps) => {
       />
       {/* 選項管理欄位 */}
       <OptionsField
-        label="Values"
+        title="options"
+        description={organizedFields.options?.description || "選項"}
         multiple={multipleValue}
         values={Array.isArray(editInfo.options) ? editInfo.options : []}
         defaultValue={editInfo.default}

@@ -20,7 +20,7 @@ export const formMenuSpec = {
       constant: true,
       priority: 1.4,
       placeholder: "yes",
-      "description": "Whether the user can select multiple items"
+      description: "Whether the user can select multiple items"
     },
     options: {
       type: "string",

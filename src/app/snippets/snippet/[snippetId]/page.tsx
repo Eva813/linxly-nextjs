@@ -316,53 +316,49 @@ const SnippetPage = ({ params }: SnippetPageProps) => {
   };
 
   return (
-    <div className="flex">
-      <div className="flex-[3] pr-4">
-        <div className="grid grid-cols-2 gap-x-4 mb-4">
-          <div className="relative col-span-1">
-            <Input
-              className="pl-9"
-              placeholder="Type snippet name..."
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-            />
-            <FaTag className="absolute left-0 top-0 m-2.5 h-4 w-4 text-muted-foreground" />
+    <div className="flex flex-col h-full">
+      <header className="grid grid-cols-[3fr_1fr] mb-4">
+        <div className="grid grid-cols-2 gap-x-4 pr-4">
+          {/** Snippet 名稱與捷徑 **/}
+          <div className="relative">
+            <Input className="pl-9" placeholder="Type snippet name..." value={name} onChange={e => setName(e.target.value)} />
+            <FaTag className="absolute left-2 top-2 h-4 w-4 text-muted-foreground" />
           </div>
-          <div className="relative col-span-1">
-            <Input
-              className="pl-9"
-              placeholder="Add a shortcut..."
-              value={shortcut}
-              onChange={handleShortcutChange}
-            />
-            <FaKeyboard className="absolute left-0 top-0 m-2.5 h-4 w-4 text-muted-foreground" />
-            {shortcutError && <p className="text-red-500">{shortcutError}</p>}
+          {/** Shortcut **/}
+          <div className="relative">
+            <Input className="pl-9" placeholder="Add a shortcut..." value={shortcut} onChange={handleShortcutChange} />
+            <FaKeyboard className="absolute left-2 top-2 h-4 w-4 text-muted-foreground" />
+            {shortcutError && <p className="text-sm text-red-500 mt-1">{shortcutError}</p>}
           </div>
         </div>
-        <TipTapEditor
-          value={content}
-          onChange={setContent}
-          onEditorReady={(editorInstance) => {
-            editorRef.current = editorInstance;
-          }}
-          onFormTextNodeClick={handleFormTextNodeClick}
-          onFormMenuNodeClick={handleFormMenuNodeClick}
-          onEditorClick={handleEditorClick}
-        />
-        <Button className="w-20" onClick={handleSave}>
-          Save
-        </Button>
-      </div>
-      <div className="flex-1 border-l">
-        {isEditPanelVisible && activeEditInfo ? (
-          <EditPanel editInfo={activeEditInfo} onChange={handleTextInputChange} />
-        ) : (
-          <Sidebar
-            onInsertTextFieldClick={handleInsertTextFieldClick}
-            onInsertMenuFieldClick={handleInsertMenuFieldClick}
+        <div className="pl-4 flex items-center">ewrew</div>
+      </header>
+  
+      <main className="grid grid-cols-[3fr_1fr] flex-1 min-h-0">
+        <section className="flex flex-col pr-4 py-4 border-r border-gray-200">
+          <TipTapEditor
+            value={content}
+            onChange={setContent}
+            onEditorReady={editor => (editorRef.current = editor)}
+            onFormTextNodeClick={handleFormTextNodeClick}
+            onFormMenuNodeClick={handleFormMenuNodeClick}
+            onEditorClick={handleEditorClick}
           />
-        )}
-      </div>
+          <Button className="w-20" onClick={handleSave}>Save</Button>
+        </section>
+  
+        <aside className="min-h-0 overflow-y-auto">
+          {isEditPanelVisible && activeEditInfo ? (
+            <EditPanel editInfo={activeEditInfo} onChange={handleTextInputChange} />
+          ) : (
+            <Sidebar
+              onInsertTextFieldClick={handleInsertTextFieldClick}
+              onInsertMenuFieldClick={handleInsertMenuFieldClick}
+            />
+          )}
+        </aside>
+      </main>
+  
       <InsertTextFieldDialog
         isOpen={isTextDialogOpen}
         onClose={() => setIsTextDialogOpen(false)}

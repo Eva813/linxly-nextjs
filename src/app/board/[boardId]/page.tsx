@@ -2,7 +2,7 @@
 
 import dynamic from 'next/dynamic';
 import { useParams } from 'next/navigation';
-import { useState, useEffect} from 'react';
+import { useState, useEffect } from 'react';
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 
@@ -15,9 +15,9 @@ interface Board {
 const FlowWithNoSSR = dynamic(() => import('../../components/flow'), {
   ssr: false,
   loading: () => (
-    <div className="w-full h-[calc(100vh-64px)] flex items-center justify-center" style={{
-        background: 'var(--background)'
-      }}>
+    <div className="w-full flex items-center justify-center" style={{
+      background: 'var(--background)'
+    }}>
       <div className="text-xl dark:text-white">Loading Flow Editor...</div>
     </div>
   )

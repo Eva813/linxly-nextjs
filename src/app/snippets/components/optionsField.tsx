@@ -1,14 +1,15 @@
 "use client"
 
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect, useCallback } from 'react';
 import { Checkbox } from "@/components/ui/checkbox"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { Plus, Trash } from "lucide-react"
+import { Plus, Trash, Check } from "lucide-react"
 
 interface OptionsFieldProps {
-  label?: string
+  title: string
+  description?: string
   multiple: boolean
   values: string[]
   defaultValue: string | string[]
@@ -19,7 +20,8 @@ interface OptionsFieldProps {
 }
 
 export function OptionsField({
-  label = "Values",
+  title,
+  description,
   multiple,
   values,
   defaultValue,
@@ -42,6 +44,38 @@ export function OptionsField({
     multiple ? (initSelected as string[]) : [initSelected as string]
   )
 
+  // 根據 multiple 決定處理邏輯
+  const normalizeDefaultValue = useCallback(() => {
+    if (multiple) {
+      // 如果 defaultValue 是陣列就直接使用，否則包成陣列（並過濾掉 falsy 值，如 null/undefined/空字串）
+      return Array.isArray(defaultValue)
+        ? defaultValue
+        : [defaultValue].filter(Boolean);
+    }
+    // 若 defaultValue 為非空陣列，取第一個值作為預設
+    if (Array.isArray(defaultValue) && defaultValue.length > 0) {
+      return [defaultValue[0]];
+    }
+
+    if (typeof defaultValue === 'string') {
+      return [defaultValue];
+    }
+
+    return [""];
+  }, [multiple, defaultValue]);
+
+  // 監聽 multiple 屬性的變化
+  useEffect(() => {
+    const newSelectedValues = normalizeDefaultValue();
+    setSelectedValues(newSelectedValues);
+
+    const updatedDefaultValue = multiple
+      ? newSelectedValues
+      : newSelectedValues[0] || "";
+
+    onChange({ values: localValues, defaultValue: updatedDefaultValue });
+  }, [normalizeDefaultValue, localValues, onChange, multiple]);
+
   const handleAddValue = () => {
     const newCounter = counter + 1;
     setCounter(newCounter);
@@ -50,23 +84,12 @@ export function OptionsField({
     onChange({ values: newValues, defaultValue: selectedValues })
   }
 
-  // const handleRemoveValue = (index: number) => {
-  //   const newValues = localValues.filter((_, i) => i !== index);
-  //   const newSelectedValues = selectedValues.filter((value) => newValues.includes(value));
-  //   setLocalValues(newValues);
-  //   setSelectedValues(newSelectedValues);
-  //   console.log('newValues', newValues, 'newSelectedValues', newSelectedValues)
-  //   onChange({ values: newValues });
-  // }
   const handleRemoveValue = (index: number) => {
     const newValues = localValues.filter((_, i) => i !== index);
     const newSelectedValues = selectedValues.filter((value) => newValues.includes(value));
 
     setLocalValues(newValues);
     setSelectedValues(newSelectedValues);
-
-    console.log('newValues', newValues, 'newSelectedValues', newSelectedValues)
-
     // 根據 multiple 屬性決定如何傳遞 defaultValue
     const updatedDefaultValue = multiple
       ? newSelectedValues
@@ -76,6 +99,7 @@ export function OptionsField({
   }
 
   const handleChangeValue = (index: number, newVal: string) => {
+    console.log('Changing value at index:', index, 'to:', newVal);
     const newValues = [...localValues]
     newValues[index] = newVal
     setLocalValues(newValues)
@@ -96,10 +120,20 @@ export function OptionsField({
   }
 
   return (
-    <div className="space-y-2">
-      {label && <label className="block text-sm font-medium">{label}</label>}
+    <div className="w-full max-w-sm bg-white px-4 pt-2 pb-4 border-b border-gray-200">
+      <div className="flex items-center justify-between pb-3">
+        <div className="flex items-center space-x-2">
+          <Check className="h-5 w-5 text-gray-500" />
+          <span className="font-medium text-gray-800">{title}</span>
+        </div>
+      </div>
 
-      <div className="border rounded-md p-2 space-y-2">
+      {/* 描述文字 */}
+      {description && (
+        <p className="text-sm text-gray-500 pb-4">{description}</p>
+      )}
+
+      <div className="space-y-2">
         {multiple ? (
           localValues.map((value, index) => (
             <div key={index} className="flex items-center space-x-2">

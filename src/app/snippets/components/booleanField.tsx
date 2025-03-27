@@ -1,24 +1,17 @@
 "use client"
 
 import React from 'react';
-import { Check, X } from "lucide-react"
+import { Check } from "lucide-react"
 import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
 
 interface BooleanFieldProps {
-  /** 例如 "multiple" */
   title: string
-  /** 例如 "Whether the user can select multiple items" */
   description?: string
-  /** true 代表 Yes, false 代表 No */
   value: boolean
-  /** 切換時呼叫的 callback */
   onChange: (newValue: boolean) => void
 }
 
-/**
- * 類似 Text Blaze 面板中的 Boolean 切換元件
- */
 export function BooleanField({
   title,
   description,
@@ -33,13 +26,6 @@ export function BooleanField({
           <Check className="h-5 w-5 text-gray-500" />
           <span className="font-medium text-gray-800">{title}</span>
         </div>
-        <button
-          type="button"
-          aria-label="Close"
-          className="text-gray-500 hover:text-gray-700"
-        >
-          <X className="h-4 w-4" />
-        </button>
       </div>
 
       {/* 描述文字 */}

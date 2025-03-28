@@ -16,7 +16,8 @@ import { FormMenuNode } from './tipTapCustomNode/FormMenuNode'
 import { FormMenuClickHandler, FormMenuData } from '@/types/snippets'
 interface TipTapEditorProps {
   value: string;
-  height?: string;
+  minHeight?: string;
+  maxHeight? : string;
   isRequired?: boolean;
   onChange: (value: string) => void;
   onEditorReady: (editor: Editor) => void;
@@ -31,7 +32,8 @@ interface TipTapEditorProps {
 }
 const TipTapEditor = ({
   value,
-  height = '12rem',
+  minHeight = '12rem',
+  maxHeight = '20rem',
   isRequired = false,
   onChange,
   onEditorReady,
@@ -225,8 +227,8 @@ const TipTapEditor = ({
 
       <EditorContent
         editor={editor}
-        className={`border tiptap-container ${hasError ? 'border-red-500' : 'border-gray-300'}`}
-        style={{ height }}
+        className={`border tiptap-container overflow-y-scroll ${hasError ? 'border-red-500' : 'border-gray-300'}`}
+        style={{ minHeight, maxHeight }}
         onClick={onEditorClick}
       />
       {hasError && <div className="text-red-500 text-sm">This field is required.</div>}

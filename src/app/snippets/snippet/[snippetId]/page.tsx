@@ -12,12 +12,12 @@ import InsertDropdownMenuDialog from '@/app/snippets/snippet/[snippetId]/InsertD
 import { Editor } from '@tiptap/react'
 import { NodeSelection } from 'prosemirror-state'
 import EditPanel from './editPanel'
-import { Snippet } from '@/types/snippets'
 import { formTextSpec } from "@/lib/specs/formTextSpec";
 import { formMenuSpec } from "@/lib/specs/formMenuSpec";
 import { buildFormData, IBuiltFormData } from '@/lib/buildFormData'
-import { DropdownEditInfo, TextInputEditInfo, EditInfo } from '@/types/snippets'
+import { Snippet, DropdownEditInfo, TextInputEditInfo, EditInfo } from '@/types/snippets'
 import EditViewButtons, { Mode } from "@/app/snippets/components/editViewButtons";
+import PreviewSnippet from "@/app/snippets/components/previewSnippet";
 interface SnippetDataMapping {
   formtext: IBuiltFormData<typeof formTextSpec>;
   formmenu: IBuiltFormData<typeof formMenuSpec>;
@@ -339,7 +339,8 @@ const SnippetPage = ({ params }: SnippetPageProps) => {
       </header>
   
       <main className="grid grid-cols-[3fr_1fr] flex-1 min-h-0">
-        <section className="flex flex-col pr-4 py-4 border-r border-gray-200">
+        { mode === "edit" ? (
+          <><section className="flex flex-col pr-4 py-4 border-r border-gray-200">
           <TipTapEditor
             value={content}
             onChange={setContent}
@@ -347,6 +348,7 @@ const SnippetPage = ({ params }: SnippetPageProps) => {
             onFormTextNodeClick={handleFormTextNodeClick}
             onFormMenuNodeClick={handleFormMenuNodeClick}
             onEditorClick={handleEditorClick}
+            maxHeight='calc(100vh - 300px)'
           />
           <Button className="w-20" onClick={handleSave}>Save</Button>
         </section>
@@ -360,7 +362,11 @@ const SnippetPage = ({ params }: SnippetPageProps) => {
               onInsertMenuFieldClick={handleInsertMenuFieldClick}
             />
           )}
-        </aside>
+        </aside></>)
+        : <div className="border-r border-gray-200">
+          <PreviewSnippet content={content} shortcut={shortcut} />
+      </div>
+        }
       </main>
   
       <InsertTextFieldDialog

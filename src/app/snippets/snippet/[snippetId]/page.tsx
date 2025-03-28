@@ -3,7 +3,7 @@ import { useSnippetStore } from "@/stores/snippet";
 import { Input } from "@/components/ui/input";
 import { FaTag } from "react-icons/fa6";
 import { FaKeyboard } from "react-icons/fa6";
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import TipTapEditor from '@/app/components/tipTapEditor';
 import Sidebar from '@/app/snippets/snippet/[snippetId]/editorSidebar'
@@ -17,6 +17,7 @@ import { formTextSpec } from "@/lib/specs/formTextSpec";
 import { formMenuSpec } from "@/lib/specs/formMenuSpec";
 import { buildFormData, IBuiltFormData } from '@/lib/buildFormData'
 import { DropdownEditInfo, TextInputEditInfo, EditInfo } from '@/types/snippets'
+import EditViewButtons, { Mode } from "@/app/snippets/components/editViewButtons";
 interface SnippetDataMapping {
   formtext: IBuiltFormData<typeof formTextSpec>;
   formmenu: IBuiltFormData<typeof formMenuSpec>;
@@ -58,6 +59,7 @@ const SnippetPage = ({ params }: SnippetPageProps) => {
   const [isTextDialogOpen, setIsTextDialogOpen] = useState(false);
   const [isDropdownDialogOpen, setIsDropdownDialogOpen] = useState(false);
   const [isEditPanelVisible, setIsEditPanelVisible] = useState(false); // 新增狀態
+  const [mode, setMode] = useState<Mode>("edit");
 
   // 利用 useMemo 依據 folders 與 snippetId 找出對應的 snippet
   const currentSnippet = useMemo(() => {
@@ -69,6 +71,16 @@ const SnippetPage = ({ params }: SnippetPageProps) => {
     }
     return null;
   }, [folders, snippetId]);
+
+  // 按下 sidebar 的 TextField
+  const handleInsertTextFieldClick = useCallback(() => {
+    setTextInputEditInfo(null);
+    setIsTextDialogOpen(true);
+  }, []);
+  const handleInsertMenuFieldClick = useCallback(() =>  {
+    setDropdownEditInfo(null); // 清除編輯狀態
+    setIsDropdownDialogOpen(true);
+  }, []);
 
   // 取得目前的編輯資訊
   const getActiveEditInfo = (
@@ -114,15 +126,6 @@ const SnippetPage = ({ params }: SnippetPageProps) => {
     }
   };
 
-  // 按下 sidebar 的 TextField
-  const handleInsertTextFieldClick = () => {
-    setTextInputEditInfo(null);
-    setIsTextDialogOpen(true);
-  };
-  const handleInsertMenuFieldClick = () => {
-    setDropdownEditInfo(null); // 清除編輯狀態
-    setIsDropdownDialogOpen(true);
-  };
 
   // 當用戶在編輯器裡點擊自訂 Node
   const handleFormTextNodeClick = ({
@@ -331,7 +334,8 @@ const SnippetPage = ({ params }: SnippetPageProps) => {
             {shortcutError && <p className="text-sm text-red-500 mt-1">{shortcutError}</p>}
           </div>
         </div>
-        <div className="pl-4 flex items-center">ewrew</div>
+        {/* <div className="pl-4 flex items-center">ewrew</div> */}
+        <EditViewButtons mode={mode} onModeChange={setMode} />
       </header>
   
       <main className="grid grid-cols-[3fr_1fr] flex-1 min-h-0">

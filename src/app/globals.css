@@ -21,13 +21,13 @@ body {
     --card-foreground: 240 10% 3.9%;
     --popover: 0 0% 100%;
     --popover-foreground: 240 10% 3.9%;
-    --primary: 240 5.9% 10%;
+    --primary: #43649d;
     --primary-foreground: 0 0% 98%;
-    --secondary: 240 4.8% 95.9%;
+    --secondary: #96b0e4;
     --secondary-foreground: 240 5.9% 10%;
-    --muted: 240 4.8% 95.9%;
+    --muted: #96b0e4;
     --muted-foreground: 240 3.8% 46.1%;
-    --accent: 240 4.8% 95.9%;
+    --accent: #2b4369;
     --accent-foreground: 240 5.9% 10%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
@@ -50,13 +50,13 @@ body {
     --card-foreground: 0 0% 98%;
     --popover: 240 10% 3.9%;
     --popover-foreground: 0 0% 98%;
-    --primary: 0 0% 98%;
+    --primary: #fff;
     --primary-foreground: 240 5.9% 10%;
     --secondary: 240 3.7% 15.9%;
     --secondary-foreground: 0 0% 98%;
     --muted: 240 3.7% 15.9%;
     --muted-foreground: 240 5% 64.9%;
-    --accent: 240 3.7% 15.9%;
+    --accent: #2b4369;
     --accent-foreground: 0 0% 98%;
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 0 0% 98%;
@@ -135,10 +135,75 @@ body {
 }
 
 @layer base {
-  * {
-    @apply border-border outline-ring/50;
-  }
   body {
     @apply bg-background text-foreground;
+  }
+}
+
+
+/* 調整 .animatedLine 以呈現水平線動畫 */
+.lines {
+  position: relative;
+  width: 50%;
+  height: 1px;
+  margin-bottom: 2rem;
+  margin-left: auto;
+  margin-right: auto; 
+}
+
+.animatedLine {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: rgba(0,0,0,0.04);
+  overflow: hidden;
+}
+.animatedLine:nth-child(1)::after {
+    animation-delay: -2s;
+}
+.animatedLine::after {
+    content: '';
+    display: block;
+    position: absolute;
+    left: -150px;
+    top: 0;
+    width: 90px;
+    height: 2px;
+    background: linear-gradient(to right, rgba(0, 0, 0, 0) 0%, #000000 75%, #000000 100%);
+    animation: animatedLine 8s 0s infinite;
+    animation-timing-function: cubic-bezier(0.4, 0.26, 0, 0.97);
+    animation-fill-mode: forwards;
+}
+
+@keyframes animatedLine {
+  0% {
+    left: -150px;
+  }
+  60% {
+    left: calc(100% + 150px);
+  }
+  100% {
+    left: calc(100% + 150px);
+  }
+}
+
+/* 定義文字遮罩動畫 */
+.text-mask {
+  display: inline-block;
+  background: linear-gradient(90deg, #43649b, #94aee3, #cad5f0);
+  background-size: 200%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: textMaskAnimation 4s linear infinite;
+}
+
+@keyframes textMaskAnimation {
+  0% {
+    background-position: 0%;
+  }
+  100% {
+    background-position: 200%;
   }
 }

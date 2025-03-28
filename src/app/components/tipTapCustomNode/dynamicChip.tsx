@@ -33,7 +33,7 @@ export function DynamicChip({
   const entries = Object.entries(data).filter(([, value]) => value !== "")
 
   return (
-    <div className="inline-flex items-center rounded-full border border-blue-300 bg-white px-3  text-sm text-gray-700 hover:bg-blue-100">
+    <div className="inline-flex items-center rounded-full border border-secondary bg-white px-3  text-sm text-gray-700 hover:bg-blue-100">
       {/* prefix 區塊 */}
       {prefix && (
         <div

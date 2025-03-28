@@ -1,5 +1,7 @@
+"use client";
 import React,{ useState, useEffect } from "react";
 import DOMPurify from 'dompurify';
+import { FiChevronDown } from "react-icons/fi";
 
 interface PreviewSnippetProps {
   content: string; // 接收 content 作為 prop
@@ -13,6 +15,72 @@ type SnippetAttribute = {
 type Snippet = {
   attributes: SnippetAttribute[];
 };
+const FormMenuMultiSelect = ({
+  options,
+  defaultValue,
+  name,
+  customKey
+}: {
+  options: string[];
+  defaultValue: string[];
+  name?: string;
+  customKey: string;
+}) => {
+  const [selected, setSelected] = useState<string[]>(defaultValue);
+  const [open, setOpen] = useState<boolean>(false);
+
+  const toggleOption = (opt: string) => {
+    setSelected((prev) =>
+      prev.includes(opt)
+        ? prev.filter((v) => v !== opt)
+        : [...prev, opt]
+    );
+  };
+
+  const toggleDropdown = () => setOpen((prev) => !prev);
+
+  return (
+    <div className="relative inline-block">
+      <div className="flex items-center" id={`field_renderer_${name ?? "auto_name"}_${customKey}`}>
+        {/* 輸入框 + 向下箭頭圖示 */}
+        <div className="relative inline-block">
+          <button
+            type="button"
+            onClick={toggleDropdown}
+            className="flex items-center relative w-32"
+            id={`field_renderer_${name ?? "auto_name"}_${customKey}`}
+          >
+            <input
+              readOnly
+              value={selected.join(", ")}
+              className="w-full py-1 px-3 border border-gray-300 rounded bg-slate-100 cursor-pointer pr-8 focus:outline-none"
+            />
+            <FiChevronDown className="absolute right-2 text-gray-600" size={18} />
+          </button>
+        </div>
+      </div>
+      {open && (
+        <div className="absolute z-10 w-full mt-1 bg-white border shadow-md rounded p-2 max-h-60 overflow-auto">
+          {options.map((opt, i) => (
+            <label
+              key={i}
+              className="flex items-center space-x-2 py-1 hover:bg-gray-100 px-2 rounded"
+            >
+              <input
+                type="checkbox"
+                checked={selected.includes(opt)}
+                onChange={() => toggleOption(opt)}
+                className="accent-blue-500"
+              />
+              <span>{opt}</span>
+            </label>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
 const PreviewSnippet: React.FC<PreviewSnippetProps> = ({ content, shortcut }) => {
   console.log('content', content);
   const [rendered, setRendered] = useState<React.ReactNode | null>(null);
@@ -41,21 +109,6 @@ const PreviewSnippet: React.FC<PreviewSnippetProps> = ({ content, shortcut }) =>
             />
           );
   
-        case "formselect":
-          const options = (attrs.options || "").split(","); // e.g. "Option1,Option2"
-          return (
-            <select
-              key={key}
-              defaultValue={attrs.default || ""}
-              className="border border-gray-400 bg-green-100 px-2 py-1 rounded"
-            >
-              {options.map((opt, i) => (
-                <option key={i} value={opt}>
-                  {opt}
-                </option>
-              ))}
-            </select>
-          );
   
         case "formdate":
           return (
@@ -66,7 +119,56 @@ const PreviewSnippet: React.FC<PreviewSnippetProps> = ({ content, shortcut }) =>
               className="border border-gray-400 bg-blue-100 px-2 py-1 rounded"
             />
           );
-  
+
+          case "formmenu":
+            console.log('parsed.attributes', parsed.attributes);
+            const nameAttr = parsed.attributes.find((a) => a.name === "name")?.value;
+            const defaultAttr = parsed.attributes.find((a) => a.name === "default")?.value;
+            const multipleAttr = parsed.attributes.find((a) => a.name === "multiple")?.value;
+            const optionsAttr = parsed.attributes.find((a) => a.name === "options")?.value;
+
+            // 確認傳入的值是否為多選
+            const isMultiple = Boolean(multipleAttr) || multipleAttr === "true" || multipleAttr === "yes";
+
+            const options: string[] = Array.isArray(optionsAttr)
+              ? optionsAttr
+              : typeof optionsAttr === "string"
+              ? optionsAttr.split(",").map((s) => s.trim())
+              : [];
+
+            const defaultValue: string[] = Array.isArray(defaultAttr)
+              ? defaultAttr
+              : typeof defaultAttr === "string"
+              ? defaultAttr.split(",").map((v) => v.trim())
+              : [];
+
+            if (isMultiple) {
+              return (
+                <FormMenuMultiSelect
+                  key={key}
+                  customKey={key}
+                  options={options}
+                  defaultValue={defaultValue}
+                  name={nameAttr}
+                />
+              );
+            }
+
+            // 單選版本
+            return (
+              <select
+                key={key}
+                id={nameAttr ? `field_renderer_${nameAttr}` : undefined}
+                defaultValue={defaultValue[0] || ""}
+                className="border border-gray-400 bg-slate-100 px-2 py-1 rounded"
+              >
+                {options.map((opt, i) => (
+                  <option key={i} value={opt}>
+                    {opt}
+                  </option>
+                ))}
+              </select>
+            );
         default:
           return <span key={key}>[Unknown form type: {type}]</span>;
       }
@@ -75,7 +177,7 @@ const PreviewSnippet: React.FC<PreviewSnippetProps> = ({ content, shortcut }) =>
     }
   };
   
-  // ⭐ 遞迴渲染 HTML DOM -> React 元件
+  // 遞迴渲染 HTML DOM -> React 元件
   const renderNode = (node: ChildNode, key: string): React.ReactNode => {
     // 針對 Node 的屬性
     if (node.nodeType === Node.TEXT_NODE) {
@@ -84,7 +186,7 @@ const PreviewSnippet: React.FC<PreviewSnippetProps> = ({ content, shortcut }) =>
   
     if (node.nodeType === Node.ELEMENT_NODE) {
       const el = node as HTMLElement;
-  
+      console.log('elllll', key);
       // 如果是客製化元件，交由 renderCustomElement 處理
       if (el.tagName === "SPAN" && el.hasAttribute("data-type")) {
         return renderCustomElement(el, key);
@@ -96,7 +198,7 @@ const PreviewSnippet: React.FC<PreviewSnippetProps> = ({ content, shortcut }) =>
       );
   
       const Tag = el.tagName.toLowerCase();
-      return React.createElement(Tag, { key, style: { margin: '5px' }  }, children);
+      return React.createElement(Tag, { key, className: "my-1" }, children);
     }
   
     return null;

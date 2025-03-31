@@ -29,8 +29,10 @@ export function DynamicChip({
   onPrefixClick,
   onBlockClick,
 }: DynamicChipProps) {
-  // 取出所有非空值的屬性
-  const entries = Object.entries(data).filter(([, value]) => value !== "")
+  // 直接取出所有的 key-value，不過濾掉空字串
+  const entries = Object.entries(data)
+  const isFallback = entries.length === 0
+  const fallbackKey = Object.keys(data)[0]
 
   return (
     <div className="inline-flex items-center rounded-full border border-blue-300 bg-white px-3  text-sm text-gray-700 hover:bg-blue-100">
@@ -45,17 +47,21 @@ export function DynamicChip({
       )}
 
       {/* 動態產生每個資料區塊 */}
-      {entries.map(([key, value], idx) => (
-        <React.Fragment key={key}>
-          {idx > 0 && <Divider />}
-          <div
-            onClick={() => onBlockClick?.(key, value)}
-            className="cursor-pointer px-1 hover:bg-blue-200"
-          >
-            {`${key} ${value}`}
-          </div>
-        </React.Fragment>
-      ))}
+      {isFallback ? (
+        <div className="px-1">{fallbackKey}</div>
+      ) : (
+        entries.map(([key, value], idx) => (
+          <React.Fragment key={key}>
+            {idx > 0 && <Divider />}
+            <div
+              onClick={() => onBlockClick?.(key, value)}
+              className="cursor-pointer px-1 hover:bg-blue-200"
+            >
+              {`${key} ${value}`}
+            </div>
+          </React.Fragment>
+        ))
+      )}
     </div>
   )
 }

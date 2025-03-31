@@ -24,59 +24,59 @@ type FormTextViewProps = NodeViewProps & {
 }
 
 export default function FormTextView(props: FormTextViewProps) {
-    const { node, getPos, extension } = props
-    const snippetData = node.attrs.snippetData
+  const { node, getPos, extension } = props
+  const snippetData = node.attrs.snippetData
+  const attributesArray = (snippetData.attributes as Array<{ name: string; value: string }>) || []
+  // 只將 value 不為 null 的欄位加入 chipData
+  const chipData = attributesArray.reduce<Record<string, string>>((acc, cur) => {
+    if (cur.value !== null) {
+      acc[cur.name] = cur.value
+    }
+    return acc
+  }, {})
 
-    const chipData = (snippetData.attributes as Array<{ name: string; value: string }>).reduce<Record<string, string>>((acc, cur) => {
-      acc[cur.name] = cur.value;
-      return acc;
-    }, {});
+  const name = chipData['name'] || ''
+  const defaultValue = chipData['default'] || ''
 
-    // 從 attributes 陣列中找出對應的欄位
-    const nameAttr = snippetData.attributes.find((attr: {name: string}) => attr.name === 'name')
-    const defaultAttr = snippetData.attributes.find((attr: {name: string}) => attr.name === 'default')
-  
-    const name = nameAttr ? nameAttr.value : ''
-    const defaultValue = defaultAttr ? defaultAttr.value : ''
-  
-    const handleClick = useCallback(
-      (event: MouseEvent<HTMLSpanElement>) => {
-        event.preventDefault()
-        event.stopPropagation()
-  
-        if (!getPos) return
-        const pos = getPos()
-  
-        if (extension?.options?.onFormTextClick) {
-          extension.options.onFormTextClick({
-            pos,
-            name,
-            default: defaultValue,
-          })
+  const handleClick = useCallback(
+    (event: MouseEvent<HTMLSpanElement>) => {
+      event.preventDefault()
+      event.stopPropagation()
+
+      if (!getPos) return
+      const pos = getPos()
+
+      extension?.options?.onFormTextClick?.({
+        pos,
+        name,
+        default: defaultValue,
+      })
+    },
+    [extension, getPos, name, defaultValue],
+  )
+
+  const isEmptyChip = !name && !defaultValue
+
+  // 定義 fallback chip data
+  const fallbackChipData = { formtext: '' }
+
+  return (
+    <NodeViewWrapper
+      as="span"
+      className="text-sm"
+      data-type="formtext"
+      role="button"
+      contentEditable={false}
+      onClick={handleClick}
+      data-snippet={JSON.stringify(node.attrs.snippetData)}
+    >
+      <DynamicChip
+        prefix="="
+        data={isEmptyChip ? fallbackChipData : chipData}
+        onBlockClick={(key, value) =>
+          alert(`點擊了區塊：${key} ${value}`)
         }
-      },
-      [extension, getPos, name, defaultValue],
-    )
-
-    return (
-        <NodeViewWrapper
-            as="span"
-            className=" text-sm"
-            data-type="formtext"
-            role="button"
-            contentEditable={false}
-            onClick={handleClick}
-            data-snippet={JSON.stringify(node.attrs.snippetData)}
-        >
-            {/* {textContent} */}
-            <DynamicChip
-                prefix="="
-                data={chipData}
-                // onPrefixClick={() => alert("點擊了 prefix")}
-                onBlockClick={(key, value) =>
-                    alert(`點擊了區塊：${key} ${value}`)
-                }
-            />
-        </NodeViewWrapper>
-    )
+      />
+    </NodeViewWrapper>
+  )
 }

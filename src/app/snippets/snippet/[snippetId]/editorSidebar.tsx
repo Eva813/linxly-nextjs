@@ -1,5 +1,5 @@
 import React from 'react'
-import { FormField } from "@/app/snippets/components/formField"
+import { ToolFieldItem } from "@/app/snippets/components/toolFieldItem"
 import { MdOutlineShortText } from "react-icons/md";
 import { MdMenuOpen } from "react-icons/md";
 
@@ -13,14 +13,14 @@ const EditorSidebar: React.FC<SidebarProps> = React.memo(({ onInsertTextFieldCli
   return (
     <>
       <h2 className="font-bold px-4 pt-4 pb-2">Tools</h2>
-      <FormField
+      <ToolFieldItem
         icon={<MdOutlineShortText className="h-8 w-8 text-grey-500" />}
         title="Text field"
         description="Single line Text Field"
         pro={false} // 不顯示 PRO 狀態
         onClick={onInsertTextFieldClick}
       />
-      <FormField
+      <ToolFieldItem
         icon={<MdMenuOpen className="h-8 w-8 text-grey-500" />}
         title="Dropdown Menu"
         description="Options in a menu"

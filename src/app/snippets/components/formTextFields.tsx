@@ -1,5 +1,5 @@
 import React from 'react'
-import EditPanelField from '@/app/snippets/components/editPanelField'
+import TextInputField from '@/app/snippets/components/textInputField'
 import { formTextSpec } from '@/lib/specs/formTextSpec'
 import { FieldGroupProps } from '@/types/fieldGropProps'
 import { organizeFormInput } from '@/lib/utils'
@@ -11,7 +11,7 @@ export const FormTextFields = ({ editInfo, onChange }: FieldGroupProps) => {
   return (
     <>
       {Object.entries(organizedFields).map(([key, field]) => (
-        <EditPanelField
+        <TextInputField
           key={key}
           title={key}
           description={field.description}

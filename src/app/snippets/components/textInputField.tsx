@@ -2,7 +2,7 @@ import React from 'react';
 import { Check, X } from "lucide-react"; 
 import { Input } from "@/components/ui/input"; 
 
-interface EditPanelFieldProps {
+interface TextInputFieldProps {
   title: string; // This will be the key (e.g., 'name')
   description: string;
   type?: string | number ;
@@ -10,7 +10,7 @@ interface EditPanelFieldProps {
   onChange: (key: string, newValue: string) => void; // Update this line
 }
 
-const EditPanelField: React.FC<EditPanelFieldProps> = React.memo(({ title, description, value, onChange }) => {
+const TextInputField: React.FC<TextInputFieldProps> = React.memo(({ title, description, value, onChange }) => {
   return (
     <div className="w-full max-w-sm bg-white px-4 pt-2 pb-4 border-b border-gray-200">
       <div className="flex items-center justify-between pb-3">
@@ -19,7 +19,7 @@ const EditPanelField: React.FC<EditPanelFieldProps> = React.memo(({ title, descr
           <span className="font-medium text-gray-800">{title}</span>
         </div>
         <button type="button" aria-label="Close" className="text-gray-500 hover:text-gray-700">
-          <X className="h-4 w-4" />
+          <X className="h-4 w-4"  onClick={() => onChange(title, '')} />
         </button>
       </div>
       <p className="text-sm text-gray-500 pb-4">{description}</p>
@@ -35,5 +35,5 @@ const EditPanelField: React.FC<EditPanelFieldProps> = React.memo(({ title, descr
     </div>
   );
 });
-EditPanelField.displayName = 'EditPanelField';
-export default EditPanelField;
+TextInputField.displayName = 'TextInputField';
+export default TextInputField;

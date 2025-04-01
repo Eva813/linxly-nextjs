@@ -17,15 +17,15 @@ export const FormTextFields = ({ editInfo, onChange }: FieldGroupProps) => {
   } as { [key: string]: React.RefObject<HTMLInputElement> }), [nameRef, defaultRef]);
 
   const focusKey = useSnippetStore((state) => state.focusKey);
-  const setFocusKey = useSnippetStore((state) => state.setFocusKey);
 
-  useEffect(() => {
-    if (focusKey && inputRefs[focusKey]?.current) {
-      inputRefs[focusKey].current.focus();
-      // Clear the focusKey after handling
-      setFocusKey(null);
-    }
-  }, [focusKey, inputRefs, setFocusKey]);
+  // 解析 focusKey 獲取位置和字段
+  const getFocusInfo = (focusKey: string | null) => {
+    if (!focusKey) return { position: null, fieldKey: null };
+    const [position, fieldKey] = focusKey.split(':');
+    return { position, fieldKey };
+  };
+
+  const { position, fieldKey } = getFocusInfo(focusKey);
 
   return (
     <>
@@ -37,8 +37,9 @@ export const FormTextFields = ({ editInfo, onChange }: FieldGroupProps) => {
           description={field.description}
           type={editInfo.type}
           value={field.value}
+          highlight={fieldKey === key}
+          focusPosition={position}
           onChange={(_, newValue) => {
-            // 使用我們已知的 key
             onChange({ [key]: newValue });
           }}
         />

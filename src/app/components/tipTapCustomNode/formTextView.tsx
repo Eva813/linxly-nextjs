@@ -41,7 +41,9 @@ export default function FormTextView(props: FormTextViewProps) {
   // Use store’s setFocusKey to update focus state from a chip click event
   const setFocusKey = useSnippetStore((state) => state.setFocusKey);
 
-
+  // 獲取當前位置作為唯一識別符
+  const position = getPos ? String(getPos()) : '';
+  
   const handleClick = useCallback(
     (event: MouseEvent<HTMLSpanElement>) => {
       event.preventDefault()
@@ -79,7 +81,7 @@ export default function FormTextView(props: FormTextViewProps) {
         data={isEmptyChip ? fallbackChipData : chipData}
         onBlockClick={(key, value) => {
           console.log(`點擊了區塊：${key} ${value}`);
-          setFocusKey(key);
+          setFocusKey(`${position}:${key}`);
         }}
       />
     </NodeViewWrapper>

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Check, X } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 
@@ -7,22 +7,40 @@ interface TextInputFieldProps {
   description: string;
   type?: string | number;
   value: string | number;
-  // 變更 onChange 型別，null 表示要刪除該欄位
+  highlight?: boolean;
+  focusPosition?: string | null;
   onChange: (key: string, newValue: string | null) => void;
 }
 
 const TextInputField = React.forwardRef<HTMLInputElement, TextInputFieldProps>(
-  ({ title, description, value, onChange }, ref) => {
-    const shouldShowClearButton = value !== '';
-    console.log('TextInputField value:', title);
+  ({ title, description, value, onChange, highlight, focusPosition }, ref) => {
+    const containerRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+      if (highlight && focusPosition && containerRef.current) {
+        // 移除現有的動畫
+        containerRef.current.style.animation = 'none';
+        // 強制重繪
+        containerRef.current.offsetHeight;
+        // 重新添加動畫
+        containerRef.current.style.animation = '';
+      }
+    }, [highlight, focusPosition]);
+
     return (
-      <div className="w-full max-w-sm bg-white px-4 pt-2 pb-4 border-b border-gray-200">
+      <div 
+        ref={containerRef}
+        className={`w-full max-w-sm bg-white px-4 pt-2 pb-4 border-b border-gray-200 ${
+          highlight ? 'animate-highlight' : ''
+        }`}
+        data-position={focusPosition}
+      >
         <div className="flex items-center justify-between pb-3">
           <div className="flex items-center space-x-2">
             <Check className="h-5 w-5 text-gray-500" />
             <span className="font-medium text-gray-800">{title}</span>
           </div>
-          {shouldShowClearButton && (
+          {value !== '' && (
             <button
               type="button"
               aria-label="Close"
@@ -40,9 +58,7 @@ const TextInputField = React.forwardRef<HTMLInputElement, TextInputFieldProps>(
           value={value}
           className="h-9"
           onChange={(e) => {
-            const newValue = e.target.value;
-            console.log('Input value:', newValue);
-            onChange(title, newValue);
+            onChange(title, e.target.value);
           }}
         />
       </div>
@@ -51,7 +67,16 @@ const TextInputField = React.forwardRef<HTMLInputElement, TextInputFieldProps>(
 );
 
 TextInputField.displayName = 'TextInputField';
-const MemoizedTextInputField = React.memo(TextInputField);
+
+const MemoizedTextInputField = React.memo(TextInputField, (prev, next) => {
+  // 只比較關鍵屬性
+  return (
+    prev.highlight === next.highlight &&
+    prev.focusPosition === next.focusPosition &&
+    prev.value === next.value
+  );
+});
+
 MemoizedTextInputField.displayName = 'TextInputField';
 
 export default MemoizedTextInputField;

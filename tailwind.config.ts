@@ -79,6 +79,12 @@ const config: Config = {
 				lg: 'var(--radius)',
 				md: 'calc(var(--radius) - 2px)',
 				sm: 'calc(var(--radius) - 4px)'
+			},
+			keyframes: {
+					highlight: {
+					'0%': { backgroundColor: 'rgba(241, 245, 249, 0.6)' },
+					'100%': { backgroundColor: 'transparent' },
+				},
 			}
 		},
 		variants: {
@@ -86,7 +92,10 @@ const config: Config = {
 				borderColor: ['focus'],
 				boxShadow: ['focus']
 			}
-		}
+		},
+    animation: {
+      highlight: 'highlight 2s ease-out forwards', // 動畫持續時間和效果
+    }
 	},
 	plugins: [tailwindAnimate],
 };

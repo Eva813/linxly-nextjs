@@ -64,7 +64,7 @@ export interface InputInfo {
   name: string;
   default: string | string[];
   type: string;
-  [key: string]: string | number | boolean | string[] | undefined;
+  [key: string]: string | number | boolean | string[] | null;
 }
 
 export interface TextInputEditInfo extends InputInfo {

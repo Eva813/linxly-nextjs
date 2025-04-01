@@ -35,7 +35,7 @@ export interface IBuiltFormData<T extends FormSpec> {
 export function buildFormData<T extends FormSpec>(
   spec: T,
   type: string,
-  userAttrs: Partial<Record<keyof T["named"], string | string[] | boolean>>
+  userAttrs: Partial<Record<keyof T["named"], string | string[] | boolean | null>>
 ): IBuiltFormData<T> {
   // 若 userAttrs 有對應的屬性，就使用其值，並且若值為 undefined 則用 null。 若沒有對應屬性，則使用預設的 placeholder（預設值為空字串）。
   const attributes = (Object.keys(spec.named) as string[]).map(key => ({

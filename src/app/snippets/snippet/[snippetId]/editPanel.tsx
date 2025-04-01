@@ -6,14 +6,14 @@ import { FormMenuFields } from '@/app/snippets/components/formMenuFields'
 
 interface SidebarProps {
   editInfo: EditInfo;
-  onChange: (updates: { [key: string]: string | string[] | boolean }) => void;
+  onChange: (updates: { [key: string]: string | string[] | boolean | null }) => void;
 }
 
 
 export default function EditPanel({ editInfo, onChange }: SidebarProps) {
   console.log('edit', editInfo)
   // 先定義所有的 Hook（這裡 useCallback 必定會被呼叫）
-  const handleChange = useCallback((updates: { [key: string]: string | string[] | boolean }) => {
+  const handleChange = useCallback((updates: { [key: string]: string | boolean | string[] | null }) => {
     console.log('批次更新:', updates);
     onChange(updates);
   }, [onChange]);

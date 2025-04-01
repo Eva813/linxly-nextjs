@@ -33,7 +33,7 @@ type UpdateHandler<T extends EditInfo> = {
   getAttributes: (
     editInfo: T,
     key: keyof T,
-    newValue: string | boolean | string[]
+    newValue: string | boolean | string[] | null
   ) => {
     snippetData: SnippetDataMapping[T["type"]];
   };
@@ -276,7 +276,7 @@ const SnippetPage = ({ params }: SnippetPageProps) => {
     },
   };
 
-  const handleTextInputChange = (updates: { [key: string]: string | string[] | boolean }) => {
+  const handleTextInputChange = (updates: { [key: string]: string | string[] | boolean | null }) => {
     const editor = editorRef.current;
     if (!editor) return;
 

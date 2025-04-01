@@ -41,7 +41,7 @@ export default function FormMenuView(props: FormMenuViewProps) {
     if (Array.isArray(optionAttr.value)) {
       return optionAttr.value;
     }
-  }, [optionAttr?.value]);
+  }, [optionAttr]);
 
   const resolvedDefaultValue = useMemo(() => {
     if (multiple) {
@@ -69,7 +69,7 @@ export default function FormMenuView(props: FormMenuViewProps) {
         })
       }
     },
-    [extension, getPos, name, defaultValue, multiple, options],
+    [getPos, nameAttr, defaultAttr, multipleAttr, options, extension.options, name, resolvedDefaultValue, multiple],
   )
 
   return (

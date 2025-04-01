@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react'
-import EditPanelField from '@/app/snippets/components/editPanelField'
+import TextInputField from '@/app/snippets/components/textInputField'
 import { BooleanField } from '@/app/snippets/components/booleanField'
 import { OptionsField } from '@/app/snippets/components/optionsField'
 import { formMenuSpec } from '@/lib/specs/formMenuSpec'
@@ -28,7 +28,7 @@ export const FormMenuFields = ({ editInfo, onChange }: FieldGroupProps) => {
       {Object.entries(organizedFields)
         .filter(([key]) => !['options', 'default', 'multiple'].includes(key))
         .map(([key, field]) => (
-          <EditPanelField
+          <TextInputField
             key={key}
             title={key}
             description={field.description}

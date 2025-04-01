@@ -3,7 +3,7 @@ import { useSnippetStore } from "@/stores/snippet";
 import { Input } from "@/components/ui/input";
 import { FaTag } from "react-icons/fa6";
 import { FaKeyboard } from "react-icons/fa6";
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import TipTapEditor from '@/app/components/tipTapEditor';
 import Sidebar from '@/app/snippets/snippet/[snippetId]/editorSidebar'
@@ -12,11 +12,12 @@ import InsertDropdownMenuDialog from '@/app/snippets/snippet/[snippetId]/InsertD
 import { Editor } from '@tiptap/react'
 import { NodeSelection } from 'prosemirror-state'
 import EditPanel from './editPanel'
-import { Snippet } from '@/types/snippets'
 import { formTextSpec } from "@/lib/specs/formTextSpec";
 import { formMenuSpec } from "@/lib/specs/formMenuSpec";
 import { buildFormData, IBuiltFormData } from '@/lib/buildFormData'
-import { DropdownEditInfo, TextInputEditInfo, EditInfo } from '@/types/snippets'
+import { Snippet, DropdownEditInfo, TextInputEditInfo, EditInfo } from '@/types/snippets'
+import EditViewButtons, { Mode } from "@/app/snippets/components/editViewButtons";
+import PreviewSnippet from "@/app/snippets/components/previewSnippet";
 interface SnippetDataMapping {
   formtext: IBuiltFormData<typeof formTextSpec>;
   formmenu: IBuiltFormData<typeof formMenuSpec>;
@@ -32,7 +33,7 @@ type UpdateHandler<T extends EditInfo> = {
   getAttributes: (
     editInfo: T,
     key: keyof T,
-    newValue: string | boolean | string[]
+    newValue: string | boolean | string[] | null
   ) => {
     snippetData: SnippetDataMapping[T["type"]];
   };
@@ -58,6 +59,7 @@ const SnippetPage = ({ params }: SnippetPageProps) => {
   const [isTextDialogOpen, setIsTextDialogOpen] = useState(false);
   const [isDropdownDialogOpen, setIsDropdownDialogOpen] = useState(false);
   const [isEditPanelVisible, setIsEditPanelVisible] = useState(false); // 新增狀態
+  const [mode, setMode] = useState<Mode>("edit");
 
   // 利用 useMemo 依據 folders 與 snippetId 找出對應的 snippet
   const currentSnippet = useMemo(() => {
@@ -69,6 +71,16 @@ const SnippetPage = ({ params }: SnippetPageProps) => {
     }
     return null;
   }, [folders, snippetId]);
+
+  // 按下 sidebar 的 TextField
+  const handleInsertTextFieldClick = useCallback(() => {
+    setTextInputEditInfo(null);
+    setIsTextDialogOpen(true);
+  }, []);
+  const handleInsertMenuFieldClick = useCallback(() =>  {
+    setDropdownEditInfo(null); // 清除編輯狀態
+    setIsDropdownDialogOpen(true);
+  }, []);
 
   // 取得目前的編輯資訊
   const getActiveEditInfo = (
@@ -114,15 +126,6 @@ const SnippetPage = ({ params }: SnippetPageProps) => {
     }
   };
 
-  // 按下 sidebar 的 TextField
-  const handleInsertTextFieldClick = () => {
-    setTextInputEditInfo(null);
-    setIsTextDialogOpen(true);
-  };
-  const handleInsertMenuFieldClick = () => {
-    setDropdownEditInfo(null); // 清除編輯狀態
-    setIsDropdownDialogOpen(true);
-  };
 
   // 當用戶在編輯器裡點擊自訂 Node
   const handleFormTextNodeClick = ({
@@ -273,7 +276,7 @@ const SnippetPage = ({ params }: SnippetPageProps) => {
     },
   };
 
-  const handleTextInputChange = (updates: { [key: string]: string | string[] | boolean }) => {
+  const handleTextInputChange = (updates: { [key: string]: string | string[] | boolean | null }) => {
     const editor = editorRef.current;
     if (!editor) return;
 
@@ -331,11 +334,13 @@ const SnippetPage = ({ params }: SnippetPageProps) => {
             {shortcutError && <p className="text-sm text-red-500 mt-1">{shortcutError}</p>}
           </div>
         </div>
-        <div className="pl-4 flex items-center">ewrew</div>
+        {/* <div className="pl-4 flex items-center">ewrew</div> */}
+        <EditViewButtons mode={mode} onModeChange={setMode} />
       </header>
   
       <main className="grid grid-cols-[3fr_1fr] flex-1 min-h-0">
-        <section className="flex flex-col pr-4 py-4 border-r border-gray-200">
+        { mode === "edit" ? (
+          <><section className="flex flex-col pr-4 py-4 border-r border-gray-200">
           <TipTapEditor
             value={content}
             onChange={setContent}
@@ -343,6 +348,7 @@ const SnippetPage = ({ params }: SnippetPageProps) => {
             onFormTextNodeClick={handleFormTextNodeClick}
             onFormMenuNodeClick={handleFormMenuNodeClick}
             onEditorClick={handleEditorClick}
+            maxHeight='calc(100vh - 300px)'
           />
           <Button className="w-20" onClick={handleSave}>Save</Button>
         </section>
@@ -356,7 +362,11 @@ const SnippetPage = ({ params }: SnippetPageProps) => {
               onInsertMenuFieldClick={handleInsertMenuFieldClick}
             />
           )}
-        </aside>
+        </aside></>)
+        : <div className="border-r border-gray-200">
+          <PreviewSnippet content={content} shortcut={shortcut} />
+      </div>
+        }
       </main>
   
       <InsertTextFieldDialog

@@ -3,6 +3,7 @@
     border: 1px solid #BDBDBD;
     border-radius: 0 0 4px 4px;
     outline: none;
+    max-height: calc(100vh-120px)  ;
   }
 
   .tiptap {

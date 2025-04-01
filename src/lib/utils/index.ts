@@ -40,17 +40,18 @@ export function organizeFormInput<T extends BaseFormSpec>(
   const organizedInput: Record<string, OrganizedField> = {};
 
   Object.entries(spec.named).forEach(([key, fieldSpec]) => {
-    const valueFromInput = input[key] !== undefined ? input[key].toString() : '';
-    organizedInput[key] = {
-      value: valueFromInput,
-      description: fieldSpec.description,
-      priority: fieldSpec.priority,
-      placeholder: fieldSpec.placeholder,
-      type: fieldSpec.type,
-      ...(fieldSpec.static !== undefined && { static: fieldSpec.static }),
-      ...(fieldSpec.constant !== undefined && { constant: fieldSpec.constant })
-    };
-  });
+    // 用 != null 來同時檢查 null 和 undefined
+    const valueFromInput = input[key] != null ? input[key].toString() : '';
+      organizedInput[key] = {
+        value: valueFromInput,
+        description: fieldSpec.description,
+        priority: fieldSpec.priority,
+        placeholder: fieldSpec.placeholder,
+        type: fieldSpec.type,
+        ...(fieldSpec.static !== undefined && { static: fieldSpec.static }),
+        ...(fieldSpec.constant !== undefined && { constant: fieldSpec.constant })
+      };
+    });
 
   return organizedInput;
 };

@@ -35,7 +35,7 @@ export function DynamicChip({
   const fallbackKey = Object.keys(data)[0]
 
   return (
-    <div className="inline-flex items-center rounded-full border-2 border-secondary bg-white px-1 text-sm text-gray-700 hover:bg-light">
+    <div className="inline-flex items-center rounded-full border border-secondary bg-white px-1 text-sm text-gray-700 hover:bg-light">
       {/* prefix 區塊 */}
       {prefix && (
         <div

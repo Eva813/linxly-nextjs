@@ -80,7 +80,7 @@ const PreviewSnippet: React.FC<PreviewSnippetProps> = ({ content, shortcut }) =>
   }, [content]);
 
   return (
-    <main className="p-4 space-y-4 w-full h-[calc(100vh-120px)] flex flex-col">
+    <main className="p-4 space-y-4 w-full h-[calc(100vh-160px)] flex flex-col">
       {/* 顯示提示 / shortcut */}
       <div className="h-4 bg-gray-200 rounded w-full" />
       <div className="flex items-center">

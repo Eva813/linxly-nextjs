@@ -320,7 +320,7 @@ const SnippetPage = ({ params }: SnippetPageProps) => {
 
   return (
     <div className="flex flex-col h-full">
-      <header className="grid grid-cols-[3fr_1fr] mb-4">
+      <header className="grid grid-cols-[3fr_1fr] mb-4 pt-4">
         <div className="grid grid-cols-2 gap-x-4 pr-4">
           {/** Snippet 名稱與捷徑 **/}
           <div className="relative">

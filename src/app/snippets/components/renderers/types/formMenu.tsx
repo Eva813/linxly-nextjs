@@ -40,7 +40,7 @@ export function renderFormMenu(attrs: Record<string, string>, key: string) {
       key={key}
       id={name ? `field_renderer_${name}` : undefined}
       defaultValue={defaultValue[0] || ""}
-      className="border border-gray-400 bg-slate-100 px-2 py-1 rounded"
+      className="border border-gray-400 bg-light px-2 py-1 rounded"
     >
       {options.map((opt, i) => (
         <option key={`${opt}-${i}`} value={opt}>

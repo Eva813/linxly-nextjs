@@ -9,7 +9,7 @@ import { ThemeToggle } from "@/components/theme-toggle";
 export function SiteHeader() {
   return (
     <header
-      className="sticky top-0 z-50 w-full"
+      className="sticky top-0 z-50 w-full border-b border-gray-200"
       style={{
         background: 'var(--header-bg)',
         backdropFilter: 'blur(5px)',

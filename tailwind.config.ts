@@ -29,7 +29,7 @@ const config: Config = {
 				},
 			},
 			colors: {
-				background: 'hsl(var(--background))',
+				background: 'var(--background)',
 				foreground: 'hsl(var(--foreground))',
 				inputFocus: '#fff',
 				card: {
@@ -41,19 +41,25 @@ const config: Config = {
 					foreground: 'hsl(var(--popover-foreground))'
 				},
 				primary: {
-					DEFAULT: 'hsl(var(--primary))',
+					DEFAULT: 'var(--primary)',
 					foreground: 'hsl(var(--primary-foreground))'
 				},
 				secondary: {
-					DEFAULT: 'hsl(var(--secondary))',
+					DEFAULT: 'var(--secondary)',
 					foreground: 'hsl(var(--secondary-foreground))'
 				},
+				third: {
+					DEFAULT: '#cad5f0',
+				},
+				light: {
+					DEFAULT: '#edf1fa',
+				},
 				muted: {
-					DEFAULT: 'hsl(var(--muted))',
+					DEFAULT: 'var(--muted)',
 					foreground: 'hsl(var(--muted-foreground))'
 				},
 				accent: {
-					DEFAULT: 'hsl(var(--accent))',
+					DEFAULT: 'var(--accent)',
 					foreground: 'hsl(var(--accent-foreground))'
 				},
 				destructive: {
@@ -62,7 +68,7 @@ const config: Config = {
 				},
 				border: 'hsl(var(--border))',
 				input: 'hsl(var(--input))',
-				ring: 'hsl(var(--ring))',
+				ring: 'var(--secondary)',
 				chart: {
 					'1': 'hsl(var(--chart-1))',
 					'2': 'hsl(var(--chart-2))',
@@ -82,7 +88,7 @@ const config: Config = {
 			},
 			keyframes: {
 					highlight: {
-					'0%': { backgroundColor: 'rgba(241, 245, 249, 0.6)' },
+					'0%': { backgroundColor: '#edf1fa' },
 					'100%': { backgroundColor: 'transparent' },
 				},
 			}

@@ -166,7 +166,7 @@ export default function InsertDropdownMenuDialog({
 
         {/* Footer Buttons */}
         <DialogFooter>
-          <Button variant="secondary" onClick={onClose}>Cancel</Button>
+          <Button variant="outline" onClick={onClose}>Cancel</Button>
           <Button onClick={handleInsert}>Insert</Button>
         </DialogFooter>
       </DialogContent>

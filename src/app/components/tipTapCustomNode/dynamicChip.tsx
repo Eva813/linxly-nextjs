@@ -35,7 +35,7 @@ export function DynamicChip({
   const fallbackKey = Object.keys(data)[0]
 
   return (
-    <div className="inline-flex items-center rounded-full border border-blue-300 bg-white px-1 text-sm text-gray-700 hover:bg-blue-100">
+    <div className="inline-flex items-center rounded-full border-2 border-secondary bg-white px-1 text-sm text-gray-700 hover:bg-light">
       {/* prefix 區塊 */}
       {prefix && (
         <div
@@ -55,7 +55,7 @@ export function DynamicChip({
             {idx > 0 && <Divider />}
             <div
               onClick={() => onBlockClick?.(key, value)}
-              className="cursor-pointer px-2 hover:bg-blue-200"
+              className="cursor-pointer px-2 hover:bg-[#c9d5e8]"
             >
               {`${key} ${value}`}
             </div>

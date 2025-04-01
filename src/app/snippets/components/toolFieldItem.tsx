@@ -21,7 +21,7 @@ export function ToolFieldItem({
   onClick
 }: IconTitleDescriptionProps) {
   return (
-    <div onClick={onClick} className="flex gap-3 py-2 px-4 cursor-pointer hover:bg-gray-100 transition-colors">
+    <div onClick={onClick} className="flex gap-3 py-2 px-4 cursor-pointer hover:bg-light transition-colors">
       {/* 左側 Icon */}
       <div className="flex flex-col justify-center text-gray-600 ">
         {icon}

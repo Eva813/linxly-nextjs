@@ -27,6 +27,12 @@ export const FormTextFields = ({ editInfo, onChange }: FieldGroupProps) => {
 
   const { position, fieldKey } = getFocusInfo(focusKey);
 
+  useEffect(() => {
+    if (fieldKey && inputRefs[fieldKey]?.current) {
+      inputRefs[fieldKey].current.focus();
+    }
+  }, [fieldKey, inputRefs]);
+
   return (
     <>
       {Object.entries(organizedFields).map(([key, field]) => (

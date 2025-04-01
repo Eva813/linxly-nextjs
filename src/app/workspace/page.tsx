@@ -54,14 +54,14 @@ const Workspace = () => {
         {boards.map((board) => (
           <div
             key={board.id}
-            className="bg-gradient-to-br from-gray-900 to-gray-800 text-white flex flex-col justify-between space-y-2 rounded-lg shadow-lg p-4  dark:bg-white dark:from-white dark:to-white dark:text-black"
+            className="from-gray-900 to-gray-800 border-2 border-primary dark:border-gray-800 text-black flex flex-col justify-between space-y-2 rounded-lg shadow-lg p-4  dark:bg-white dark:from-white dark:to-white dark:text-black"
           >
             <h3 className="text-lg font-semibold">{board.name}</h3>
             <p>{board.createdAt}</p>
             <div className="flex space-x-2 justify-end w-full">
               {/* 查看按鈕 - 使用 Shadcn Button */}
               <Button
-                className='bg-gray-600 text-white dark:text-black hover:bg-gray-600 dark:hover:bg-gray-400 dark:bg-gray-400 dark:text-white'
+                className='bg-primary text-white dark:text-black hover:bg-primary dark:hover:bg-primary dark:bg-primary dark:text-white'
                 onClick={() => router.push(`/board/${board.id}`)}
                 variant="secondary"
               >

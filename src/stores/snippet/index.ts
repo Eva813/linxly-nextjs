@@ -3,9 +3,10 @@ import { persist } from 'zustand/middleware';
 import { FolderSlice, createFolderSlice } from './slices/folderSlice';
 import { SnippetSlice, createSnippetSlice } from './slices/snippetSlice';
 import { UISlice, createUISlice } from './slices/uiSlice';
+import { FocusSlice, createFocusSlice } from './slices/focusSlice';
 
 // 組合所有模組的型別
-export type AppStore = FolderSlice & SnippetSlice & UISlice;
+export type AppStore = FolderSlice & SnippetSlice & UISlice & FocusSlice;
 
 export const useSnippetStore = create<AppStore>()(
   persist(
@@ -13,6 +14,7 @@ export const useSnippetStore = create<AppStore>()(
       ...createFolderSlice(set, get, api),
       ...createSnippetSlice(set, get, api),
       ...createUISlice(set, get, api),
+      ...createFocusSlice(set, get, api),
     }),
     {
       name: 'my-snippets-storage',

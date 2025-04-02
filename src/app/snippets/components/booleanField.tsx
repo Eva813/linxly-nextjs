@@ -4,11 +4,14 @@ import React from 'react';
 import { Check } from "lucide-react"
 import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
+import { useForceRerender } from '@/lib/useForceRepaint';
 
 interface BooleanFieldProps {
   title: string
   description?: string
   value: boolean
+  highlight?: boolean
+  focusPosition?: string | null
   onChange: (newValue: boolean) => void
 }
 
@@ -17,9 +20,15 @@ export function BooleanField({
   description,
   value,
   onChange,
+  highlight,
+  focusPosition
 }: BooleanFieldProps) {
+  const containerRef = useForceRerender(highlight, focusPosition);
+
   return (
-    <div className="w-full max-w-sm bg-white px-4 pt-2 pb-4 border-b border-gray-200">
+    <div ref={containerRef} className={`w-full max-w-sm bg-white px-4 pt-2 pb-4 border-b border-gray-200 ${highlight ? 'animate-highlight' : ''
+      }`}
+      data-position={focusPosition}>
       {/* 頂部標題區 */}
       <div className="flex items-center justify-between pb-3">
         <div className="flex items-center space-x-2">

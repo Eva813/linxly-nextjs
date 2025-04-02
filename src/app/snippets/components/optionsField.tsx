@@ -6,6 +6,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Plus, Trash, Check } from "lucide-react"
+import { useForceRerender } from '@/lib/useForceRepaint';
 
 interface OptionsFieldProps {
   title: string
@@ -13,6 +14,8 @@ interface OptionsFieldProps {
   multiple: boolean
   values: string[]
   defaultValue: string | string[]
+  highlight?: boolean
+  focusPosition?: string | null
   onChange: (update: {
     values: string[]
     defaultValue: string | string[]
@@ -26,13 +29,16 @@ export function OptionsField({
   values,
   defaultValue,
   onChange,
+  highlight,
+  focusPosition
 }: OptionsFieldProps) {
   console.log('OptionsField rendering with values:', values, 'defaultValue:', defaultValue)
   const [localValues, setLocalValues] = useState<string[]>(values)
   const [counter, setCounter] = useState(values.length);
+  const containerRef = useForceRerender(highlight, focusPosition);
+
 
   const initSelected = useMemo(() => {
-    console.log('defaultValue', defaultValue)
     if (multiple) {
       return Array.isArray(defaultValue) ? defaultValue : [defaultValue]
     } else {
@@ -120,7 +126,9 @@ export function OptionsField({
   }
 
   return (
-    <div className="w-full max-w-sm bg-white px-4 pt-2 pb-4 border-b border-gray-200">
+    <div ref={containerRef} className={`w-full max-w-sm bg-white px-4 pt-2 pb-4 border-b border-gray-200 ${highlight ? 'animate-highlight' : ''
+      }`}
+      data-position={focusPosition}>
       <div className="flex items-center justify-between pb-3">
         <div className="flex items-center space-x-2">
           <Check className="h-5 w-5 text-gray-500" />

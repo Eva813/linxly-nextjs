@@ -3,7 +3,7 @@ import React, { useCallback, MouseEvent, useMemo } from 'react'
 import { NodeViewWrapper, NodeViewProps } from '@tiptap/react'
 import { DynamicChip } from './dynamicChip'
 import { FormMenuClickHandler } from '@/types/snippets'
-
+import { useSnippetStore } from '@/stores/snippet/index'
 
 type FormMenuViewProps = NodeViewProps & {
   extension: {
@@ -16,10 +16,15 @@ export default function FormMenuView(props: FormMenuViewProps) {
   const snippetData = node.attrs.snippetData
   console.log('FormMenuView rendering with snippetData:', snippetData);
   // 轉換 attributes 陣列成物件形式
-  const chipData = (snippetData.attributes as Array<{ name: string; value: string }>).reduce<Record<string, string>>((acc, cur) => {
-    acc[cur.name] = cur.value
+  const attributesArray = snippetData.attributes as Array<{ name: string; value: string }>;
+  const chipData = attributesArray.reduce<Record<string, string>>((acc, cur) => {
+    if (cur.value !== null) {
+      acc[cur.name] = cur.value
+    }
     return acc
   }, {})
+  const setFocusKey = useSnippetStore((state) => state.setFocusKey);
+  const position = getPos ? String(getPos()) : '';
 
   // 從 attributes 陣列中找出對應的欄位，這會影響傳入 EditPanel 的資料
   const nameAttr = snippetData.attributes.find((attr: { name: string }) => attr.name === 'name')
@@ -58,7 +63,6 @@ export default function FormMenuView(props: FormMenuViewProps) {
 
       if (!getPos) return
       const pos = getPos()
-      console.log('在 formMenuView: nameAttr', nameAttr, 'defaultAttr', defaultAttr, 'multipleAttr', multipleAttr, ' optionAttr', options)
       if (extension?.options?.onFormMenuClick) {
         extension.options.onFormMenuClick({
           pos,
@@ -69,7 +73,7 @@ export default function FormMenuView(props: FormMenuViewProps) {
         })
       }
     },
-    [getPos, nameAttr, defaultAttr, multipleAttr, options, extension.options, name, resolvedDefaultValue, multiple],
+    [getPos, options, extension.options, name, resolvedDefaultValue, multiple],
   )
 
   return (
@@ -85,7 +89,9 @@ export default function FormMenuView(props: FormMenuViewProps) {
       <DynamicChip
         prefix="="
         data={chipData}
-        onBlockClick={(key, value) => alert(`點擊了區塊：${key} ${value}`)}
+        onBlockClick={(key) => {
+          setFocusKey(`${position}:${key}`);
+        }}
       />
     </NodeViewWrapper>
   )

@@ -21,7 +21,7 @@ const TextInputField = React.forwardRef<HTMLInputElement, TextInputFieldProps>(
         // 移除現有的動畫
         containerRef.current.style.animation = 'none';
         // 強制重繪
-        containerRef.current.offsetHeight;
+        void containerRef.current.offsetHeight; // Use void operator to indicate intentional usage
         // 重新添加動畫
         containerRef.current.style.animation = '';
       }

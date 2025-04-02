@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { parseHtml } from "@/lib/utils/parseHtml";
 import { renderCustomElement } from "./renderers/renderCustomElement";
 
@@ -7,15 +7,15 @@ interface PreviewSnippetProps {
   content: string;
   shortcut: string;
 }
+const VOID_TAGS = new Set([
+  "area", "base", "br", "col", "embed", "hr", "img", "input",
+  "link", "meta", "source", "track", "wbr"
+]);
 
 const PreviewSnippet: React.FC<PreviewSnippetProps> = ({ content, shortcut }) => {
   const [rendered, setRendered] = useState<React.ReactNode[] | null>(null);
-  const VOID_TAGS = new Set([
-    "area", "base", "br", "col", "embed", "hr", "img", "input",
-    "link", "meta", "source", "track", "wbr"
-  ]);
   // 遞迴渲染 DOM ➝ React 元素
-  const renderNode = (node: ChildNode, key: string): React.ReactNode => {
+  const renderNode = useCallback((node: ChildNode, key: string): React.ReactNode => {
     if (node.nodeType === Node.TEXT_NODE) {
       return node.textContent;
     }
@@ -66,7 +66,7 @@ const PreviewSnippet: React.FC<PreviewSnippetProps> = ({ content, shortcut }) =>
     
 
     return null;
-  };
+  }, []); 
 
   useEffect(() => {
     const root = parseHtml(content);
@@ -77,7 +77,7 @@ const PreviewSnippet: React.FC<PreviewSnippetProps> = ({ content, shortcut }) =>
     );
 
     setRendered(children);
-  }, [content]);
+  }, [content, renderNode]);
 
   return (
     <main className="p-4 space-y-4 w-full h-[calc(100vh-160px)] flex flex-col">

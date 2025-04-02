@@ -51,6 +51,17 @@ export const FormMenuFields = ({ editInfo, onChange }: FieldGroupProps) => {
 
   return (
     <>
+      {/* 選項管理欄位 */}
+      <OptionsField
+        title="options"
+        description={organizedFields.options?.description || "Options"}
+        multiple={multipleValue}
+        values={Array.isArray(editInfo.options) ? editInfo.options : []}
+        defaultValue={editInfo.default}
+        highlight={fieldKey === 'options'}
+        focusPosition={position}
+        onChange={handleOptionsChange}
+      />
       {/* 基本屬性欄位 */}
       {Object.entries(organizedFields)
         .filter(([key]) => !['options', 'default', 'multiple'].includes(key))
@@ -80,17 +91,6 @@ export const FormMenuFields = ({ editInfo, onChange }: FieldGroupProps) => {
           // 明確指示型別轉換
           onChange({ multiple: newValue });
         }}
-      />
-      {/* 選項管理欄位 */}
-      <OptionsField
-        title="options"
-        description={organizedFields.options?.description || "Options"}
-        multiple={multipleValue}
-        values={Array.isArray(editInfo.options) ? editInfo.options : []}
-        defaultValue={editInfo.default}
-        highlight={fieldKey === 'options'}
-        focusPosition={position}
-        onChange={handleOptionsChange}
       />
     </>
   );

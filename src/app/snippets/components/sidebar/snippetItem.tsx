@@ -24,8 +24,8 @@ const SnippetItem: React.FC<SnippetItemProps> = React.memo(({
   return (
     <li className="mb-2">
       <div
-        className={`flex items-center justify-between px-2 py-1 w-full block rounded hover:bg-gray-100 dark:hover:text-black ${
-          isActiveSnippet ? "bg-slate-100 dark:text-black" : "bg-transparent"
+        className={`flex items-center justify-between px-2 py-1 w-full font-bold block rounded hover:bg-light dark:hover:text-black ${
+          isActiveSnippet ? "bg-light text-primary dark:text-black" : "bg-transparent"
         }`}
       >
         <Link
@@ -34,7 +34,7 @@ const SnippetItem: React.FC<SnippetItemProps> = React.memo(({
           href={`/snippets/snippet/${snippet.id}`}
         >
           {snippet.name}
-          <span className="inline-flex items-center px-3 py-1 border border-blue-300 text-sm h-6 font-medium rounded-full">
+          <span className="inline-flex items-center px-3 py-1 border-2 border-secondary text-sm h-6 font-medium rounded-full">
             {snippet.shortcut}
           </span>
         </Link>

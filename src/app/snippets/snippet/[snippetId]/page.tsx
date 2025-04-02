@@ -320,21 +320,20 @@ const SnippetPage = ({ params }: SnippetPageProps) => {
 
   return (
     <div className="flex flex-col h-full">
-      <header className="grid grid-cols-[3fr_1fr] mb-4">
+      <header className="grid grid-cols-[3fr_1fr] mb-4 pt-4">
         <div className="grid grid-cols-2 gap-x-4 pr-4">
           {/** Snippet 名稱與捷徑 **/}
           <div className="relative">
-            <Input className="pl-9" placeholder="Type snippet name..." value={name} onChange={e => setName(e.target.value)} />
-            <FaTag className="absolute left-2 top-2 h-4 w-4 text-muted-foreground" />
+            <Input className="pl-9 h-12" placeholder="Type snippet name..." value={name} onChange={e => setName(e.target.value)} />
+            <FaTag className="absolute left-[10px] top-1/2 h-4 w-4 text-muted-foreground -translate-y-1/2" />
           </div>
           {/** Shortcut **/}
           <div className="relative">
-            <Input className="pl-9" placeholder="Add a shortcut..." value={shortcut} onChange={handleShortcutChange} />
-            <FaKeyboard className="absolute left-2 top-2 h-4 w-4 text-muted-foreground" />
+            <Input className="pl-9 h-12" placeholder="Add a shortcut..." value={shortcut} onChange={handleShortcutChange} />
+            <FaKeyboard className="absolute left-[10px] top-1/2 h-4 w-4 text-muted-foreground -translate-y-1/2" />
             {shortcutError && <p className="text-sm text-red-500 mt-1">{shortcutError}</p>}
           </div>
         </div>
-        {/* <div className="pl-4 flex items-center">ewrew</div> */}
         <EditViewButtons mode={mode} onModeChange={setMode} />
       </header>
   

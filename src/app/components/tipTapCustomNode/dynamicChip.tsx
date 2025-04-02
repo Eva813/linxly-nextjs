@@ -13,7 +13,7 @@ interface DynamicChipProps {
 
 /** 垂直分隔線 */
 function Divider() {
-  return <div className="mx-2 h-4 w-px bg-gray-300" />
+  return <div className="h-4 w-px bg-gray-300" />
 }
 
 /**
@@ -35,12 +35,12 @@ export function DynamicChip({
   const fallbackKey = Object.keys(data)[0]
 
   return (
-    <div className="inline-flex items-center rounded-full border border-blue-300 bg-white px-3  text-sm text-gray-700 hover:bg-blue-100">
+    <div className="inline-flex items-center rounded-full border border-secondary bg-white px-1 text-sm text-gray-700 hover:bg-light">
       {/* prefix 區塊 */}
       {prefix && (
         <div
           onClick={onPrefixClick}
-          className="mr-0.5 cursor-pointer rounded px-1"
+          className="rounded pl-2"
         >
           {prefix}
         </div>
@@ -48,14 +48,14 @@ export function DynamicChip({
 
       {/* 動態產生每個資料區塊 */}
       {isFallback ? (
-        <div className="px-1">{fallbackKey}</div>
+        <div className="px-2">{fallbackKey}</div>
       ) : (
         entries.map(([key, value], idx) => (
           <React.Fragment key={key}>
             {idx > 0 && <Divider />}
             <div
               onClick={() => onBlockClick?.(key, value)}
-              className="cursor-pointer px-1 hover:bg-blue-200"
+              className="cursor-pointer px-2 hover:bg-[#c9d5e8]"
             >
               {`${key} ${value}`}
             </div>

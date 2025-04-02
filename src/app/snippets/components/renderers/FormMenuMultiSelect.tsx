@@ -75,7 +75,7 @@ const FormMenuMultiSelect: React.FC<FormMenuMultiSelectProps> = ({
           id={dropdownId}
           type="button"
           onClick={() => setOpen(!open)}
-          className="w-40 py-1 px-3 border border-gray-300 rounded bg-slate-100 text-left relative pr-8"
+          className="w-40 py-1 px-3 border border-gray-300 rounded bg-light text-left relative pr-8"
         >
           <span className="truncate block">
             {selected.join(", ") || "choose"}

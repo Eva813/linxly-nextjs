@@ -2,6 +2,7 @@
 import React, { useCallback, MouseEvent } from 'react'
 import { NodeViewWrapper, NodeViewProps } from '@tiptap/react'
 import { DynamicChip } from './dynamicChip'
+import { useSnippetStore } from '@/stores/snippet/index'
 
 // 我們再擴充一下 options 裡可能用到的 onFormTextClick
 interface FormTextNodeOptions {
@@ -37,7 +38,12 @@ export default function FormTextView(props: FormTextViewProps) {
 
   const name = chipData['name'] || ''
   const defaultValue = chipData['default'] || ''
+  // Use store’s setFocusKey to update focus state from a chip click event
+  const setFocusKey = useSnippetStore((state) => state.setFocusKey);
 
+  // 獲取當前位置作為唯一識別符
+  const position = getPos ? String(getPos()) : '';
+  
   const handleClick = useCallback(
     (event: MouseEvent<HTMLSpanElement>) => {
       event.preventDefault()
@@ -73,9 +79,10 @@ export default function FormTextView(props: FormTextViewProps) {
       <DynamicChip
         prefix="="
         data={isEmptyChip ? fallbackChipData : chipData}
-        onBlockClick={(key, value) =>
-          alert(`點擊了區塊：${key} ${value}`)
-        }
+        onBlockClick={(key, value) => {
+          console.log(`點擊了區塊：${key} ${value}`);
+          setFocusKey(`${position}:${key}`);
+        }}
       />
     </NodeViewWrapper>
   )

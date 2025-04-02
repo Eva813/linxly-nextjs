@@ -17,11 +17,11 @@ export default function EditPreviewButtons({ mode, onModeChange }: Props) {
         type="single"
         value={mode}
         onValueChange={(v) => onModeChange(v as Mode)}
-        className="inline-flex gap-0 rounded-md divide-x border border-gray-300 "
+        className="inline-flex gap-0 rounded-md divide-x border border-gray-300 h-12"
       >
         <ToggleGroupItem
           value="edit"
-          className="flex items-center gap-1 px-3 py-2 text-sm font-medium rounded-r-none data-[state=on]:bg-slate-200 data-[state=on]:text-slate-500 data-[state=off]:bg-white data-[state=off]:text-gray-600"
+          className="flex items-center gap-1 px-3 py-2 h-full font-bold rounded-r-none data-[state=on]:bg-light data-[state=on]:text-primary data-[state=off]:bg-white data-[state=off]:text-gray-600"
           aria-label="Edit"
         >
           <FaEdit className="text-base" />
@@ -30,7 +30,7 @@ export default function EditPreviewButtons({ mode, onModeChange }: Props) {
 
         <ToggleGroupItem
           value="preview"
-          className="flex items-center gap-1 px-3 py-2 text-sm rounded-l-none font-medium data-[state=on]:bg-slate-200 data-[state=on]:text-slate-500 data-[state=off]:bg-white data-[state=off]:text-gray-600"
+          className="flex items-center gap-1 px-3 py-2  h-full rounded-l-none font-bold data-[state=on]:bg-light data-[state=on]:text-primary data-[state=off]:bg-white data-[state=off]:text-gray-600"
           aria-label="Preview"
         >
           <FaEye className="text-base" />

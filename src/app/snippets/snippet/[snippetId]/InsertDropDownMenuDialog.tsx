@@ -22,36 +22,23 @@ interface InsertDropdownMenuDialogProps {
 export default function InsertDropdownMenuDialog({
   isOpen,
   onClose,
-  onInsert,
-  defaultName = '',
-  defaultOptionValues = [], //option Value  
-  defaultMultiple = false,
-  selectedValue = defaultMultiple ? [] : '',
+  onInsert
 }: InsertDropdownMenuDialogProps) {
-  const [name, setName] = useState(defaultName);
-  const [values, setValues] = useState<string[]>(defaultOptionValues);
-  const [multiple, setMultiple] = useState(defaultMultiple);
-  const [selectedValues, setSelectedValues] = useState<string | string[]>(selectedValue);
+  const [name, setName] = useState('');
+  const [values, setValues] = useState<string[]>([]);
+  const [multiple, setMultiple] = useState(false);
+  const [selectedValues, setSelectedValues] = useState<string | string[]>(multiple ? [] : '');
+
 
     useEffect(() => {
       if (!isOpen) return;
-      const newValues = Array.isArray(defaultOptionValues) ? defaultOptionValues : [];
-      const isMultiple = Boolean(defaultMultiple);
-      console.log('selectedValue',selectedValue,'isMultiple',isMultiple)
-      let newSelectedValues: string | string[] = '';
-      if (isMultiple) {
-        newSelectedValues = Array.isArray(selectedValue) 
-          ? selectedValue 
-          : (typeof selectedValue === 'string' ? selectedValue.split(',') : []);
-      } else {
-        newSelectedValues = selectedValue.toString();
-      }
-      console.log('newValues',newValues,'isMultiple',isMultiple,'newSelectedValues',newSelectedValues)
-  
-      setName(defaultName);
-      setValues(newValues);
-      setMultiple(isMultiple);
-      setSelectedValues(newSelectedValues);
+      
+      // 直接設置為空值或預設值
+      setName('');
+      setValues([]);
+      setMultiple(false);
+      setSelectedValues('');
+      
     }, [isOpen]);
   
 
@@ -166,7 +153,7 @@ export default function InsertDropdownMenuDialog({
 
         {/* Footer Buttons */}
         <DialogFooter>
-          <Button variant="secondary" onClick={onClose}>Cancel</Button>
+          <Button variant="outline" onClick={onClose}>Cancel</Button>
           <Button onClick={handleInsert}>Insert</Button>
         </DialogFooter>
       </DialogContent>

@@ -49,7 +49,7 @@ export default function InsertTextFieldDialog({ isOpen, onClose, onInsert, defau
           </div>
         </div>
         <DialogFooter>
-          <Button variant="secondary" onClick={onClose}>Cancel</Button>
+          <Button variant="outline" onClick={onClose}>Cancel</Button>
           <Button onClick={handleInsert}>Insert</Button>
         </DialogFooter>
       </DialogContent>

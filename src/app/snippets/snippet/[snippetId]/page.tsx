@@ -18,6 +18,7 @@ import { buildFormData, IBuiltFormData } from '@/lib/buildFormData'
 import { Snippet, DropdownEditInfo, TextInputEditInfo, EditInfo } from '@/types/snippets'
 import EditViewButtons, { Mode } from "@/app/snippets/components/editViewButtons";
 import PreviewSnippet from "@/app/snippets/components/previewSnippet";
+import TryItOutPopup from './tryItOutPopup';
 interface SnippetDataMapping {
   formtext: IBuiltFormData<typeof formTextSpec>;
   formmenu: IBuiltFormData<typeof formMenuSpec>;
@@ -48,6 +49,8 @@ const SnippetPage = ({ params }: SnippetPageProps) => {
   const [shortcut, setShortcut] = useState("");
   const [content, setContent] = useState("");
   const [shortcutError, setShortcutError] = useState<string | null>(null);
+  const [isPopupVisible, setIsPopupVisible] = useState(false);
+
 
   // 透過 ref 持有 editor 實例
   const editorRef = useRef<Editor | null>(null);
@@ -330,6 +333,13 @@ const SnippetPage = ({ params }: SnippetPageProps) => {
             <Input className="pl-9 h-12" placeholder="Add a shortcut..." value={shortcut} onChange={handleShortcutChange} />
             <FaKeyboard className="absolute left-[10px] top-1/2 h-4 w-4 text-muted-foreground -translate-y-1/2" />
             {shortcutError && <p className="text-sm text-red-500 mt-1">{shortcutError}</p>}
+            <Button
+              className="absolute right-[10px] top-1/2 h-8 px-4 -translate-y-1/2"
+              onClick={() => setIsPopupVisible(!isPopupVisible)}
+            >
+              Try it out
+            </Button>
+            {isPopupVisible && <TryItOutPopup shortcut={shortcut} />}
           </div>
         </div>
         <EditViewButtons mode={mode} onModeChange={setMode} />

@@ -135,11 +135,11 @@ const Sidebar = () => {
   return (
     <div className="w-1/4 p-4 border-r border-gray-300 h-full overflow-y-auto">
       <div className="grid grid-cols-2 gap-x-4 mb-4">
-        <Button className="h-10 text-lg" onClick={handleAddFolder}>
+        <Button className="h-8" onClick={handleAddFolder}>
           <FaFolderPlus />
           Add Folder
         </Button>
-        <Button className="h-10 text-lg" onClick={handleAddSnippet}>
+        <Button className="h-8" onClick={handleAddSnippet}>
           <FaFileMedical />
           Add Snippet
         </Button>

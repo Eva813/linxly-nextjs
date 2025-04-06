@@ -1,6 +1,8 @@
-import React, { useEffect, useRef } from 'react';
+import React from 'react';
 import { Check, X } from 'lucide-react';
 import { Input } from '@/components/ui/input';
+import { useForceRerender } from '@/lib/useForceRepaint';
+
 
 interface TextInputFieldProps {
   title: string; // This will be the key (e.g., 'name')
@@ -14,25 +16,13 @@ interface TextInputFieldProps {
 
 const TextInputField = React.forwardRef<HTMLInputElement, TextInputFieldProps>(
   ({ title, description, value, onChange, highlight, focusPosition }, ref) => {
-    const containerRef = useRef<HTMLDivElement>(null);
-
-    useEffect(() => {
-      if (highlight && focusPosition && containerRef.current) {
-        // 移除現有的動畫
-        containerRef.current.style.animation = 'none';
-        // 強制重繪
-        void containerRef.current.offsetHeight; // Use void operator to indicate intentional usage
-        // 重新添加動畫
-        containerRef.current.style.animation = '';
-      }
-    }, [highlight, focusPosition]);
+    const containerRef = useForceRerender(highlight, focusPosition);
 
     return (
-      <div 
+      <div
         ref={containerRef}
-        className={`w-full max-w-sm bg-white px-4 pt-2 pb-4 border-b border-gray-200 ${
-          highlight ? 'animate-highlight' : ''
-        }`}
+        className={`w-full max-w-sm bg-white px-4 pt-2 pb-4 border-b border-gray-200 ${highlight ? 'animate-highlight' : ''
+          }`}
         data-position={focusPosition}
       >
         <div className="flex items-center justify-between pb-3">

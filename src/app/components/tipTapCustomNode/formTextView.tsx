@@ -3,14 +3,15 @@ import React, { useCallback, MouseEvent } from 'react'
 import { NodeViewWrapper, NodeViewProps } from '@tiptap/react'
 import { DynamicChip } from './dynamicChip'
 import { useSnippetStore } from '@/stores/snippet/index'
+import { MdOutlineShortText } from "react-icons/md";
 
 // 我們再擴充一下 options 裡可能用到的 onFormTextClick
 interface FormTextNodeOptions {
-    onFormTextClick?: (data: {
-        pos: number
-        name: string
-        default: string
-    }) => void
+  onFormTextClick?: (data: {
+    pos: number
+    name: string
+    default: string
+  }) => void
 }
 
 /**
@@ -19,9 +20,9 @@ interface FormTextNodeOptions {
  * - extension.options 會是 { onFormTextClick: ... }
  */
 type FormTextViewProps = NodeViewProps & {
-    extension: {
-        options?: FormTextNodeOptions
-    }
+  extension: {
+    options?: FormTextNodeOptions
+  }
 }
 
 export default function FormTextView(props: FormTextViewProps) {
@@ -43,7 +44,7 @@ export default function FormTextView(props: FormTextViewProps) {
 
   // 獲取當前位置作為唯一識別符
   const position = getPos ? String(getPos()) : '';
-  
+
   const handleClick = useCallback(
     (event: MouseEvent<HTMLSpanElement>) => {
       event.preventDefault()
@@ -77,10 +78,9 @@ export default function FormTextView(props: FormTextViewProps) {
       data-snippet={JSON.stringify(node.attrs.snippetData)}
     >
       <DynamicChip
-        prefix="="
+        icon={<MdOutlineShortText className="h-4 w-4" />}
         data={isEmptyChip ? fallbackChipData : chipData}
-        onBlockClick={(key, value) => {
-          console.log(`點擊了區塊：${key} ${value}`);
+        onBlockClick={(key) => {
           setFocusKey(`${position}:${key}`);
         }}
       />

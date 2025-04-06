@@ -17,7 +17,7 @@ import { FormMenuClickHandler, FormMenuData } from '@/types/snippets'
 interface TipTapEditorProps {
   value: string;
   minHeight?: string;
-  maxHeight? : string;
+  maxHeight?: string;
   isRequired?: boolean;
   onChange: (value: string) => void;
   onEditorReady: (editor: Editor) => void;
@@ -108,7 +108,6 @@ const TipTapEditor = ({
 
   useEffect(() => {
     if (editor && value !== editor.getHTML()) {
-      console.log('Updating editor content:', value);
       editor.commands.setContent(value || '', false);
     }
   }, [value, editor]);

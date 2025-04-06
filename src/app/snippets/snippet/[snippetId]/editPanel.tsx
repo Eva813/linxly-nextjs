@@ -26,7 +26,6 @@ export default function EditPanel({ editInfo, onChange }: SidebarProps) {
 
 
   return (
-    // overflow - y - auto flex flex - col
     <div className="">
       <h2 className="font-bold px-4 py-2">Edit Panel</h2>
       <div className='px-4 py-2'>{editInfo.type}</div>

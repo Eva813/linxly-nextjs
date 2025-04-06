@@ -77,7 +77,7 @@ const SnippetPage = ({ params }: SnippetPageProps) => {
     setTextInputEditInfo(null);
     setIsTextDialogOpen(true);
   }, []);
-  const handleInsertMenuFieldClick = useCallback(() =>  {
+  const handleInsertMenuFieldClick = useCallback(() => {
     setDropdownEditInfo(null); // 清除編輯狀態
     setIsDropdownDialogOpen(true);
   }, []);
@@ -160,7 +160,6 @@ const SnippetPage = ({ params }: SnippetPageProps) => {
   }) => {
     setTextInputEditInfo(null);
     // 將 options 轉成陣列
-    console.log('傳入', options, 'multiple', multiple, 'default', defaultValue)
     setDropdownEditInfo({
       type: "formmenu",
       pos,
@@ -202,7 +201,6 @@ const SnippetPage = ({ params }: SnippetPageProps) => {
   ) => {
     const editor = editorRef.current;
     if (!editor) return;
-    console.log(values, "and", selectedValues);
     if (!dropdownEditInfo) {
       editor
         .chain()
@@ -336,38 +334,38 @@ const SnippetPage = ({ params }: SnippetPageProps) => {
         </div>
         <EditViewButtons mode={mode} onModeChange={setMode} />
       </header>
-  
+
       <main className="grid grid-cols-[3fr_1fr] flex-1 min-h-0">
-        { mode === "edit" ? (
+        {mode === "edit" ? (
           <><section className="flex flex-col pr-4 py-4 border-r border-gray-200">
-          <TipTapEditor
-            value={content}
-            onChange={setContent}
-            onEditorReady={editor => (editorRef.current = editor)}
-            onFormTextNodeClick={handleFormTextNodeClick}
-            onFormMenuNodeClick={handleFormMenuNodeClick}
-            onEditorClick={handleEditorClick}
-            maxHeight='calc(100vh - 300px)'
-          />
-          <Button className="w-20" onClick={handleSave}>Save</Button>
-        </section>
-  
-        <aside className="min-h-0 overflow-y-auto">
-          {isEditPanelVisible && activeEditInfo ? (
-            <EditPanel editInfo={activeEditInfo} onChange={handleTextInputChange} />
-          ) : (
-            <Sidebar
-              onInsertTextFieldClick={handleInsertTextFieldClick}
-              onInsertMenuFieldClick={handleInsertMenuFieldClick}
+            <TipTapEditor
+              value={content}
+              onChange={setContent}
+              onEditorReady={editor => (editorRef.current = editor)}
+              onFormTextNodeClick={handleFormTextNodeClick}
+              onFormMenuNodeClick={handleFormMenuNodeClick}
+              onEditorClick={handleEditorClick}
+              maxHeight='calc(100vh - 300px)'
             />
-          )}
-        </aside></>)
-        : <div className="border-r border-gray-200">
-          <PreviewSnippet content={content} shortcut={shortcut} />
-      </div>
+            <Button className="w-20" onClick={handleSave}>Save</Button>
+          </section>
+
+            <aside className="min-h-0 overflow-y-auto">
+              {isEditPanelVisible && activeEditInfo ? (
+                <EditPanel editInfo={activeEditInfo} onChange={handleTextInputChange} />
+              ) : (
+                <Sidebar
+                  onInsertTextFieldClick={handleInsertTextFieldClick}
+                  onInsertMenuFieldClick={handleInsertMenuFieldClick}
+                />
+              )}
+            </aside></>)
+          : <div className="border-r border-gray-200">
+            <PreviewSnippet content={content} shortcut={shortcut} />
+          </div>
         }
       </main>
-  
+
       <InsertTextFieldDialog
         isOpen={isTextDialogOpen}
         onClose={() => setIsTextDialogOpen(false)}

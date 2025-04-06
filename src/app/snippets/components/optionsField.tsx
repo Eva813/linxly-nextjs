@@ -35,7 +35,6 @@ export function OptionsField({
   focusPosition
 }: OptionsFieldProps) {
   const [localOptions, setLocalOptions] = useState<string[]>(values);
-  // const [choiceCounter, setChoiceCounter] = useState(values.length);
   const [selectedOptions, setSelectedOptions] = useState<string[]>(() => {
     if (multiple) {
       return Array.isArray(defaultValue)
@@ -80,11 +79,11 @@ export function OptionsField({
   }, [debouncedChangeHandler]);
 
   // 當父層傳入的值改變時，同步更新 localOptions 與 selectedOptions
-  React.useEffect(() => {
+  useEffect(() => {
     setLocalOptions(values);
   }, [values]);
 
-  React.useEffect(() => {
+  useEffect(() => {
     let normalized: string[] = [];
     if (multiple) {
       normalized = Array.isArray(defaultValue)
@@ -101,10 +100,7 @@ export function OptionsField({
 
   // 新增選項：更新 localOptions 與 choiceCounter，並呼叫 debouncedOnChange
   const addOption = () => {
-    // const nextCount = choiceCounter + 1;
-    // const newOption = `Choice ${nextCount}`;
     const newLocalOptions = [...localOptions, ""];
-    // setChoiceCounter(nextCount);
     setLocalOptions(newLocalOptions);
     debouncedOnChange(newLocalOptions, selectedOptions);
   };
@@ -207,7 +203,6 @@ export function OptionsField({
               <Input
                 value={value}
                 onChange={(e) => updateOption(index, e.target.value)}
-              // placeholder={`Choice ${index + 1}`}
               />
               <Button
                 variant="ghost"
@@ -229,7 +224,6 @@ export function OptionsField({
                 <Input
                   value={value}
                   onChange={(e) => updateOption(index, e.target.value)}
-                // placeholder={`Choice ${index + 1}`}
                 />
                 <Button
                   variant="ghost"

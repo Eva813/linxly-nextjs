@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useEffect } from 'react'
+import React, { useMemo, useRef, useEffect, useCallback } from 'react'
 import TextInputField from '@/app/snippets/components/textInputField'
 import { BooleanField } from '@/app/snippets/components/booleanField'
 import { OptionsField } from '@/app/snippets/components/optionsField'
@@ -9,9 +9,14 @@ import { useSnippetStore } from '@/stores/snippet/index'
 
 export const FormMenuFields = ({ editInfo, onChange }: FieldGroupProps) => {
   const organizedFields = organizeFormInput(editInfo, formMenuSpec);
-  const handleOptionsChange = createOptionsChangeHandler(editInfo, onChange);
-  console.log('FormMenuFields rendering with editInfo:', organizedFields);
-  // const multipleRef = useRef<HTMLInputElement>(null);
+  // const handleOptionsChange = createOptionsChangeHandler(editInfo, onChange);
+  // 使用 useCallback 包裝 handleOptionsChange 函式
+  const handleOptionsChange = useCallback((options: { values: string[]; defaultValue: string | string[] }) => {
+    // 呼叫 createOptionsChangeHandler 建立的函式處理邏輯
+    const handler = createOptionsChangeHandler(editInfo, onChange);
+    handler(options);
+  }, [editInfo, onChange]);
+
   const focusKey = useSnippetStore((state) => state.focusKey);
   // 目前在 formmnue 的編輯，只有 name 欄位需要 focus
   const nameRef = useRef<HTMLInputElement>(null);
@@ -19,7 +24,6 @@ export const FormMenuFields = ({ editInfo, onChange }: FieldGroupProps) => {
   const inputRefs = useMemo(() => ({
     name: nameRef
   } as { [key: string]: React.RefObject<HTMLInputElement> }), [nameRef]);
-
 
   // 解析 focusKey 獲取位置和欄位名稱
   const getFocusInfo = (focusKey: string | null) => {
@@ -87,7 +91,6 @@ export const FormMenuFields = ({ editInfo, onChange }: FieldGroupProps) => {
         highlight={fieldKey === 'multiple'}
         focusPosition={position}
         onChange={(newValue) => {
-          console.log('布林切換:', newValue);
           // 明確指示型別轉換
           onChange({ multiple: newValue });
         }}

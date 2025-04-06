@@ -50,7 +50,7 @@ export default function FormMenuView(props: FormMenuViewProps) {
     // 轉換 attributes 陣列成物件形式
     const attributesArray = snippetData.attributes as Array<{ name: string; value: string }>;
     const map = attributesArray
-      .filter(({ name, value }) => value !== null && name !== 'default' && name !== 'multiple')
+      .filter(({ name, value }) => value !== null && name !== 'multiple')
       .reduce<Record<string, string>>((acc, { name, value }) => {
         acc[name] = value;
         return acc;

@@ -23,11 +23,11 @@ const PreviewSnippet: React.FC<PreviewSnippetProps> = ({ content, shortcut }) =>
     if (node.nodeType === Node.ELEMENT_NODE) {
       const el = node as HTMLElement;
       const tagName = el.tagName.toLowerCase();
-    
+
       if (el.tagName === "SPAN" && el.hasAttribute("data-type")) {
         return renderCustomElement(el, key);
       }
-      
+
       // 遞迴子節點
       const children = Array.from(el.childNodes).map((child, i) =>
         renderNode(child, `${key}-${i}`)
@@ -37,11 +37,11 @@ const PreviewSnippet: React.FC<PreviewSnippetProps> = ({ content, shortcut }) =>
       if (VOID_TAGS.has(tagName)) {
         return React.createElement(tagName, { key });
       }
-        
-      // 建立 style object（使用 Vanilla JS）
+
+      // 建立 style object，加入樣式
       const styleObj: React.CSSProperties = {};
       const style = el.style;
-    
+
       for (let i = 0; i < style.length; i++) {
         const prop = style.item(i);
         if (!prop) continue;
@@ -52,7 +52,7 @@ const PreviewSnippet: React.FC<PreviewSnippetProps> = ({ content, shortcut }) =>
           styleObj[camelProp] = value as any;
         }
       }
-    
+
       return React.createElement(
         tagName,
         {
@@ -63,10 +63,10 @@ const PreviewSnippet: React.FC<PreviewSnippetProps> = ({ content, shortcut }) =>
         children
       );
     }
-    
+
 
     return null;
-  }, []); 
+  }, []);
 
   useEffect(() => {
     const root = parseHtml(content);

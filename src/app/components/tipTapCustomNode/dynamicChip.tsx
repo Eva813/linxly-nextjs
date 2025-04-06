@@ -50,8 +50,6 @@ export function DynamicChip({
       ) : (
         entries.map(([key, value], idx) => {
           const extraClass = fieldStyles?.[key]?.className ?? '';
-          console.log(`Key: ${key}, Value: ${value}`);
-          console.log(` Value: ${extraClass}`);
           return (
             <React.Fragment key={key}>
               {idx > 0 && <Divider />}

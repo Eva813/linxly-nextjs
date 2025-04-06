@@ -80,8 +80,7 @@ export default function FormTextView(props: FormTextViewProps) {
       <DynamicChip
         icon={<MdOutlineShortText className="h-4 w-4" />}
         data={isEmptyChip ? fallbackChipData : chipData}
-        onBlockClick={(key, value) => {
-          console.log(`點擊了區塊：${key} ${value}`);
+        onBlockClick={(key) => {
           setFocusKey(`${position}:${key}`);
         }}
       />

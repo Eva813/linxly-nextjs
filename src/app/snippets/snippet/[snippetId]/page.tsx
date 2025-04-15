@@ -18,6 +18,8 @@ import { buildFormData, IBuiltFormData } from '@/lib/buildFormData'
 import { Snippet, DropdownEditInfo, TextInputEditInfo, EditInfo } from '@/types/snippets'
 import EditViewButtons, { Mode } from "@/app/snippets/components/editViewButtons";
 import PreviewSnippet from "@/app/snippets/components/previewSnippet";
+import TryItOutPopup from './tryItOutPopup';
+import ShortcutErrorAlert  from "@/app/snippets/components/shortcutErrorAlert";  
 interface SnippetDataMapping {
   formtext: IBuiltFormData<typeof formTextSpec>;
   formmenu: IBuiltFormData<typeof formMenuSpec>;
@@ -27,6 +29,12 @@ interface SnippetPageProps {
     snippetId: string;
   };
 }
+
+interface ShortcutError {
+  conflictingShortcut: string;
+  message: string;
+}
+
 
 // 使用泛型並依據傳入的 type 取得對應的 snippetData 型別
 type UpdateHandler<T extends EditInfo> = {
@@ -42,12 +50,14 @@ type UpdateHandler<T extends EditInfo> = {
 
 const SnippetPage = ({ params }: SnippetPageProps) => {
   const { snippetId } = params;
-  // 改用 useSnippetStore 取得 folders 與更新函式
   const { folders, updateSnippet } = useSnippetStore();
   const [name, setName] = useState("");
   const [shortcut, setShortcut] = useState("");
   const [content, setContent] = useState("");
-  const [shortcutError, setShortcutError] = useState<string | null>(null);
+  const [shortcutError, setShortcutError] = useState<ShortcutError | null>(null);
+  const [isPopupVisible, setIsPopupVisible] = useState(false);
+  const tryItOutButtonRef = useRef<HTMLButtonElement>(null);
+
 
   // 透過 ref 持有 editor 實例
   const editorRef = useRef<Editor | null>(null);
@@ -236,11 +246,11 @@ const SnippetPage = ({ params }: SnippetPageProps) => {
           (shortcut.length > 1 &&
             (shortcut.startsWith(s.shortcut) || s.shortcut.startsWith(shortcut)))
       );
-    console.log("Conflicting snippet:", conflictingSnippet);
     if (conflictingSnippet) {
-      setShortcutError(
-        `Conflicting shortcut with ${conflictingSnippet.shortcut}. Please choose a unique shortcut.`
-      );
+      setShortcutError({
+        conflictingShortcut: conflictingSnippet.shortcut,
+        message: "Please choose a unique shortcut."
+      });
     } else {
       setShortcutError(null);
     }
@@ -327,9 +337,22 @@ const SnippetPage = ({ params }: SnippetPageProps) => {
           </div>
           {/** Shortcut **/}
           <div className="relative">
-            <Input className="pl-9 h-12" placeholder="Add a shortcut..." value={shortcut} onChange={handleShortcutChange} />
-            <FaKeyboard className="absolute left-[10px] top-1/2 h-4 w-4 text-muted-foreground -translate-y-1/2" />
-            {shortcutError && <p className="text-sm text-red-500 mt-1">{shortcutError}</p>}
+            <div className="relative">
+              <Input className="pl-9 h-12" placeholder="Add a shortcut..." value={shortcut} onChange={handleShortcutChange} />
+              <FaKeyboard className="absolute left-[10px] top-1/2 h-4 w-4 text-muted-foreground -translate-y-1/2" />
+              <Button
+                ref={tryItOutButtonRef}
+                className="absolute right-[10px] top-1/2 h-8 px-4 -translate-y-1/2"
+                onClick={e => {
+                  e.stopPropagation();
+                  setIsPopupVisible(prev => !prev);
+                }}
+              >
+                Try it out
+              </Button>
+            </div>
+            {shortcutError && <ShortcutErrorAlert error={shortcutError} onClose={() => setShortcutError(null)} />}
+            {isPopupVisible && <TryItOutPopup tryItOutButtonRef={tryItOutButtonRef} shortcut={shortcut} onClose={() => setIsPopupVisible(false)} />}
           </div>
         </div>
         <EditViewButtons mode={mode} onModeChange={setMode} />

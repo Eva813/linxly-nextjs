@@ -6,10 +6,26 @@ import dynamic from "next/dynamic";
 import { useSnippetStore } from "@/stores/snippet";
 import { Button } from "@/components/ui/button";
 import { FaFolderPlus, FaFileMedical } from "react-icons/fa";
+import { Skeleton } from "@/components/ui/skeleton"
 
 // 動態載入 FolderItem 與 SnippetItem
-const FolderItem = dynamic(() => import("./folderItem"), { ssr: false });
-const SnippetItem = dynamic(() => import("./snippetItem"), { ssr: false });
+const FolderItem = dynamic(() => import("./folderItem"), {
+  ssr: false,
+  loading: () => (
+    <div className="px-2 py-2">
+      <Skeleton className="h-8 w-full rounded-md" />
+    </div>
+  ),
+});
+
+const SnippetItem = dynamic(() => import("./snippetItem"), {
+  ssr: false,
+  loading: () => (
+    <div className="px-2 py-1">
+      <Skeleton className="h-6 w-full rounded-md" />
+    </div>
+  ),
+});
 
 const Sidebar = () => {
   const {
@@ -145,40 +161,40 @@ const Sidebar = () => {
         </Button>
       </div>
       <div className="flex-1">
-        <ul className="dark:text-gray-200">
-          {folders.map((folder) => (
-            <FolderItem
-              key={folder.id}
-              folder={folder}
-              activeFolderMenu={activeFolderMenu}
-              setActiveFolderMenu={setActiveFolderMenu}
-              collapsedFolders={collapsedFolders}
-              toggleCollapse={toggleCollapse}
-              deleteFolder={handleDeleteFolder}
-              pathname={pathname ?? ""}
-            >
-              <ul className="ml-4 mt-1">
-                {folder.snippets.length === 0 ? (
-                  <span className="ml-2 text-gray-500">
-                    No snippets in the folder
-                  </span>
-                ) : (
-                  folder.snippets.map((snippet) => (
-                    <SnippetItem
-                      key={snippet.id}
-                      snippet={snippet}
-                      folderId={folder.id}
-                      activeSnippetMenu={activeSnippetMenu}
-                      setActiveSnippetMenu={setActiveSnippetMenu}
-                      deleteFile={handleDeleteSnippet}
-                      pathname={pathname ?? ""}
-                    />
-                  ))
-                )}
-              </ul>
-            </FolderItem>
-          ))}
-        </ul>
+          <ul className="dark:text-gray-200">
+            {folders.map((folder) => (
+              <FolderItem
+                key={folder.id}
+                folder={folder}
+                activeFolderMenu={activeFolderMenu}
+                setActiveFolderMenu={setActiveFolderMenu}
+                collapsedFolders={collapsedFolders}
+                toggleCollapse={toggleCollapse}
+                deleteFolder={handleDeleteFolder}
+                pathname={pathname ?? ""}
+              >
+                <ul className="ml-4 mt-1">
+                  {folder.snippets.length === 0 ? (
+                    <span className="ml-2 text-gray-500">
+                      No snippets in the folder
+                    </span>
+                  ) : (
+                    folder.snippets.map((snippet) => (
+                      <SnippetItem
+                        key={snippet.id}
+                        snippet={snippet}
+                        folderId={folder.id}
+                        activeSnippetMenu={activeSnippetMenu}
+                        setActiveSnippetMenu={setActiveSnippetMenu}
+                        deleteFile={handleDeleteSnippet}
+                        pathname={pathname ?? ""}
+                      />
+                    ))
+                  )}
+                </ul>
+              </FolderItem>
+            ))}
+          </ul>
       </div>
     </div>
   );

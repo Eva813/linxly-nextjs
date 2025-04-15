@@ -1,11 +1,12 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import dynamic from "next/dynamic";
 import { useSnippetStore } from "@/stores/snippet";
 import { Button } from "@/components/ui/button";
 import { FaFolderPlus, FaFileMedical } from "react-icons/fa";
+import { Skeleton } from "@/components/ui/skeleton"
 
 // 動態載入 FolderItem 與 SnippetItem
 const FolderItem = dynamic(() => import("./folderItem"), { ssr: false });
@@ -26,7 +27,15 @@ const Sidebar = () => {
   const [activeFolderMenu, setActiveFolderMenu] = useState<string | null>(null);
   const [collapsedFolders, setCollapsedFolders] = useState<Set<string>>(new Set());
   const [activeSnippetMenu, setActiveSnippetMenu] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
+  // 偵測資料夾是否已載入
+  useEffect(() => {
+    // 如果 folders 已經有資料，則設定為非載入狀態
+    if (folders && Array.isArray(folders)) {
+      setIsLoading(false);
+    }
+  }, [folders]);
   // 解析目前路由資訊 (/snippets/folder/[folderId] 或 /snippets/snippet/[snippetId])
   const getCurrentContext = () => {
     const segments = (pathname ?? "").split("/").filter(Boolean);
@@ -145,40 +154,53 @@ const Sidebar = () => {
         </Button>
       </div>
       <div className="flex-1">
-        <ul className="dark:text-gray-200">
-          {folders.map((folder) => (
-            <FolderItem
-              key={folder.id}
-              folder={folder}
-              activeFolderMenu={activeFolderMenu}
-              setActiveFolderMenu={setActiveFolderMenu}
-              collapsedFolders={collapsedFolders}
-              toggleCollapse={toggleCollapse}
-              deleteFolder={handleDeleteFolder}
-              pathname={pathname ?? ""}
-            >
-              <ul className="ml-4 mt-1">
-                {folder.snippets.length === 0 ? (
-                  <span className="ml-2 text-gray-500">
-                    No snippets in the folder
-                  </span>
-                ) : (
-                  folder.snippets.map((snippet) => (
-                    <SnippetItem
-                      key={snippet.id}
-                      snippet={snippet}
-                      folderId={folder.id}
-                      activeSnippetMenu={activeSnippetMenu}
-                      setActiveSnippetMenu={setActiveSnippetMenu}
-                      deleteFile={handleDeleteSnippet}
-                      pathname={pathname ?? ""}
-                    />
-                  ))
-                )}
-              </ul>
-            </FolderItem>
-          ))}
-        </ul>
+        {isLoading ? (
+          // 骨架屏元件
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Skeleton className="h-8 w-full rounded-md" />
+              <div className="ml-4 space-y-2">
+                <Skeleton className="h-6 w-full rounded-md" />
+                <Skeleton className="h-6 w-full rounded-md" />
+              </div>
+            </div>
+          </div>
+        ) : (
+          <ul className="dark:text-gray-200">
+            {folders.map((folder) => (
+              <FolderItem
+                key={folder.id}
+                folder={folder}
+                activeFolderMenu={activeFolderMenu}
+                setActiveFolderMenu={setActiveFolderMenu}
+                collapsedFolders={collapsedFolders}
+                toggleCollapse={toggleCollapse}
+                deleteFolder={handleDeleteFolder}
+                pathname={pathname ?? ""}
+              >
+                <ul className="ml-4 mt-1">
+                  {folder.snippets.length === 0 ? (
+                    <span className="ml-2 text-gray-500">
+                      No snippets in the folder
+                    </span>
+                  ) : (
+                    folder.snippets.map((snippet) => (
+                      <SnippetItem
+                        key={snippet.id}
+                        snippet={snippet}
+                        folderId={folder.id}
+                        activeSnippetMenu={activeSnippetMenu}
+                        setActiveSnippetMenu={setActiveSnippetMenu}
+                        deleteFile={handleDeleteSnippet}
+                        pathname={pathname ?? ""}
+                      />
+                    ))
+                  )}
+                </ul>
+              </FolderItem>
+            ))}
+          </ul>
+        )}
       </div>
     </div>
   );

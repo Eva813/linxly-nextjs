@@ -1,8 +1,9 @@
 'use client'
-// index.js
+
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation'
 import { useSnippetStore } from "@/stores/snippet";
+import { Skeleton } from "@/components/ui/skeleton"
 
 const Snippets = () => {
   const router = useRouter();
@@ -16,9 +17,9 @@ const Snippets = () => {
   }, [folders, router]);
 
   return (
-    <div>
-      <h1>Snippets</h1>
-      <p>Loading...</p>
+    <div className="flex flex-col space-y-3">
+      <Skeleton className="h-6 w-[250px]" />
+      <Skeleton className="h-20 w-full" />
     </div>
   );
 };

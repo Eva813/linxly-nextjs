@@ -91,6 +91,10 @@ const config: Config = {
 					'0%': { backgroundColor: '#edf1fa' },
 					'100%': { backgroundColor: 'transparent' },
 				},
+				"pulse-strong": {
+					'0%, 100%': {opacity: '1' },
+					'50%': {  opacity: '0.5' },
+				},
 			}
 		},
 		variants: {
@@ -101,6 +105,7 @@ const config: Config = {
 		},
     animation: {
       highlight: 'highlight 2s ease-out forwards', // 動畫持續時間和效果
+	  "pulse-strong": 'pulse-strong 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
     }
 	},
 	plugins: [tailwindAnimate],

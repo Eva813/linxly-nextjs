@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 import { connectToDatabase } from '@/lib/mongodb';
 // import { ObjectId } from 'mongodb';
 
+// 後端會從資料庫中取得所有資料夾，並且對每個資料夾進行處理，將其關聯的程式碼片段（snippets）一併查詢並格式化後返回
 export async function GET() {
   try {
     const { db } = await connectToDatabase();
@@ -11,12 +12,29 @@ export async function GET() {
       .find({})
       .toArray();
 
-    // 轉 _id -> id
-    const result = folders.map(f => ({
-      id: f._id.toString(),
-      name: f.name,
-      description: f.description || '',
-      snippets: f.snippets || []
+    // 處理每個資料夾，並獲取其關聯的程式碼片段
+    const result = await Promise.all(folders.map(async (folder) => {
+      // 從 snippets 集合獲取該資料夾的程式碼片段
+      const snippets = await db
+        .collection('snippets')
+        .find({ folderId: folder._id.toString() })
+        .toArray();
+      
+      // 格式化程式碼片段資料
+      const formattedSnippets = snippets.map(s => ({
+        id: s._id.toString(),
+        name: s.name,
+        content: s.content,
+        shortcut: s.shortcut
+      }));
+      
+      // 返回完整的資料夾物件，包含程式碼片段
+      return {
+        id: folder._id.toString(),
+        name: folder.name,
+        description: folder.description || '',
+        snippets: formattedSnippets
+      };
     }));
 
     return NextResponse.json(result);
@@ -45,14 +63,15 @@ export async function POST(req: Request) {
       .insertOne({
         name: body.name,
         description: body.description || '',
-        snippets: []
+        createdAt: new Date(),
+        updatedAt: new Date()
       });
 
     const created = {
       id: insertRes.insertedId.toString(),
       name: body.name,
       description: body.description || '',
-      snippets: []
+      snippets: [] // 新資料夾初始沒有程式碼片段
     };
 
     return NextResponse.json(created, { status: 201 });

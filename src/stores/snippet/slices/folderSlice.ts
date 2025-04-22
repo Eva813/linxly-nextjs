@@ -52,13 +52,7 @@ export const createFolderSlice: StateCreator<FolderSlice> = (set, get) => ({
         // set({ folders: DEFAULT_FOLDERS, isLoading: false });
         
         // 順序可能要考慮：先設定狀態，再非同步建立到 DB
-        // 未來若要同步到 DB，可以在這裡遍歷 DEFAULT_FOLDERS 並依序建立到 DB
-        // for (const folder of DEFAULT_FOLDERS) {
-        //   await createFolder({
-        //     name: folder.name,
-        //     description: folder.description
-        //   });
-        // }
+        // 若要同步到 DB，可以在這裡遍歷 DEFAULT_FOLDERS 並依序建立到 DB
           for (const folder of DEFAULT_FOLDERS) {
             await createFolder({
               name: folder.name,
@@ -85,8 +79,9 @@ export const createFolderSlice: StateCreator<FolderSlice> = (set, get) => ({
       console.error('取得資料夾失敗:', error);
     }
   },
+  // 當 setFolders 被呼叫時，它會觸發 React 的重新渲染機制，更新依賴 folders 狀態的元件。
   setFolders: (folders) => set({ folders }),
- // 更新資料夾
+  // 更新資料夾
   updateFolder: async (id, updates) => {
     try {
       const updatedFolder = await updateFolder(id, updates);

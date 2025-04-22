@@ -82,23 +82,6 @@ const Sidebar = () => {
   }
 
   // 新增 Folder，將插入位置邏輯封裝進 store API
-  // const handleAddFolder = () => {
-  //   let insertIndex: number | undefined;
-  //   if ((mode === "folder" || mode === "snippet") && currentFolderIndex !== -1) {
-  //     insertIndex = currentFolderIndex + 1;
-  //   }
-  //   const newFolder = addFolder(
-  //     {
-  //       name: "New folder",
-  //       description: "",
-  //       snippets: [],
-  //     },
-  //     insertIndex
-  //   );
-  //   router.push(`/snippets/folder/${newFolder.id}`);
-  // };
-
-  // 新增資料夾 - 使用 MongoDB API
   const handleAddFolder = async () => {
     try {
       // 建立新資料夾的資料
@@ -120,36 +103,33 @@ const Sidebar = () => {
   };
 
 
-  // 新增 Snippet（這裡不做插入位置，僅調用 store API，若有類似邏輯可同理封裝）
-  const handleAddSnippet = () => {
+  // 新增 Snippet
+  const handleAddSnippet = async () => {
+  try {
     let newSnippet;
+    const defaultSnippet = {
+      name: "New snippet", // 必填欄位
+      content: "New snippet content", // 可選欄位
+      shortcut: "/newSnippet", // 必填欄位
+    };
+
     if (mode === "folder" && currentFolderIndex !== -1) {
-      newSnippet = addSnippetToFolder(folders[currentFolderIndex].id, {
-        name: "New snippet",
-        content: "New snippet content",
-        shortcut: "",
-      });
+      newSnippet = await addSnippetToFolder(folders[currentFolderIndex].id, defaultSnippet);
       router.push(`/snippets/snippet/${newSnippet.id}`);
     } else if (mode === "snippet" && currentFolderIndex !== -1 && currentSnippetIndex !== -1) {
-      newSnippet = addSnippetToFolder(folders[currentFolderIndex].id, {
-        name: "New snippet",
-        content: "New snippet content",
-        shortcut: "",
-      });
+      newSnippet = await addSnippetToFolder(folders[currentFolderIndex].id, defaultSnippet);
       router.push(`/snippets/snippet/${newSnippet.id}`);
     } else if (folders.length > 0) {
-      newSnippet = addSnippetToFolder(folders[0].id, {
-        name: "New snippet",
-        content: "New snippet content",
-        shortcut: "",
-      });
+      newSnippet = await addSnippetToFolder(folders[0].id, defaultSnippet);
       router.push(`/snippets/snippet/${newSnippet.id}`);
     }
-  };
+  } catch (error) {
+    console.error("新增 Snippet 失敗:", error);
+  }
+};
 
   // 刪除 Folder
   const handleDeleteFolder = (folderId: string) => {
-    console.log("刪除資料夾:", folderId);
     deleteFolder(folderId);
     setActiveFolderMenu(null);
     if (mode === "folder" && id === folderId) {

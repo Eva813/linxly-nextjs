@@ -11,7 +11,7 @@ export async function GET(
     
     if (!snippetId) {
       return NextResponse.json(
-        { message: 'snippetId 是必需的' },
+        { message: 'snippetId required' },
         { status: 400 }
       );
     }
@@ -25,7 +25,7 @@ export async function GET(
     
     if (!snippet) {
       return NextResponse.json(
-        { message: '找不到程式碼片段' },
+        { message: 'snippet not found' },
         { status: 404 }
       );
     }
@@ -41,9 +41,9 @@ export async function GET(
     
     return NextResponse.json(result);
   } catch (error: unknown) {
-    const errorMessage = error instanceof Error ? error.message : '未知錯誤';
+    const errorMessage = error instanceof Error ? error.message : 'unknow error';
     return NextResponse.json(
-      { message: '伺服器錯誤', error: errorMessage },
+      { message: 'server error', error: errorMessage },
       { status: 500 }
     );
   }
@@ -61,7 +61,7 @@ export async function PUT(
     // 至少提供一個欄位進行更新
     if (!name && content === undefined && !shortcut) {
       return NextResponse.json(
-        { message: '至少需要提供一個欄位進行更新' },
+        { message: 'at least one field is required for update' },
         { status: 400 }
       );
     }
@@ -75,7 +75,7 @@ export async function PUT(
     
     if (!existingSnippet) {
       return NextResponse.json(
-        { message: '找不到程式碼片段' },
+        { message: 'snippet not found' },
         { status: 404 }
       );
     }
@@ -106,7 +106,7 @@ export async function PUT(
     
     if (!updatedSnippet) {
       return NextResponse.json(
-        { message: '更新後找不到程式碼片段' },
+        { message: 'snippet not found' },
         { status: 404 }
       );
     }
@@ -121,9 +121,9 @@ export async function PUT(
     
     return NextResponse.json(result);
   } catch (error: unknown) {
-    const errorMessage = error instanceof Error ? error.message : '未知錯誤';
+    const errorMessage = error instanceof Error ? error.message : 'unknow error';
     return NextResponse.json(
-      { message: '伺服器錯誤', error: errorMessage },
+      { message: 'server error', error: errorMessage },
       { status: 500 }
     );
   }
@@ -145,7 +145,7 @@ export async function DELETE(
     
     if (!snippet) {
       return NextResponse.json(
-        { message: '找不到程式碼片段' },
+        { message: 'snippet not found' },
         { status: 404 }
       );
     }
@@ -157,9 +157,9 @@ export async function DELETE(
     
     return new NextResponse(null, { status: 204 });
   } catch (error: unknown) {
-    const errorMessage = error instanceof Error ? error.message : '未知錯誤';
+    const errorMessage = error instanceof Error ? error.message : 'unknow error';
     return NextResponse.json(
-      { message: '伺服器錯誤', error: errorMessage },
+      { message: 'server error', error: errorMessage },
       { status: 500 }
     );
   }

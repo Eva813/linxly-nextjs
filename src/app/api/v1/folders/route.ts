@@ -28,7 +28,7 @@ export async function GET() {
         shortcut: s.shortcut
       }));
       
-      // 返回完整的資料夾物件，包含程式碼片段
+      // 返回完整的資料夾物件，包含 snippets
       return {
         id: folder._id.toString(),
         name: folder.name,
@@ -39,9 +39,9 @@ export async function GET() {
 
     return NextResponse.json(result);
   } catch (error: unknown) {
-    const errorMessage = error instanceof Error ? error.message : '未知錯誤';
+    const errorMessage = error instanceof Error ? error.message : 'unknow error';
     return NextResponse.json(
-      { message: '伺服器錯誤', error: errorMessage },
+      { message: 'server error', error: errorMessage },
       { status: 500 }
     );
   }
@@ -52,7 +52,7 @@ export async function POST(req: Request) {
     const body = await req.json();
     if (!body.name) {
       return NextResponse.json(
-        { message: 'name 欄位為必填' },
+        { message: 'name required' },
         { status: 400 }
       );
     }
@@ -76,9 +76,9 @@ export async function POST(req: Request) {
 
     return NextResponse.json(created, { status: 201 });
   } catch (error: unknown) {
-    const errorMessage = error instanceof Error ? error.message : '未知錯誤';
+    const errorMessage = error instanceof Error ? error.message : 'unknow error';
     return NextResponse.json(
-      { message: '伺服器錯誤', error: errorMessage },
+      { message: 'server error', error: errorMessage },
       { status: 500 }
     );
   }

@@ -9,7 +9,7 @@ export async function GET() {
     await db.command({ ping: 1 });
     return NextResponse.json({ message: 'MongoDB 連線成功 ✅' });
   } catch (error: unknown) {
-    const errorMessage = error instanceof Error ? error.message : '未知錯誤';
+    const errorMessage = error instanceof Error ? error.message : 'unknow error';
     return NextResponse.json(
       { message: 'MongoDB 連線失敗 ❌', error: errorMessage },
       { status: 500 }

@@ -11,7 +11,7 @@ export async function GET(
     
     if (!folderId) {
       return NextResponse.json(
-        { message: 'folderId 是必需的' },
+        { message: 'folderId required' },
         { status: 400 }
       );
     }
@@ -25,12 +25,12 @@ export async function GET(
     
     if (!folder) {
       return NextResponse.json(
-        { message: '找不到資料夾' },
+        { message: 'folder not found' },
         { status: 404 }
       );
     }
     
-    // 獲取該資料夾的所有程式碼片段
+    // 獲取該資料夾的所有 snippet 片段
     const snippets = await db
       .collection('snippets')
       .find({ folderId })
@@ -51,9 +51,9 @@ export async function GET(
     
     return NextResponse.json(result);
   } catch (error: unknown) {
-    const errorMessage = error instanceof Error ? error.message : '未知錯誤';
+    const errorMessage = error instanceof Error ? error.message : 'unknow error';
     return NextResponse.json(
-      { message: '伺服器錯誤', error: errorMessage },
+      { message: 'server error', error: errorMessage },
       { status: 500 }
     );
   }
@@ -69,7 +69,7 @@ export async function PUT(
     
     if (!body.name) {
       return NextResponse.json(
-        { message: 'name 欄位為必填' },
+        { message: 'name required' },
         { status: 400 }
       );
     }
@@ -90,7 +90,7 @@ export async function PUT(
     
     if (updateResult.matchedCount === 0) {
       return NextResponse.json(
-        { message: '找不到資料夾' },
+        { message: 'folder not found' },
         { status: 404 }
       );
     }
@@ -102,11 +102,12 @@ export async function PUT(
     
     if (!updatedFolder) {
       return NextResponse.json(
-        { message: '找不到資料夾' },
+        { message: 'folder not found' },
         { status: 404 }
       );
     }
     
+    // 獲取該資料夾的所有 snippet 片段
     const snippets = await db
       .collection('snippets')
       .find({ folderId })
@@ -126,9 +127,9 @@ export async function PUT(
     
     return NextResponse.json(result);
   } catch (error: unknown) {
-    const errorMessage = error instanceof Error ? error.message : '未知錯誤';
+    const errorMessage = error instanceof Error ? error.message : 'unknow error';
     return NextResponse.json(
-      { message: '伺服器錯誤', error: errorMessage },
+      { message: 'server error', error: errorMessage },
       { status: 500 }
     );
   }
@@ -150,7 +151,7 @@ export async function DELETE(
     
     if (!folder) {
       return NextResponse.json(
-        { message: '找不到資料夾' },
+        { message: 'folder not found' },
         { status: 404 }
       );
     }
@@ -163,9 +164,9 @@ export async function DELETE(
     
     return new NextResponse(null, { status: 204 });
   } catch (error: unknown) {
-    const errorMessage = error instanceof Error ? error.message : '未知錯誤';
+    const errorMessage = error instanceof Error ? error.message : 'unknow error';
     return NextResponse.json(
-      { message: '伺服器錯誤', error: errorMessage },
+      { message: 'server error', error: errorMessage },
       { status: 500 }
     );
   }

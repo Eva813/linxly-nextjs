@@ -9,7 +9,7 @@ export async function GET(req: Request) {
 
     if (!folderId) {
       return NextResponse.json(
-        { message: 'folderId 欄位為必填' },
+        { message: 'folderId required' },
         { status: 400 }
       );
     }
@@ -23,7 +23,7 @@ export async function GET(req: Request) {
     
     if (!folder) {
       return NextResponse.json(
-        { message: '資料夾不存在' },
+        { message: 'folder not found' },
         { status: 404 }
       );
     }
@@ -43,9 +43,9 @@ export async function GET(req: Request) {
 
     return NextResponse.json(result, { status: 200 });
   } catch (error: unknown) {
-    const errorMessage = error instanceof Error ? error.message : '未知錯誤';
+    const errorMessage = error instanceof Error ? error.message : 'unknow error';
     return NextResponse.json(
-      { message: '伺服器錯誤', error: errorMessage },
+      { message: 'server error', error: errorMessage },
       { status: 500 }
     );
   }
@@ -58,7 +58,7 @@ export async function POST(req: Request) {
 
     if (!folderId || !name || !shortcut) {
       return NextResponse.json(
-        { message: 'folderId, name 與 shortcut 欄位為必填' },
+        { message: 'folderId, name and shortcut required' },
         { status: 400 }
       );
     }
@@ -72,12 +72,12 @@ export async function POST(req: Request) {
     
     if (!folder) {
       return NextResponse.json(
-        { message: '資料夾不存在' },
+        { message: 'folder not found' },
         { status: 404 }
       );
     }
 
-    // 新增程式碼片段到 snippets 集合
+    // 新增 snippet 片段到 snippets 集合
     const insertRes = await db.collection('snippets').insertOne({
       folderId,
       name,
@@ -97,9 +97,9 @@ export async function POST(req: Request) {
 
     return NextResponse.json(created, { status: 201 });
   } catch (error: unknown) {
-    const errorMessage = error instanceof Error ? error.message : '未知錯誤';
+    const errorMessage = error instanceof Error ? error.message : 'unknow error';
     return NextResponse.json(
-      { message: '伺服器錯誤', error: errorMessage },
+      { message: 'server error', error: errorMessage },
       { status: 500 }
     );
   }

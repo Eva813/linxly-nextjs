@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import dynamic from "next/dynamic";
 import { useSnippetStore } from "@/stores/snippet";
@@ -30,6 +30,7 @@ const SnippetItem = dynamic(() => import("./snippetItem"), {
 const Sidebar = () => {
   const {
     folders,
+    fetchFolders,
     addFolder,
     addSnippetToFolder,
     deleteFolder,
@@ -42,6 +43,11 @@ const Sidebar = () => {
   const [activeFolderMenu, setActiveFolderMenu] = useState<string | null>(null);
   const [collapsedFolders, setCollapsedFolders] = useState<Set<string>>(new Set());
   const [activeSnippetMenu, setActiveSnippetMenu] = useState<string | null>(null);
+
+    // 元件初始化時從 API 取得資料夾
+    useEffect(() => {
+      fetchFolders();
+    }, [fetchFolders]);
 
   // 解析目前路由資訊 (/snippets/folder/[folderId] 或 /snippets/snippet/[snippetId])
   const getCurrentContext = () => {
@@ -76,21 +82,43 @@ const Sidebar = () => {
   }
 
   // 新增 Folder，將插入位置邏輯封裝進 store API
-  const handleAddFolder = () => {
-    let insertIndex: number | undefined;
-    if ((mode === "folder" || mode === "snippet") && currentFolderIndex !== -1) {
-      insertIndex = currentFolderIndex + 1;
-    }
-    const newFolder = addFolder(
-      {
-        name: "New folder",
+  // const handleAddFolder = () => {
+  //   let insertIndex: number | undefined;
+  //   if ((mode === "folder" || mode === "snippet") && currentFolderIndex !== -1) {
+  //     insertIndex = currentFolderIndex + 1;
+  //   }
+  //   const newFolder = addFolder(
+  //     {
+  //       name: "New folder",
+  //       description: "",
+  //       snippets: [],
+  //     },
+  //     insertIndex
+  //   );
+  //   router.push(`/snippets/folder/${newFolder.id}`);
+  // };
+
+  // 新增資料夾 - 使用 MongoDB API
+  const handleAddFolder = async () => {
+    try {
+      // 建立新資料夾的資料
+      const folderData = {
+        name: "新資料夾",
         description: "",
         snippets: [],
-      },
-      insertIndex
-    );
-    router.push(`/snippets/folder/${newFolder.id}`);
+      };
+      
+      // 使用 API 建立資料夾並保存到 MongoDB
+      const newFolder = await addFolder(folderData);
+      
+      // 導向到新建立的資料夾
+      router.push(`/snippets/folder/${newFolder.id}`);
+    } catch (error) {
+      console.error('建立資料夾失敗:', error);
+      
+    }
   };
+
 
   // 新增 Snippet（這裡不做插入位置，僅調用 store API，若有類似邏輯可同理封裝）
   const handleAddSnippet = () => {
@@ -121,6 +149,7 @@ const Sidebar = () => {
 
   // 刪除 Folder
   const handleDeleteFolder = (folderId: string) => {
+    console.log("刪除資料夾:", folderId);
     deleteFolder(folderId);
     setActiveFolderMenu(null);
     if (mode === "folder" && id === folderId) {

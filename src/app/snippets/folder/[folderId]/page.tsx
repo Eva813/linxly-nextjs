@@ -2,7 +2,8 @@
 import { Button } from '@/components/ui/button';
 import { useSnippetStore } from "@/stores/snippet";
 import { useState, useEffect } from 'react';
-import { Textarea } from "@/components/ui/textarea"
+import { Textarea } from "@/components/ui/textarea";
+import EditorSkeleton from '@/app/snippets/components/editorSkeleton';
 
 interface FolderPageProps {
   params: {
@@ -29,7 +30,7 @@ const FolderPage = ({ params }: FolderPageProps) => {
   }, [currentFolder]);
 
   if (!currentFolder) {
-    return <p>Folder not found.</p>;
+    return <EditorSkeleton />;
   }
 
   const handleSave = () => {

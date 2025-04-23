@@ -6,7 +6,8 @@ const allowedOrigins = [
   'chrome-extension://fnklojfgggbcmcmldigpicflliiogoij',
   'https://chatgpt.com',
   'https://linxly-nextjs-git-feat-snippet-api-eva813s-projects.vercel.app/',
-  'https://linxly-nextjs.vercel.app/'
+  'https://linxly-nextjs.vercel.app/',
+  'arc-extension://fnklojfgggbcmcmldigpicflliiogoij'
 ]
 
 const CORS_HEADERS = {

@@ -2,12 +2,12 @@ import request from './client';
 import { Snippet } from '@/types/snippets';
 
 
-// 取得特定資料夾的程式碼片段
+// 取得特定資料夾的snippet片段
 export function getSnippets(folderId: string): Promise<Snippet[]> {
   return request<Snippet[]>(`/snippets?folderId=${folderId}`);
 }
 
-// 建立新的程式碼片段
+// 建立新的snippet片段
 export function createSnippet(
   data: { folderId: string } & Omit<Snippet, 'id'>
 ): Promise<Snippet> {
@@ -17,7 +17,7 @@ export function createSnippet(
   });
 }
 
-// 更新程式碼片段
+// 更新snippet片段
 export function updateSnippet(
   snippetId: string, 
   data: Partial<Omit<Snippet, 'id'>>
@@ -28,7 +28,7 @@ export function updateSnippet(
   });
 }
 
-// 刪除程式碼片段
+// 刪除snippet片段
 export function deleteSnippet(snippetId: string): Promise<void> {
   return request<void>(`/snippets/${snippetId}`, {
     method: 'DELETE',

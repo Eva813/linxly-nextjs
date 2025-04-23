@@ -20,6 +20,7 @@ const FolderItem = dynamic(() => import("./folderItem"), {
 
 const SnippetItem = dynamic(() => import("./snippetItem"), {
   ssr: false,
+
   loading: () => (
     <div className="px-2 py-1">
       <Skeleton className="h-6 w-full rounded-md" />

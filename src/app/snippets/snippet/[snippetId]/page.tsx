@@ -134,8 +134,10 @@ const SnippetPage = ({ params }: SnippetPageProps) => {
       console.log("Updating snippet:", updatedSnippet);
       
       try {
-        await new Promise(resolve => setTimeout(resolve, 2000));
-        updateSnippet(snippetId, updatedSnippet);
+        await Promise.all([
+          updateSnippet(snippetId, updatedSnippet),
+          new Promise(resolve => setTimeout(resolve, 300)),
+        ]);
       } catch (error) {
         console.error("儲存時發生錯誤:", error);
       } finally {

@@ -4,6 +4,7 @@ import { useSnippetStore } from "@/stores/snippet";
 import { useState, useEffect } from 'react';
 import { Textarea } from "@/components/ui/textarea";
 import EditorSkeleton from '@/app/snippets/components/editorSkeleton';
+import { useLoadingStore } from '@/stores/loading';
 
 interface FolderPageProps {
   params: {
@@ -16,6 +17,8 @@ const FolderPage = ({ params }: FolderPageProps) => {
   const { folders, updateFolder } = useSnippetStore();
 
   const currentFolder = folders.find(folder => folder.id === folderId);
+  const { setLoading } = useLoadingStore();
+  
 
   // 本地狀態，用於雙向綁定
   const [name, setName] = useState('');
@@ -33,11 +36,19 @@ const FolderPage = ({ params }: FolderPageProps) => {
     return <EditorSkeleton />;
   }
 
-  const handleSave = () => {
-    updateFolder(folderId, {
-      name,
-      description,
-    });
+  const handleSave = async () => {
+    setLoading(true); 
+
+    try {
+      await Promise.all([
+        updateFolder(folderId, { name, description }), 
+        new Promise(resolve => setTimeout(resolve, 300)), 
+      ]);
+    } catch (error) {
+      console.error("儲存時發生錯誤:", error);
+    } finally {
+      setLoading(false); 
+    }
   };
 
   return (

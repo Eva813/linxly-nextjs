@@ -73,7 +73,7 @@ export default function BoardPage() {
         />
         <Button type="button" onClick={saveBoardName}>Save name</Button>
       </div>
-      <FlowWithNoSSR boardId={boardId as string} />
+      <FlowWithNoSSR boardId={boardId} />
     </div>
   );
 }

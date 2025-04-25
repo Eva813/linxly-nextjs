@@ -17,7 +17,7 @@ const handleStyle = {
 };
 
 const TextInputNode = ({ data }: CustomNodeData) => {
-  const [inputValue, setInputValue] = useState(data.label || '');
+  const [inputValue, setInputValue] = useState(data.label ?? '');
   const { setNodes, deleteElements, getNodes, addNodes } = useReactFlow();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 

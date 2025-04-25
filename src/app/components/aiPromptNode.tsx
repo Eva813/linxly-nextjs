@@ -23,9 +23,9 @@ const handleStyle = {
 
 const AIPromptNode = ({ data }: CustomNodeData)  => {
   const { setNodes, deleteElements, getNodes, addNodes } = useReactFlow();
-  const [systemPrompt, setSystemPrompt] = useState(data.systemPrompt || '');
-  const [userPrompt, setUserPrompt] = useState(data.userPrompt || '');
-  const [result, setResult] = useState(data.result || '(尚未輸出)');
+  const [systemPrompt, setSystemPrompt] = useState(data.systemPrompt ?? '');
+  const [userPrompt, setUserPrompt] = useState(data.userPrompt ?? '');
+  const [result, setResult] = useState(data.result ?? '(Not yet output.)');
   // const [quantity, setQuantity] = useState(1);
   const [loading, setLoading] = useState(false);
   const updateNodeInternals = useUpdateNodeInternals();

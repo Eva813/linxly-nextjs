@@ -118,15 +118,15 @@ body {
 .form-text-field,
 .form-menu-field {
   /* font-size: .8rem; */
-  display: inline-flex;       
-  align-items: center;        
-  background-color: #e2e8f0;  
-  padding: 0px 6px;           
-  border-radius: 4px;         
-  margin: 0 2px;             
-  user-select: none;         
-  cursor: pointer;            
-  border: 1px solid #6096dd;  
+  display: inline-flex;
+  align-items: center;
+  background-color: #e2e8f0;
+  padding: 0px 6px;
+  border-radius: 4px;
+  margin: 0 2px;
+  user-select: none;
+  cursor: pointer;
+  border: 1px solid #6096dd;
 }
 
 /* 暗色模式下的背景色 */
@@ -148,7 +148,7 @@ body {
   height: 1px;
   margin-bottom: 2rem;
   margin-left: auto;
-  margin-right: auto; 
+  margin-right: auto;
 }
 
 .animatedLine {
@@ -157,33 +157,37 @@ body {
   left: 0;
   width: 100%;
   height: 2px;
-  background: rgba(0,0,0,0.04);
+  background: rgba(0, 0, 0, 0.04);
   overflow: hidden;
 }
+
 .animatedLine:nth-child(1)::after {
-    animation-delay: -2s;
+  animation-delay: -2s;
 }
+
 .animatedLine::after {
-    content: '';
-    display: block;
-    position: absolute;
-    left: -150px;
-    top: 0;
-    width: 90px;
-    height: 2px;
-    background: linear-gradient(to right, rgba(0, 0, 0, 0) 0%, #000000 75%, #000000 100%);
-    animation: animatedLine 8s 0s infinite;
-    animation-timing-function: cubic-bezier(0.4, 0.26, 0, 0.97);
-    animation-fill-mode: forwards;
+  content: '';
+  display: block;
+  position: absolute;
+  left: -150px;
+  top: 0;
+  width: 90px;
+  height: 2px;
+  background: linear-gradient(to right, rgba(0, 0, 0, 0) 0%, #000000 75%, #000000 100%);
+  animation: animatedLine 8s 0s infinite;
+  animation-timing-function: cubic-bezier(0.4, 0.26, 0, 0.97);
+  animation-fill-mode: forwards;
 }
 
 @keyframes animatedLine {
   0% {
     left: -150px;
   }
+
   60% {
     left: calc(100% + 150px);
   }
+
   100% {
     left: calc(100% + 150px);
   }
@@ -203,6 +207,7 @@ body {
   0% {
     background-position: 0%;
   }
+
   100% {
     background-position: 200%;
   }
@@ -222,8 +227,4 @@ body {
   justify-content: center;
   align-items: center;
   z-index: 1000;
-}
-
-.select-text {
-  user-select: text;
 }

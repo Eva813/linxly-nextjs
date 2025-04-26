@@ -42,6 +42,31 @@ export const FormTextNode = Node.create({
       },
     }
   },
+  // 新增：定義節點複製為純文字時的內容
+  renderText({ node }) {
+    const snippetData = node.attrs.snippetData;
+    const attributesArray = (snippetData?.attributes as Array<{ name: string; value: string | null }>) || [];
+    const chipData = attributesArray.reduce<Record<string, string>>((acc, cur) => {
+      if (cur.value !== null) {
+        acc[cur.name] = cur.value;
+      }
+      return acc;
+    }, {});
+    const entries = Object.entries(chipData);
+
+    if (entries.length === 0 && snippetData?.attributes?.length > 0) {
+      // 處理 fallback 情況，如果 chipData 為空但原始 attributes 有資料
+      // 這裡假設 fallback 顯示第一個 key，如果沒有則為空字串
+      const fallbackKey = snippetData.attributes[0]?.name ?? 'formtext';
+      return `{${fallbackKey}=}`; // 或者返回您希望的 fallback 文字
+    } else if (entries.length === 0) {
+      // 如果完全沒有資料
+      return '{formtext=}'; // 或者其他預設空值表示
+    }
+
+    // 產生與之前 handleCopyCapture 相同的字串格式
+    return `{${entries.map(([k, v]) => `${k}=${v}`).join(",")}}`;
+  },
 
   parseHTML() {
     return [
@@ -74,17 +99,17 @@ export const FormTextNode = Node.create({
       stopEvent: (props: { event: Event }) => {
         // 這些事件讓它們通過，不要在 NodeView 裡攔截
         const passThrough = [
-          'mousedown',
-          'mouseup',
-          'mousemove',
-          'click',
-          'dblclick',
-          'keydown',
-          'keyup',
+          // 'mousedown',
+          // 'mouseup',
+          // 'mousemove',
+          // 'click',
+          // 'dblclick',
+          // 'keydown',
+          // 'keyup',
           'copy',
-          'cut',
-          'paste',
-          'selectstart',
+          // 'cut',
+          // 'paste',
+          // 'selectstart',
         ]
         return !passThrough.includes(props.event.type)
       },

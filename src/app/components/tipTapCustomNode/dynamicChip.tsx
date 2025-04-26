@@ -24,27 +24,25 @@ export function DynamicChip({
   const fallbackKey = Object.keys(data)[0]
 
   // 1. 建立要複製的字串
-  const clipboardText = `{${entries.map(([k, v]) => `${k}=${v}`).join(",")}}`
+  // const clipboardText = `{${entries.map(([k, v]) => `${k}=${v}`).join(",")}}`
 
   // 2. 攔截 copy 事件，寫入 custom text
-  const handleCopyCapture = (e: React.ClipboardEvent<HTMLDivElement>) => {
-     // 1. 寫進 ClipboardEvent
-    e.clipboardData.setData("text/plain", clipboardText)
-      // 2. fallback：呼叫 Navigator Clipboard API
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(clipboardText).catch(() => {})
-      }
-      e.preventDefault()
-   }
+  // const handleCopyCapture = (e: React.ClipboardEvent<HTMLDivElement>) => {
+  //   // 1. 寫進 ClipboardEvent
+  //   e.clipboardData.setData("text/plain", clipboardText)
+  //   // 2. fallback：呼叫 Navigator Clipboard API
+  //   if (navigator.clipboard && navigator.clipboard.writeText) {
+  //     navigator.clipboard.writeText(clipboardText).catch(() => { })
+  //   }
+  //   e.preventDefault()
+  // }
 
   return (
     <div
-      // 3. 在最外層攔截 copy
-      onCopyCapture={handleCopyCapture}
-      // 4. 讓所有子孫元素都可選字
       className="inline-flex items-center rounded-full border border-secondary bg-white px-1 text-sm text-gray-700 hover:bg-light select-text"
+
     >
-      <div className="rounded pl-2">
+      <div className="rounded pl-2 select-text">
         {icon ?? <span className="text-gray-500">{'='}</span>}
       </div>
 

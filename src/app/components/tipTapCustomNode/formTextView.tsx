@@ -1,6 +1,6 @@
 // FormTextView.tsx
 import React, { useCallback, MouseEvent } from 'react'
-import { NodeViewWrapper, NodeViewProps, NodeViewContent } from '@tiptap/react'
+import { NodeViewWrapper, NodeViewProps } from '@tiptap/react'
 import { DynamicChip } from './dynamicChip'
 import { useSnippetStore } from '@/stores/snippet/index'
 import { MdOutlineShortText } from "react-icons/md";
@@ -75,16 +75,15 @@ export default function FormTextView(props: FormTextViewProps) {
       role="button"
       onClick={handleClick}
       data-snippet={JSON.stringify(node.attrs.snippetData)}
+      tabIndex={-1}
     >
-      <NodeViewContent contentEditable={true} as="span" className="inline-block focus:outline-none focus:ring-0 select-text">
-        <DynamicChip
-          icon={<MdOutlineShortText className="h-4 w-4" />}
-          data={isEmptyChip ? fallbackChipData : chipData}
-          onBlockClick={(key) => {
-            setFocusKey(`${position}:${key}`);
-          }}
-        />
-      </NodeViewContent>
+      <DynamicChip
+        icon={<MdOutlineShortText className="h-4 w-4" />}
+        data={isEmptyChip ? fallbackChipData : chipData}
+        onBlockClick={(key) => {
+          setFocusKey(`${position}:${key}`);
+        }}
+      />
     </NodeViewWrapper>
   )
 }

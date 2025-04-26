@@ -1,6 +1,6 @@
 // FormMenuView.tsx
 import React, { useCallback, MouseEvent, useMemo } from 'react'
-import { NodeViewWrapper, NodeViewProps } from '@tiptap/react'
+import { NodeViewWrapper, NodeViewProps, NodeViewContent } from '@tiptap/react'
 import { DynamicChip } from './dynamicChip'
 import { FormMenuClickHandler } from '@/types/snippets'
 import { useSnippetStore } from '@/stores/snippet/index'
@@ -99,6 +99,7 @@ export default function FormMenuView(props: FormMenuViewProps) {
       onClick={handleClick}
       data-snippet={JSON.stringify(node.attrs.snippetData)}
     >
+      <NodeViewContent as="div" className="inline-block">
       <DynamicChip
         icon={<MdMenuOpen className="h-4 w-4" />}
         data={chipData}
@@ -107,6 +108,7 @@ export default function FormMenuView(props: FormMenuViewProps) {
           setFocusKey(`${position}:${key}`);
         }}
       />
+      </NodeViewContent>
     </NodeViewWrapper>
   )
 }

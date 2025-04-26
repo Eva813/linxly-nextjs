@@ -223,3 +223,7 @@ body {
   align-items: center;
   z-index: 1000;
 }
+
+.select-text {
+  user-select: text;
+}

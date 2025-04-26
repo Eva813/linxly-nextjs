@@ -70,6 +70,24 @@ export const FormTextNode = Node.create({
    * 使用 React NodeView 來渲染
    */
   addNodeView() {
-    return ReactNodeViewRenderer(FormTextView)
+    return ReactNodeViewRenderer(FormTextView, {
+      stopEvent: (props: { event: Event }) => {
+        // 這些事件讓它們通過，不要在 NodeView 裡攔截
+        const passThrough = [
+          'mousedown',
+          'mouseup',
+          'mousemove',
+          'click',
+          'dblclick',
+          'keydown',
+          'keyup',
+          'copy',
+          'cut',
+          'paste',
+          'selectstart',
+        ]
+        return !passThrough.includes(props.event.type)
+      },
+    })
   },
 })

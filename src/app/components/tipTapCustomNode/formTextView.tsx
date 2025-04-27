@@ -1,5 +1,5 @@
 // FormTextView.tsx
-import React, { useCallback, MouseEvent } from 'react'
+import React, { useCallback, MouseEvent, useState, useEffect } from 'react'
 import { NodeViewWrapper, NodeViewProps } from '@tiptap/react'
 import { DynamicChip } from './dynamicChip'
 import { useSnippetStore } from '@/stores/snippet/index'
@@ -26,9 +26,38 @@ type FormTextViewProps = NodeViewProps & {
 }
 
 export default function FormTextView(props: FormTextViewProps) {
-  const { node, getPos, extension } = props
+  const { node, getPos, extension, editor } = props
   const snippetData = node.attrs.snippetData
   const attributesArray = (snippetData.attributes as Array<{ name: string; value: string }>) || []
+  const [isSelected, setIsSelected] = useState(false)
+
+  // 監聽 TipTap 選取狀態變化
+  useEffect(() => {
+    if (!getPos) return
+
+    const updateSelection = () => {
+      const { state } = editor
+      const currentPos = getPos()
+      const nodeSize = node.nodeSize
+
+      // 檢查目前的選取是否包含這個節點
+      const { from, to } = state.selection
+      const isNodeSelected = from <= currentPos && to >= currentPos + nodeSize
+
+      setIsSelected(isNodeSelected)
+    }
+
+    // 初始檢查
+    updateSelection()
+
+    // 訂閱選取變化
+    editor.on('selectionUpdate', updateSelection)
+
+    return () => {
+      editor.off('selectionUpdate', updateSelection)
+    }
+  }, [editor, getPos, node])
+
   // 只將 value 不為 null 的欄位加入 chipData
   const chipData = attributesArray.reduce<Record<string, string>>((acc, cur) => {
     if (cur.value !== null) {
@@ -70,12 +99,13 @@ export default function FormTextView(props: FormTextViewProps) {
   return (
     <NodeViewWrapper
       as="span"
-      className="text-sm focus:outline-none focus:ring-0 select-text inline"
+      className="text-sm mr-1 ml-1 bg-white focus:outline-none focus:ring-0 select-all inline-block collapsed-command"
       data-type="formtext"
       role="button"
       onClick={handleClick}
       data-snippet={JSON.stringify(node.attrs.snippetData)}
       tabIndex={-1}
+      data-selected={isSelected}
     >
       <DynamicChip
         icon={<MdOutlineShortText className="h-4 w-4" />}
@@ -83,6 +113,7 @@ export default function FormTextView(props: FormTextViewProps) {
         onBlockClick={(key) => {
           setFocusKey(`${position}:${key}`);
         }}
+        isSelected={isSelected}
       />
     </NodeViewWrapper>
   )

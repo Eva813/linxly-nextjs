@@ -228,3 +228,7 @@ body {
   align-items: center;
   z-index: 1000;
 }
+
+.collapsed-command[data-selected=true] {
+  background: linear-gradient(Highlight, Highlight) !important;
+}

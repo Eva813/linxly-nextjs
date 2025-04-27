@@ -99,17 +99,21 @@ export const FormTextNode = Node.create({
       stopEvent: (props: { event: Event }) => {
         // 這些事件讓它們通過，不要在 NodeView 裡攔截
         const passThrough = [
-          // 'mousedown',
-          // 'mouseup',
-          // 'mousemove',
-          // 'click',
-          // 'dblclick',
+          'mousedown',
+          'mouseup',
+          'mousemove',
+          'click',
+          'dblclick',
           // 'keydown',
           // 'keyup',
           'copy',
           // 'cut',
           // 'paste',
-          // 'selectstart',
+          'selectstart',
+          'mouseenter',
+          'mouseleave',
+          'focusin',
+          'focusout'
         ]
         return !passThrough.includes(props.event.type)
       },

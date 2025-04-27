@@ -62,9 +62,9 @@ const SnippetDialog = () => {
           // 添加表單字段
           newFormFields[fieldId] = {
             id: fieldId,
-            label: span.getAttribute('label') || '',
-            default: span.getAttribute('default') || '',
-            currentValue: span.getAttribute('default') || ''
+            label: span.getAttribute('label') ?? '',
+            default: span.getAttribute('default') ?? '',
+            currentValue: span.getAttribute('default') ?? ''
           };
 
           // 添加字段標記

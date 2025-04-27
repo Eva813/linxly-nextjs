@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import dynamic from "next/dynamic";
 import { useSnippetStore } from "@/stores/snippet";
@@ -20,6 +20,7 @@ const FolderItem = dynamic(() => import("./folderItem"), {
 
 const SnippetItem = dynamic(() => import("./snippetItem"), {
   ssr: false,
+
   loading: () => (
     <div className="px-2 py-1">
       <Skeleton className="h-6 w-full rounded-md" />
@@ -30,6 +31,7 @@ const SnippetItem = dynamic(() => import("./snippetItem"), {
 const Sidebar = () => {
   const {
     folders,
+    fetchFolders,
     addFolder,
     addSnippetToFolder,
     deleteFolder,
@@ -42,6 +44,11 @@ const Sidebar = () => {
   const [activeFolderMenu, setActiveFolderMenu] = useState<string | null>(null);
   const [collapsedFolders, setCollapsedFolders] = useState<Set<string>>(new Set());
   const [activeSnippetMenu, setActiveSnippetMenu] = useState<string | null>(null);
+
+    // 元件初始化時從 API 取得資料夾
+    useEffect(() => {
+      fetchFolders();
+    }, [fetchFolders]);
 
   // 解析目前路由資訊 (/snippets/folder/[folderId] 或 /snippets/snippet/[snippetId])
   const getCurrentContext = () => {
@@ -76,48 +83,51 @@ const Sidebar = () => {
   }
 
   // 新增 Folder，將插入位置邏輯封裝進 store API
-  const handleAddFolder = () => {
-    let insertIndex: number | undefined;
-    if ((mode === "folder" || mode === "snippet") && currentFolderIndex !== -1) {
-      insertIndex = currentFolderIndex + 1;
-    }
-    const newFolder = addFolder(
-      {
-        name: "New folder",
+  const handleAddFolder = async () => {
+    try {
+      // 建立新資料夾的資料
+      const folderData = {
+        name: "新資料夾",
         description: "",
         snippets: [],
-      },
-      insertIndex
-    );
-    router.push(`/snippets/folder/${newFolder.id}`);
-  };
-
-  // 新增 Snippet（這裡不做插入位置，僅調用 store API，若有類似邏輯可同理封裝）
-  const handleAddSnippet = () => {
-    let newSnippet;
-    if (mode === "folder" && currentFolderIndex !== -1) {
-      newSnippet = addSnippetToFolder(folders[currentFolderIndex].id, {
-        name: "New snippet",
-        content: "New snippet content",
-        shortcut: "",
-      });
-      router.push(`/snippets/snippet/${newSnippet.id}`);
-    } else if (mode === "snippet" && currentFolderIndex !== -1 && currentSnippetIndex !== -1) {
-      newSnippet = addSnippetToFolder(folders[currentFolderIndex].id, {
-        name: "New snippet",
-        content: "New snippet content",
-        shortcut: "",
-      });
-      router.push(`/snippets/snippet/${newSnippet.id}`);
-    } else if (folders.length > 0) {
-      newSnippet = addSnippetToFolder(folders[0].id, {
-        name: "New snippet",
-        content: "New snippet content",
-        shortcut: "",
-      });
-      router.push(`/snippets/snippet/${newSnippet.id}`);
+      };
+      
+      // 使用 API 建立資料夾並保存到 MongoDB
+      const newFolder = await addFolder(folderData);
+      
+      // 導向到新建立的資料夾
+      router.push(`/snippets/folder/${newFolder.id}`);
+    } catch (error) {
+      console.error('建立資料夾失敗:', error);
+      
     }
   };
+
+
+  // 新增 Snippet
+  const handleAddSnippet = async () => {
+  try {
+    let newSnippet;
+    const defaultSnippet = {
+      name: "New snippet", // 必填欄位
+      content: "New snippet content", // 可選欄位
+      shortcut: "/newSnippet", // 必填欄位
+    };
+
+    if (mode === "folder" && currentFolderIndex !== -1) {
+      newSnippet = await addSnippetToFolder(folders[currentFolderIndex].id, defaultSnippet);
+      router.push(`/snippets/snippet/${newSnippet.id}`);
+    } else if (mode === "snippet" && currentFolderIndex !== -1 && currentSnippetIndex !== -1) {
+      newSnippet = await addSnippetToFolder(folders[currentFolderIndex].id, defaultSnippet);
+      router.push(`/snippets/snippet/${newSnippet.id}`);
+    } else if (folders.length > 0) {
+      newSnippet = await addSnippetToFolder(folders[0].id, defaultSnippet);
+      router.push(`/snippets/snippet/${newSnippet.id}`);
+    }
+  } catch (error) {
+    console.error("新增 Snippet 失敗:", error);
+  }
+};
 
   // 刪除 Folder
   const handleDeleteFolder = (folderId: string) => {

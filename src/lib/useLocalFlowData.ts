@@ -3,7 +3,7 @@ import { useCallback } from 'react';
 export const useLocalFlowData = (boardId: string) => {
   const getFlowData = useCallback(() => {
     try {
-      return JSON.parse(localStorage.getItem(`flowData-${boardId}`) || '{}');
+      return JSON.parse(localStorage.getItem(`flowData-${boardId}`) ?? '{}');
     } catch (error) {
       console.error(`Failed to parse flowData for board ${boardId}:`, error);
       return {};

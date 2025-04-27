@@ -1,9 +1,8 @@
 import React from 'react';
 import { Panel } from '@xyflow/react';
 import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
-import { LuText, LuSave } from "react-icons/lu";
+import { LuText, LuSave, LuFileUp } from "react-icons/lu";
 import { GiArtificialHive } from "react-icons/gi";
-import { LuFileUp } from "react-icons/lu";
 
 interface FlowControlPanelProps {
   onAddText: () => void;

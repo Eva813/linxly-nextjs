@@ -53,12 +53,14 @@ export function DynamicChip({
           return (
             <React.Fragment key={key}>
               {idx > 0 && <Divider />}
-              <div
+              <button
+                type="button"
                 onClick={() => onBlockClick?.(key, value)}
+                role="presentation"
                 className={`cursor-pointer px-2 hover:bg-[#c9d5e8] flex items-center gap-1`}
               >
                 {`${key}: `}<div className={`${extraClass}`}>{`${value}`}</div>
-              </div>
+              </button>
             </React.Fragment>
           )
         })

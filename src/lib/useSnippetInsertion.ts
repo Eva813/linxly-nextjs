@@ -31,7 +31,7 @@ export const useSnippetInsertion = ({ inputRef, onInsert }: UseSnippetInsertionP
     const target = e.target as HTMLInputElement | HTMLTextAreaElement;
     if (!target || target !== inputRef.current) return;
 
-    const cursorPosition = target.selectionStart || 0;
+    const cursorPosition = target.selectionStart ?? 0;
     const textBeforeCursor = target.value.substring(0, cursorPosition);
 
     // 找出符合條件的 snippet (以 shortcut 為依據)

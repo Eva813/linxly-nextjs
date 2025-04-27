@@ -1,10 +1,8 @@
 import { useState, useCallback, useEffect, useMemo } from 'react';
-import {
-  ReactFlow, Background, Controls, applyNodeChanges,
-  applyEdgeChanges
-} from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import {
+  ReactFlow, Background, Controls, applyNodeChanges,
+  applyEdgeChanges,
   type Node,
   type Edge,
   type OnConnect,

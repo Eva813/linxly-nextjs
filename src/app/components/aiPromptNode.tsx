@@ -23,9 +23,9 @@ const handleStyle = {
 
 const AIPromptNode = ({ data }: CustomNodeData)  => {
   const { setNodes, deleteElements, getNodes, addNodes } = useReactFlow();
-  const [systemPrompt, setSystemPrompt] = useState(data.systemPrompt || '');
-  const [userPrompt, setUserPrompt] = useState(data.userPrompt || '');
-  const [result, setResult] = useState(data.result || '(尚未輸出)');
+  const [systemPrompt, setSystemPrompt] = useState(data.systemPrompt ?? '');
+  const [userPrompt, setUserPrompt] = useState(data.userPrompt ?? '');
+  const [result, setResult] = useState(data.result ?? '(Not yet output.)');
   // const [quantity, setQuantity] = useState(1);
   const [loading, setLoading] = useState(false);
   const updateNodeInternals = useUpdateNodeInternals();
@@ -360,7 +360,12 @@ const AIPromptNode = ({ data }: CustomNodeData)  => {
       </div>
 
       {/* 結果輸出 */}
-      <div className="mt-2 p-2 border rounded border-gray-200 pt-2 text-gray-500 text-sm max-h-[300px] overflow-y-auto nodrag nowheel" onClick={() => setIsDialogOpen(true)}>
+      <div className="mt-2 p-2 border rounded border-gray-200 pt-2 text-gray-500 text-sm max-h-[300px] overflow-y-auto nodrag nowheel" onClick={() => setIsDialogOpen(true)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            setIsDialogOpen(true);
+          }
+        }}>
         <ReactMarkdown>{result.length > 300 ? result.substring(0, 300) + '...' : result}</ReactMarkdown>
       </div>
       <Handle type="source" position={Position.Right} style={handleStyle} id="source" className="bg-[#555] dark:bg-white" />

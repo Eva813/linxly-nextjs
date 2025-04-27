@@ -9,7 +9,7 @@ interface IconTitleDescriptionProps {
   title: string
   description: string
   pro?: boolean,
-  onClick?: React.MouseEventHandler<HTMLDivElement>
+  onClick?: React.MouseEventHandler<HTMLButtonElement>
 }
 
 
@@ -21,7 +21,7 @@ export function ToolFieldItem({
   onClick
 }: IconTitleDescriptionProps) {
   return (
-    <div onClick={onClick} className="flex gap-3 py-2 px-4 cursor-pointer hover:bg-light transition-colors">
+    <button type="button" onClick={onClick} className="w-full text-left flex gap-3 py-2 px-4 cursor-pointer hover:bg-light transition-colors">
       {/* 左側 Icon */}
       <div className="flex flex-col justify-center text-gray-600 ">
         {icon}
@@ -40,6 +40,6 @@ export function ToolFieldItem({
         </div>
         <p className="text-sm text-gray-500">{description}</p>
       </div>
-    </div>
+    </button>
   )
 }

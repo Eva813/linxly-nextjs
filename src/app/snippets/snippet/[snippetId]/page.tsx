@@ -15,11 +15,15 @@ import EditPanel from './editPanel'
 import { formTextSpec } from "@/lib/specs/formTextSpec";
 import { formMenuSpec } from "@/lib/specs/formMenuSpec";
 import { buildFormData, IBuiltFormData } from '@/lib/buildFormData'
-import { Snippet, DropdownEditInfo, TextInputEditInfo, EditInfo } from '@/types/snippets'
+import { DropdownEditInfo, TextInputEditInfo, EditInfo } from '@/types/snippets'
 import EditViewButtons, { Mode } from "@/app/snippets/components/editViewButtons";
 import PreviewSnippet from "@/app/snippets/components/previewSnippet";
 import TryItOutPopup from './tryItOutPopup';
-import ShortcutErrorAlert  from "@/app/snippets/components/shortcutErrorAlert";  
+import ShortcutErrorAlert  from "@/app/snippets/components/shortcutErrorAlert";
+import { useLoadingStore } from '@/stores/loading';
+import { useCurrentSnippet } from '@/lib/useCurrentSnippet';
+import EditorSkeleton from '@/app/snippets/components/editorSkeleton';
+
 interface SnippetDataMapping {
   formtext: IBuiltFormData<typeof formTextSpec>;
   formmenu: IBuiltFormData<typeof formMenuSpec>;
@@ -51,12 +55,16 @@ type UpdateHandler<T extends EditInfo> = {
 const SnippetPage = ({ params }: SnippetPageProps) => {
   const { snippetId } = params;
   const { folders, updateSnippet } = useSnippetStore();
+  const { snippet: currentSnippet, loading } = useCurrentSnippet(snippetId);
+  
   const [name, setName] = useState("");
   const [shortcut, setShortcut] = useState("");
   const [content, setContent] = useState("");
   const [shortcutError, setShortcutError] = useState<ShortcutError | null>(null);
   const [isPopupVisible, setIsPopupVisible] = useState(false);
   const tryItOutButtonRef = useRef<HTMLButtonElement>(null);
+
+  const { setLoading } = useLoadingStore();
 
 
   // 透過 ref 持有 editor 實例
@@ -70,17 +78,6 @@ const SnippetPage = ({ params }: SnippetPageProps) => {
   const [isDropdownDialogOpen, setIsDropdownDialogOpen] = useState(false);
   const [isEditPanelVisible, setIsEditPanelVisible] = useState(false); // 新增狀態
   const [mode, setMode] = useState<Mode>("edit");
-
-  // 利用 useMemo 依據 folders 與 snippetId 找出對應的 snippet
-  const currentSnippet = useMemo(() => {
-    for (const folder of folders) {
-      const snippet = folder.snippets.find((s: Snippet) => s.id === snippetId);
-      if (snippet) {
-        return snippet;
-      }
-    }
-    return null;
-  }, [folders, snippetId]);
 
   // 按下 sidebar 的 TextField
   const handleInsertTextFieldClick = useCallback(() => {
@@ -119,12 +116,15 @@ const SnippetPage = ({ params }: SnippetPageProps) => {
     }
   }, [currentSnippet]);
 
-  if (!currentSnippet) {
-    return <p>Snippet not found.</p>;
+
+  if (loading) {
+    return <EditorSkeleton />;
   }
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (currentSnippet) {
+      setLoading(true); // 設定全域載入狀態
+      
       const updatedSnippet = {
         ...currentSnippet,
         name,
@@ -132,7 +132,17 @@ const SnippetPage = ({ params }: SnippetPageProps) => {
         content,
       };
       console.log("Updating snippet:", updatedSnippet);
-      updateSnippet(snippetId, updatedSnippet);
+      
+      try {
+        await Promise.all([
+          updateSnippet(snippetId, updatedSnippet),
+          new Promise(resolve => setTimeout(resolve, 300)),
+        ]);
+      } catch (error) {
+        console.error("儲存時發生錯誤:", error);
+      } finally {
+        setLoading(false); 
+      }
     }
   };
 

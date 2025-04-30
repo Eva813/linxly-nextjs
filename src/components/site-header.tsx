@@ -1,4 +1,8 @@
+'use client'
 import Link from "next/link"
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import { Button } from '@/components/ui/button'
 
 import { siteConfig } from "@/config/site"
 // import { buttonVariants } from "@/components/ui/dialog"
@@ -7,6 +11,16 @@ import { MainNav } from "@/components/main-nav"
 import { FaGithub } from "react-icons/fa";
 import { ThemeToggle } from "@/components/theme-toggle";
 export function SiteHeader() {
+  const [isLoggedIn, setIsLoggedIn] = useState(false)
+  const router = useRouter()
+  useEffect(() => {
+    setIsLoggedIn(!!localStorage.getItem('token'))
+  }, [])
+  const handleLogout = () => {
+    localStorage.removeItem('token')
+    setIsLoggedIn(false)
+    router.push('/')
+  }
   return (
     <header
       className="sticky top-0 z-50 w-full border-b border-gray-200"
@@ -33,18 +47,20 @@ export function SiteHeader() {
               </div>
             </Link>
             <ThemeToggle />
-            <Link
-              href="/login"
-              className="inline-flex items-center justify-center rounded-md px-4 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground h-10"
-            >
-              Login
-            </Link>
-            <Link
-              href="/register"
-              className="inline-flex items-center justify-center rounded-md px-4 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground h-10"
-            >
-              Register
-            </Link>
+            {isLoggedIn ? (
+              <Button onClick={handleLogout} className="inline-flex items-center justify-center rounded-md px-4 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground h-10">
+                Logout
+              </Button>
+            ) : (
+              <>
+                <Link href="/login" className="inline-flex items-center justify-center rounded-md px-4 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground h-10">
+                  Login
+                </Link>
+                <Link href="/register" className="inline-flex items-center justify-center rounded-md px-4 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground h-10">
+                  Register
+                </Link>
+              </>
+            )}
           </nav>
         </div>
       </div>

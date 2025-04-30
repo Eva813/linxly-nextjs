@@ -10,11 +10,19 @@ async function request<T>(
   path: string,
   options: RequestInit = {}
 ): Promise<T> {
-  const res = await fetch(`${BASE_URL}${path}`, {
-    headers: { 'Content-Type': 'application/json' },
+  const token = localStorage.getItem('token');
+  
+  // 確保 options.headers 存在，並使用正確的合併方式
+  const requestOptions: RequestInit = {
     ...options,
-  });
-
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+      ...(options.headers || {})
+    }
+  };
+  
+  const res = await fetch(`${BASE_URL}${path}`, requestOptions);
   // 嘗試 parse 錯誤訊息
   if (!res.ok) {
     let err: APIError | null = null;

@@ -3,6 +3,11 @@ import { connectToDatabase } from '@/lib/mongodb';
 import { ObjectId } from 'mongodb';
 
 export async function GET(req: Request) {
+  const userId = req.headers.get('x-user-id');
+  if (!userId) {
+    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+  }
+
   try {
     const { searchParams } = new URL(req.url);
     const folderId = searchParams.get('folderId');
@@ -18,7 +23,8 @@ export async function GET(req: Request) {
     
     // 檢查資料夾是否存在
     const folder = await db.collection('folders').findOne({ 
-      _id: new ObjectId(folderId) 
+      _id: new ObjectId(folderId),
+      userId: new ObjectId(userId) 
     });
     
     if (!folder) {
@@ -31,7 +37,11 @@ export async function GET(req: Request) {
     // 獲取此資料夾的所有程式碼片段
     const snippets = await db
       .collection('snippets')
-      .find({ folderId })
+      .find({
+        folderId: folderId,
+        userId: new ObjectId(userId)
+      })
+      .project({ _id: 1, name: 1, content: 1, shortcut: 1 })
       .toArray();
 
     const result = snippets.map(s => ({
@@ -52,9 +62,12 @@ export async function GET(req: Request) {
 }
 
 export async function POST(req: Request) {
+  const userId = req.headers.get('x-user-id');
+  if (!userId) {
+    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+  }
   try {
-    const body = await req.json();
-    const { folderId, name, content, shortcut } = body;
+    const { folderId, name, content, shortcut } = await req.json();
 
     if (!folderId || !name || !shortcut) {
       return NextResponse.json(
@@ -67,7 +80,8 @@ export async function POST(req: Request) {
     
     // 檢查資料夾是否存在
     const folder = await db.collection('folders').findOne({ 
-      _id: new ObjectId(folderId) 
+      _id: new ObjectId(folderId),
+      userId: new ObjectId(userId) 
     });
     
     if (!folder) {
@@ -78,13 +92,15 @@ export async function POST(req: Request) {
     }
 
     // 新增 snippet 片段到 snippets 集合
+    const now = new Date();
     const insertRes = await db.collection('snippets').insertOne({
       folderId,
+      userId: new ObjectId(userId),
       name,
       content: content || '',
       shortcut,
-      createdAt: new Date(),
-      updatedAt: new Date()
+      createdAt: now,
+      updatedAt: now
     });
 
     const created = {

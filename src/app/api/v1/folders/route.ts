@@ -1,15 +1,21 @@
 // app/api/v1/folders/route.ts
 import { NextResponse } from 'next/server';
 import { connectToDatabase } from '@/lib/mongodb';
-// import { ObjectId } from 'mongodb';
+import { ObjectId } from 'mongodb';
 
 // 後端會從資料庫中取得所有資料夾，並且對每個資料夾進行處理，將其關聯的程式碼片段（snippets）一併查詢並格式化後返回
-export async function GET() {
+export async function GET(req: Request) {
+  
   try {
+    const userId = req.headers.get('x-user-id')
+    if (!userId) {
+      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 })
+    }
+
     const { db } = await connectToDatabase();
     const folders = await db
       .collection('folders')
-      .find({})
+      .find({ userId: new ObjectId(userId) })
       .toArray();
 
     // 處理每個資料夾，並獲取其關聯的程式碼片段
@@ -17,7 +23,16 @@ export async function GET() {
       // 從 snippets 集合獲取該資料夾的程式碼片段
       const snippets = await db
         .collection('snippets')
-        .find({ folderId: folder._id.toString() })
+        .find({
+          folderId: folder._id.toString(),         // 或 ObjectId(folder._id) 視 schema 而定
+          userId: new ObjectId(userId),           // 加上 userId 過濾
+        })
+        .project({                             // 告訴 MongoDB「只回傳這四個欄位」，其他一律排除
+          _id: 1,
+          name: 1,
+          content: 1,
+          shortcut: 1
+        })
         .toArray();
       
       // 格式化程式碼片段資料
@@ -48,6 +63,7 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
+  const userId = req.headers.get('x-user-id')
   try {
     const body = await req.json();
     if (!body.name) {
@@ -61,6 +77,7 @@ export async function POST(req: Request) {
     const insertRes = await db
       .collection('folders')
       .insertOne({
+        userId: userId ? new ObjectId(userId) : null,
         name: body.name,
         description: body.description || '',
         createdAt: new Date(),

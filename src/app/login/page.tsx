@@ -3,8 +3,11 @@ import Link from "next/link";
 import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { useRouter } from "next/navigation";
+import { login } from "@/api/auth";
 
 export default function Login() {
+  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -22,22 +25,13 @@ export default function Login() {
     setIsLoading(true);
 
     try {
-      // 模擬 API 呼叫
-      const response = await fetch("/api/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
-      });
-
-      if (!response.ok) {
-        throw new Error("登入失敗，請檢查您的帳號或密碼");
-      }
-
-      // 處理成功邏輯
-      console.log("登入成功");
+      const { token } = await login(email, password);
+      console.log("tokenDDDD", token);
+      localStorage.setItem("token", token);
+      router.push("/");
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
-      setError(err.message || "發生未知錯誤");
+      setError(err.message || "登入失敗");
     } finally {
       setIsLoading(false);
     }

@@ -26,7 +26,6 @@ export default function Login() {
 
     try {
       const { token } = await login(email, password);
-      console.log("tokenDDDD", token);
       localStorage.setItem("token", token);
       router.push("/");
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

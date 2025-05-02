@@ -7,7 +7,7 @@ const allowedOrigins = [
   'arc-extension://fnklojfgggbcmcmldigpicflliiogoij',
   'https://chatgpt.com',
   'https://linxly-nextjs-git-feat-snippet-api-eva813s-projects.vercel.app',
-  'https://linxly-nextjs.vercel.app/'
+  'https://linxly-nextjs.vercel.app'
 ]
 
 const CORS_HEADERS = {
@@ -43,13 +43,11 @@ export async function middleware(request: NextRequest) {
     return NextResponse.json({}, { headers: preflightHeaders })
   }
 
-  // 2️⃣ 驗 JWT
+  // 驗 JWT
   const authHeader = request.headers.get('authorization') || ''
-  console.log('請求路徑:', path);
-  console.log('身分驗證標頭:', authHeader ? `${authHeader.substring(0, 20)}...` : '無');
 
   if (!authHeader.startsWith('Bearer ')) {
-      console.error('!!! JWT_SECRET is missing in environment variables !!!');
+      console.error('JWT_SECRET is missing in environment variables !!!');
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 })
   }
   const token = authHeader.slice(7)
@@ -66,9 +64,6 @@ export async function middleware(request: NextRequest) {
     const userId = (payload as JwtPayload).sub;
     const res = NextResponse.next()
     res.headers.set('x-user-id', userId)
-  
-
-    console.log('JWT 驗證成功 (jose)，使用者 ID:', payload.sub);
 
     if (isAllowedOrigin) {
       res.headers.set('Access-Control-Allow-Origin', origin)
@@ -76,8 +71,7 @@ export async function middleware(request: NextRequest) {
     Object.entries(CORS_HEADERS).forEach(([k, v]) => res.headers.set(k, v))
     return res
   } catch(err) {
-          console.error('!!! JWT verification FAILED !!!'); // 先印簡單訊息
-     console.error('Error details:', err); // 再印錯誤細節
+    console.error('Error details:', err);
     return NextResponse.json({ message: 'Invalid token' }, { status: 401 })
   }
 }

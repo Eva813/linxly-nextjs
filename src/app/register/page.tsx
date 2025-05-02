@@ -5,9 +5,11 @@ import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { register } from "@/api/auth";
+import { useAuthStore } from "@/stores/auth"; 
 
 export default function Register() {
-    const router = useRouter();
+  const router = useRouter();
+  const { login: loginToStore } = useAuthStore(); 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -18,16 +20,16 @@ export default function Register() {
     e.preventDefault();
     setError("");
     if (!name || !email || !password) {
-      setError("請輸入完整資訊");
+      setError("Please fill in all fields");
       return;
     }
     setIsLoading(true);
     try {
       const { token } = await register(name, email, password);
-      localStorage.setItem("token", token);
+      loginToStore(token);
       router.push("/");
     } catch  {
-      setError("註冊失敗");
+      setError("Failed to register");
     } finally {
       setIsLoading(false);
     }

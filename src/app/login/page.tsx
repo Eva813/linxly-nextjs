@@ -5,9 +5,11 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 import { login } from "@/api/auth";
+import { useAuthStore } from "@/stores/auth";
 
 export default function Login() {
   const router = useRouter();
+  const { login: loginToStore } = useAuthStore();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -26,7 +28,7 @@ export default function Login() {
 
     try {
       const { token } = await login(email, password);
-      localStorage.setItem("token", token);
+      loginToStore(token);
       router.push("/");
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {

@@ -1,6 +1,5 @@
 'use client'
 import Link from "next/link"
-import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 
@@ -10,17 +9,17 @@ import { siteConfig } from "@/config/site"
 import { MainNav } from "@/components/main-nav"
 import { FaGithub } from "react-icons/fa";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { useAuthStore } from "@/stores/auth";
+
 export function SiteHeader() {
-  const [isLoggedIn, setIsLoggedIn] = useState(false)
+  const { isLoggedIn, logout } = useAuthStore();
   const router = useRouter()
-  useEffect(() => {
-    setIsLoggedIn(!!localStorage.getItem('token'))
-  }, [])
+
   const handleLogout = () => {
-    localStorage.removeItem('token')
-    setIsLoggedIn(false)
-    router.push('/')
-  }
+    logout();
+    router.push("/");
+  };
+
   return (
     <header
       className="sticky top-0 z-50 w-full border-b border-gray-200"

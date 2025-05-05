@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import dynamic from "next/dynamic";
 import { useSnippetStore } from "@/stores/snippet";
@@ -31,7 +31,6 @@ const SnippetItem = dynamic(() => import("./snippetItem"), {
 const Sidebar = () => {
   const {
     folders,
-    fetchFolders,
     addFolder,
     addSnippetToFolder,
     deleteFolder,
@@ -44,22 +43,6 @@ const Sidebar = () => {
   const [activeFolderMenu, setActiveFolderMenu] = useState<string | null>(null);
   const [collapsedFolders, setCollapsedFolders] = useState<Set<string>>(new Set());
   const [activeSnippetMenu, setActiveSnippetMenu] = useState<string | null>(null);
-
-    // 元件初始化時從 API 取得資料夾
-    // useEffect(() => {
-    //   fetchFolders();
-    // }, [fetchFolders]);
-  useEffect(() => {
-    fetchFolders()
-      .catch(err => {
-        if (err.status === 401) {
-          // 未授權 → 導向登入
-          router.push('/login');
-        } else {
-          console.error('fetchFolders error:', err);
-        }
-      });
-  }, [fetchFolders, router]);
 
   // 解析目前路由資訊 (/snippets/folder/[folderId] 或 /snippets/snippet/[snippetId])
   const getCurrentContext = () => {
@@ -98,7 +81,7 @@ const Sidebar = () => {
     try {
       // 建立新資料夾的資料
       const folderData = {
-        name: "新資料夾",
+        name: "New Folder",
         description: "",
         snippets: [],
       };
@@ -109,7 +92,7 @@ const Sidebar = () => {
       // 導向到新建立的資料夾
       router.push(`/snippets/folder/${newFolder.id}`);
     } catch (error) {
-      console.error('建立資料夾失敗:', error);
+      console.error('folder:', error);
       
     }
   };

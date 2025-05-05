@@ -1,19 +1,37 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useSnippetStore } from "@/stores/snippet";
 import { Skeleton } from "@/components/ui/skeleton";
 import EditorSkeleton from "@/app/snippets/components/editorSkeleton";
 import LoadingOverlay from "@/app/components/loadingOverlay";
+import { useRouter } from "next/navigation";
 
 // 提供一個全頁載入的狀態，當資料尚未載入完成時顯示載入動畫
 export default function FullPageLoading({ children }: { children: React.ReactNode }) {
   const { fetchFolders } = useSnippetStore();
   const [isLoaded, setIsLoaded] = useState(false);
+  // guard ref，確保只呼叫一次
+  const hasCalled = useRef(false);
+  const router = useRouter();
 
-  useEffect(() => {
-    fetchFolders().finally(() => setIsLoaded(true));
-  }, [fetchFolders]);
+useEffect(() => {
+  if (hasCalled.current) return;
+  hasCalled.current = true;
+
+  fetchFolders()
+    .then(() => {
+      setIsLoaded(true);
+    })
+    .catch(err => {
+      if (err.status === 401) {
+        router.replace('/login');
+      } else {
+        console.error('fetchFolders error:', err);
+        setIsLoaded(true); 
+      }
+    });
+}, [fetchFolders, router]);
 
   if (!isLoaded) {
     return (

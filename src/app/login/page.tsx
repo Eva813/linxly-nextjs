@@ -4,40 +4,14 @@ import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
-// import { login } from "@/api/auth";
-// import { useAuthStore } from "@/stores/auth";
 import { signIn } from "next-auth/react";
 
 export default function Login() {
   const router = useRouter();
-  // const { login: loginToStore } = useAuthStore();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-
-  // const handleSubmit = async (e: React.FormEvent) => {
-  //   e.preventDefault();
-  //   setError("");
-
-  //   if (!email || !password) {
-  //     setError("請輸入有效的電子郵件和密碼");
-  //     return;
-  //   }
-
-  //   setIsLoading(true);
-
-  //   try {
-  //     const { token } = await login(email, password);
-  //     loginToStore(token);
-  //     router.push("/");
-  //   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  //   } catch (err: any) {
-  //     setError(err.message || "登入失敗");
-  //   } finally {
-  //     setIsLoading(false);
-  //   }
-  // };
 
   const handleSubmit = async (e: React.FormEvent) => {
       e.preventDefault();
@@ -57,7 +31,7 @@ export default function Login() {
           router.push("/");   
         }
       } catch  {
-        setError("登入失敗");
+        setError("login failed");
       } finally {
         setIsLoading(false);
       }

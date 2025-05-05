@@ -1,6 +1,4 @@
 
-
-
 import Sidebar from '@/app/snippets/components/sidebar/sidebar';
 import { ReactNode } from 'react';
 import LoadingOverlay from "@/app/components/loadingOverlay";

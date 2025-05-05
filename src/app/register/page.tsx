@@ -5,11 +5,10 @@ import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { register } from "@/api/auth";
-import { useAuthStore } from "@/stores/auth"; 
+import { signIn } from "next-auth/react";
 
 export default function Register() {
   const router = useRouter();
-  const { login: loginToStore } = useAuthStore(); 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -20,16 +19,29 @@ export default function Register() {
     e.preventDefault();
     setError("");
     if (!name || !email || !password) {
-      setError("Please fill in all fields");
+      setError("請填寫所有欄位");
       return;
     }
     setIsLoading(true);
+
     try {
-      const { token } = await register(name, email, password);
-      loginToStore(token);
-      router.push("/");
-    } catch  {
-      setError("Failed to register");
+      await register(name, email, password);
+
+      // 自動登入
+      const signInRes = await signIn("credentials", {
+        redirect: false,
+        email,
+        password,
+      });
+
+      if (signInRes?.error) {
+        setError(signInRes.error);
+      } else {
+        router.push("/");
+      }
+    } catch (err: Error | unknown) {
+      const errorMessage = err instanceof Error ? err.message : "註冊失敗";
+      setError(errorMessage);
     } finally {
       setIsLoading(false);
     }

@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
+import Image from "next/image";
 
 export default function Login() {
   const router = useRouter();
@@ -74,6 +75,18 @@ export default function Login() {
             {isLoading ? "Loading..." : "Login"}
           </Button>
         </form>
+        <div className="my-4">
+          <Button
+            type="button"
+            variant="outline"
+            className="w-full text-gray-700 flex items-center justify-center gap-2"
+            onClick={() => signIn('google', { callbackUrl: '/' })}
+            disabled={isLoading}
+          >
+            <Image src="/assets/google-logo.svg" alt="Google logo" width={20} height={20} className="w-5 h-5" />
+            使用 Google 登入
+          </Button>
+        </div>
         <p className="text-sm text-center text-gray-600">
           Don&apos;t have an account?{' '}
           <Link href="/register" className="text-blue-600 hover:underline">

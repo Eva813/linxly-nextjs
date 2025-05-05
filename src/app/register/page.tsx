@@ -19,7 +19,7 @@ export default function Register() {
     e.preventDefault();
     setError("");
     if (!name || !email || !password) {
-      setError("請填寫所有欄位");
+      setError("Please fill in all fields");
       return;
     }
     setIsLoading(true);
@@ -40,7 +40,7 @@ export default function Register() {
         router.push("/");
       }
     } catch (err: Error | unknown) {
-      const errorMessage = err instanceof Error ? err.message : "註冊失敗";
+      const errorMessage = err instanceof Error ? err.message : "register failed";
       setError(errorMessage);
     } finally {
       setIsLoading(false);
@@ -48,7 +48,7 @@ export default function Register() {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-50 min-h-[calc(100vh-4rem-1px)]">
+    <div className="flex items-center justify-center bg-gray-50 min-h-[calc(100vh-4rem-1px)]">
       <div className="w-full max-w-md p-8 space-y-4 bg-white rounded-lg shadow-md">
         <h2 className="text-2xl font-bold text-center text-gray-900">Register</h2>
         <p className="text-center text-gray-600">Enter your information to create an account</p>

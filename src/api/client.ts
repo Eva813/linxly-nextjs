@@ -1,3 +1,4 @@
+import { getSession } from "next-auth/react";
 const BASE_URL = '/api/v1';
 
 interface APIError {
@@ -10,7 +11,9 @@ async function request<T>(
   path: string,
   options: RequestInit = {}
 ): Promise<T> {
-  const token = localStorage.getItem('token');
+  // const token = localStorage.getItem('token');
+  const session = await getSession();
+  const token = session?.user?.token;
   
   // 確保 options.headers 存在，並使用正確的合併方式
   const requestOptions: RequestInit = {
@@ -25,10 +28,12 @@ async function request<T>(
   const res = await fetch(`${BASE_URL}${path}`, requestOptions);
   // 嘗試 parse 錯誤訊息
   if (!res.ok) {
-    let err: APIError | null = null;
-    try { err = await res.json(); } catch { /* ignore */ }
-    const message = err?.message || res.statusText;
-    throw new Error(message);
+    let errPayload: APIError | null = null;
+    try { errPayload = await res.json(); } catch { /* ignore */ }
+    const msg = errPayload?.message || res.statusText;
+    const errorWithStatus = new Error(msg) as Error & { status: number };
+    errorWithStatus.status = res.status;
+    throw errorWithStatus;
   }
 
   // DELETE 204 會沒有 body

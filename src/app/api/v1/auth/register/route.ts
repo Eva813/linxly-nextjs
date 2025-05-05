@@ -1,8 +1,7 @@
 import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";                    
-import { sign } from "jsonwebtoken";              
+// import { sign } from "jsonwebtoken";              
 import { connectToDatabase } from "@/lib/mongodb"; 
-import { ObjectId } from "mongodb";
 
 
 // interface AuthProvider {
@@ -21,7 +20,7 @@ import { ObjectId } from "mongodb";
 // }
 
 export async function POST(req: Request) {
-  // 1) 解析並驗證必要欄位
+  // 解析並驗證必要欄位
   const { email, password, name } = await req.json();
   if (!email || !password) {
     return NextResponse.json(
@@ -33,20 +32,11 @@ export async function POST(req: Request) {
     return NextResponse.json({ message: "invalid email format" }, { status: 400 });
   }
 
-  // 2) 環境變數檢查
-  if (!process.env.JWT_SECRET) {
-    console.error("缺少 JWT_SECRET");
-    return NextResponse.json(
-      { message: "伺服器設定錯誤" },
-      { status: 500 }
-    );
-  }
-
   const { db, client } = await connectToDatabase();
   const session = client.startSession();
-  let newUserId: ObjectId;
+  
   try {
-    // 3) 檢查是否已存在（請在 Mongo Shell 中：db.users.createIndex({ email: 1 }, { unique: true }) 建立唯一索引）
+    // 檢查是否已存在（請在 Mongo Shell 中：db.users.createIndex({ email: 1 }, { unique: true }) 建立唯一索引）
     const existing = await db.collection("users").findOne({ email });
     if (existing) {
       await session.endSession();
@@ -56,7 +46,7 @@ export async function POST(req: Request) {
       );
     }
 
-    // 4) 建立使用者 + authProviders（交易式寫入）
+    // 建立使用者 + authProviders（交易式寫入）
     const now = new Date();
     const hash = await bcrypt.hash(password, 12);
     
@@ -67,7 +57,6 @@ export async function POST(req: Request) {
           { email, name: name || "", createdAt: now, updatedAt: now },
           { session }
         );
-      newUserId = userRes.insertedId;
 
       await db
         .collection("authProviders")
@@ -89,13 +78,10 @@ export async function POST(req: Request) {
 
     session.endSession();
 
-    // 5) 簽發 JWT 並回傳
-    const token = sign(
-      { sub: newUserId!.toString() },
-      process.env.JWT_SECRET,
-      { expiresIn: process.env.JWT_EXPIRES_IN }
+    return NextResponse.json(
+      { message: "Login successful" },
+      { status: 200 }
     );
-    return NextResponse.json({ token }, { status: 201 });
   } catch (err: unknown) {
     console.error("註冊失敗：", err);
     await session.endSession(); 

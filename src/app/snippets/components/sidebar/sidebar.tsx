@@ -46,9 +46,20 @@ const Sidebar = () => {
   const [activeSnippetMenu, setActiveSnippetMenu] = useState<string | null>(null);
 
     // 元件初始化時從 API 取得資料夾
-    useEffect(() => {
-      fetchFolders();
-    }, [fetchFolders]);
+    // useEffect(() => {
+    //   fetchFolders();
+    // }, [fetchFolders]);
+  useEffect(() => {
+    fetchFolders()
+      .catch(err => {
+        if (err.status === 401) {
+          // 未授權 → 導向登入
+          router.push('/login');
+        } else {
+          console.error('fetchFolders error:', err);
+        }
+      });
+  }, [fetchFolders, router]);
 
   // 解析目前路由資訊 (/snippets/folder/[folderId] 或 /snippets/snippet/[snippetId])
   const getCurrentContext = () => {

@@ -20,14 +20,7 @@ export async function POST(req: Request) {
       { status: 400 }
     );
   }
-  // 3) 檢查 JWT_SECRET
-  if (!process.env.JWT_SECRET) {
-    console.error("缺少 JWT_SECRET");
-    return NextResponse.json(
-      { message: "伺服器設定錯誤" },
-      { status: 500 }
-    );
-  }
+
   try {
     const { db } = await connectToDatabase();
     // 4) 查找使用者
@@ -57,12 +50,15 @@ export async function POST(req: Request) {
       );
     }
     // 7) 簽發 JWT
-    const token = sign(
-      { sub: user._id.toString() },
-      process.env.JWT_SECRET,
-      { expiresIn: process.env.JWT_EXPIRES_IN }
+    const jwtToken = sign(
+      { sub: user._id.toString(), email: user.email },
+      process.env.NEXTAUTH_SECRET as string,
+      { expiresIn: "7d" }
     );
-    return NextResponse.json({ token }, { status: 200 });
+    return NextResponse.json(
+      { id: user._id.toString(), email: user.email, token: jwtToken },
+      { status: 200 }
+    );
   } catch (err: unknown) {
     console.error("登入失敗：", err);
     const message = err instanceof Error ? err.message : "Unknown error";

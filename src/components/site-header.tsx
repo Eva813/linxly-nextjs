@@ -9,16 +9,25 @@ import { siteConfig } from "@/config/site"
 import { MainNav } from "@/components/main-nav"
 import { FaGithub } from "react-icons/fa";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { useAuthStore } from "@/stores/auth";
+import { useSession, signOut } from "next-auth/react";
 
 export function SiteHeader() {
-  const { isLoggedIn, logout } = useAuthStore();
+  const {  data: session, status } = useSession();
+  const isLoggedIn = status === "authenticated";
   const router = useRouter()
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await signOut({ redirect: false });
     router.push("/");
   };
+
+  // 過濾需要登入的選項
+  const filteredNav = siteConfig.mainNav.filter((item) => {
+    if (["/snippets", "/workspace"].includes(item.href)) {
+      return isLoggedIn; // 僅在登入時顯示
+    }
+    return true; // 其他選項始終顯示
+  });
 
   return (
     <header
@@ -31,7 +40,7 @@ export function SiteHeader() {
     >
       {/* header content */}
       <div className="container flex h-16 items-center space-x-4 max-w-screen-2xl sm:justify-between sm:space-x-0">
-        <MainNav items={siteConfig.mainNav} />
+        <MainNav items={filteredNav} />
         <div className="flex flex-1 items-center justify-end space-x-4">
           <nav className="flex items-center space-x-1">
             <Link
@@ -48,8 +57,9 @@ export function SiteHeader() {
             <ThemeToggle />
             {isLoggedIn ? (
               <Button onClick={handleLogout} className="inline-flex items-center justify-center rounded-md px-4 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground h-10">
-                Logout
+                Logout<p>Welcome, {session.user.email || "User"}</p>
               </Button>
+            
             ) : (
               <>
                 <Link href="/login" className="inline-flex items-center justify-center rounded-md px-4 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground h-10">

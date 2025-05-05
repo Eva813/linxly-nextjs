@@ -4,6 +4,7 @@ import "./globals.css";
 import { SiteHeader } from '@/components/site-header';
 import { ThemeProvider } from "@/components/theme-provider";
 import SnippetDialog from "@/app/components/snippetDialog";
+import ClientProvider from "./SessionProvider";
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -31,11 +32,13 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-              <SiteHeader />
-              {children}
-              <SnippetDialog />
-        </ThemeProvider>
+        <ClientProvider>
+          <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+                <SiteHeader />
+                {children}
+                <SnippetDialog />
+          </ThemeProvider>
+        </ClientProvider>
       </body>
     </html>
   );

@@ -63,20 +63,24 @@ export const createFolderSlice: StateCreator<FolderSlice> = (set, get) => ({
           // 再次從資料庫取得資料夾
           const updatedFolders = await getFolders();
           set({ folders: updatedFolders, isLoading: false });
-        
-        console.log('use default folders:');
       } else {
         set({ folders, isLoading: false });
       }
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'unknown error';
-      set({ 
-        error: `get folder failed: ${errorMessage}`, 
+    } catch (error: unknown) {
+      const err = error as { status?: number };
+      const msg = error instanceof Error ? error.message : 'unknown error';
+
+      console.error('取得資料夾失敗:', msg);
+
+      // 若為未授權，直接拋出
+      if (err.status === 401) throw error;
+
+      // 其他錯誤顯示訊息 + 設定預設資料夾
+      set({
+        error: msg,
+        folders: DEFAULT_FOLDERS,
         isLoading: false,
-        // 發生錯誤時也使用預設資料
-        folders: DEFAULT_FOLDERS
       });
-      console.error('取得資料夾失敗:', error);
     }
   },
   // 當 setFolders 被呼叫時，它會觸發 React 的重新渲染機制，更新依賴 folders 狀態的元件。

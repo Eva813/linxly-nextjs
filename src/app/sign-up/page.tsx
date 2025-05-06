@@ -1,12 +1,15 @@
 'use client'
 import Link from "next/link";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { signup } from "@/api/auth";
 import { signIn } from "next-auth/react";
-import Image from "next/image";
+
+import { AuthLayout } from "@/components/layout/AuthLayout";
+import { InputField } from "@/components/ui/InputField";
+import { LoadingButton } from "@/components/ui/loadingButton";
+import { ErrorMessage } from "@/components/ui/errorMessage";
+import { SocialLoginButton } from "@/components/ui/socialLoginButton";
 import { Eye, EyeOff } from "lucide-react";
 
 export default function SignUp() {
@@ -62,103 +65,69 @@ export default function SignUp() {
   };
 
   return (
-    <div className="flex items-center justify-center bg-gray-50 min-h-[calc(100vh-4rem-1px)]">
-      <div className="w-full max-w-md p-8 space-y-4 bg-white rounded-lg shadow-md">
-        <h2 className="text-2xl font-bold text-center text-gray-900">Sign up</h2>
-        <p className="text-center text-gray-600">
-          {step === 1 ? "Enter your name and email to continue" : "Enter your password to complete registration"}
-        </p>
-        {error && <p className="text-sm text-red-600">{error}</p>}
-        {step === 1 && (
-          <>
-            <form className="space-y-4" onSubmit={handleNextStep}>
-              <div>
-                <label htmlFor="name" className="block text-sm font-medium text-gray-700">
-                  Name
-                </label>
-                <Input
-                  id="name"
-                  type="text"
-                  placeholder="John Doe"
-                  className="mt-1"
-                  value={name}
-                  onChange={e => setName(e.target.value)} />
-              </div>
-              <div>
-                <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                  Email
-                </label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="m@example.com"
-                  className="mt-1"
-                  value={email}
-                  onChange={e => setEmail(e.target.value)} />
-              </div>
-              <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? "Loading..." : "Continue with email"}
-              </Button>
-            </form>
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <span className="w-full border-t" />
-              </div>
-              <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-background px-2 text-muted-foreground">
-                  Other sign up options
-                </span>
-              </div>
-            </div>
-            <Button
-              type="button"
-              variant="outline"
-              className="w-full text-gray-700 flex items-center justify-center gap-2"
-              onClick={() => signIn('google', { callbackUrl: '/' })}
-              disabled={isLoading}
-            >
-              <Image src="/assets/google-logo.svg" alt="Google logo" width={20} height={20} className="w-5 h-5" />
-              Sign up with Google
-            </Button>
-          </>
-        )}
-        {step === 2 && (
-          <form className="space-y-4" onSubmit={handleSubmit}>
-            <div className="space-y-2 relative">
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-                Password
-              </label>
-              <div className="relative">
-                <Input
-                  id="password"
-                  type={showPassword ? "text" : "password"}
-                  placeholder="Enter your password"
-                  className="mt-1"
-                  value={password}
-                  onChange={e => setPassword(e.target.value)}
-                />
-                <Button
-                  type="button"
-                  variant="ghost"
-                  className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                  onClick={() => setShowPassword(!showPassword)}
-                >
-                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                </Button>
-              </div>
-            </div>
-            <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? "Loading..." : "Sign up"}
-            </Button>
-          </form>
-        )}
-        <p className="text-sm text-center text-gray-600">
-          Already have an account?{' '}
-          <Link href="/login" className="text-blue-600 hover:underline">
-            Log in
-          </Link>
-        </p>
-      </div>
-    </div>
+    <AuthLayout
+      title="Sign up"
+      description={step === 1 ? "Enter your name and email to continue" : "Enter your password to complete registration"}
+    >
+      <ErrorMessage message={error} />
+      {step === 1 && (
+        <form className="space-y-4" onSubmit={handleNextStep}>
+          <InputField
+            id="name"
+            label="Name"
+            type="text"
+            placeholder="John Doe"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+          />
+          <InputField
+            id="email"
+            label="Email"
+            type="email"
+            placeholder="m@example.com"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+          />
+          <LoadingButton type="submit" className="w-full" isLoading={isLoading}>
+            Continue with email
+          </LoadingButton>
+        </form>
+      )}
+      {step === 2 && (
+        <form className="space-y-4" onSubmit={handleSubmit}>
+          <InputField
+            id="password"
+            label="Password"
+            type={showPassword ? "text" : "password"}
+            placeholder="Enter your password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            suffix={
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                {showPassword ? <Eye className="w-5 h-5" /> : <EyeOff className="w-5 h-5" />}
+              </button>
+            }
+          />
+          <LoadingButton type="submit" className="w-full" isLoading={isLoading}>
+            Sign up
+          </LoadingButton>
+        </form>
+      )}
+      <SocialLoginButton
+        provider="google"
+        onClick={() => signIn('google', { callbackUrl: '/' })}
+        isLoading={isLoading}
+      />
+      <p className="text-sm text-center text-gray-600">
+        Already have an account?{' '}
+        <Link href="/login" className="text-blue-600 hover:underline">
+          Log in
+        </Link>
+      </p>
+    </AuthLayout>
   );
 }

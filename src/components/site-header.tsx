@@ -54,7 +54,10 @@ export function SiteHeader() {
               </div>
             </Link>
             <ThemeToggle />
-            {isLoggedIn ? (
+            {status === "loading" ? (
+            // 載入中顯示占位骨架
+            <div className="w-10 h-10 rounded-full bg-gray-200 animate-pulse-strong" />
+          ) : isLoggedIn ? (
               <DropdownMenu>
                 <DropdownMenuTrigger className="inline-flex items-center justify-center rounded-full h-8 w-8 overflow-hidden border border-gray-500 focus:outline-none focus:ring-0">
                   <FaUserAlt />

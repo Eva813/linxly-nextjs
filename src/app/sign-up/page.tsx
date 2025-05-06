@@ -6,6 +6,8 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { signup } from "@/api/auth";
 import { signIn } from "next-auth/react";
+import Image from "next/image";
+
 
 
 export default function SignUp() {
@@ -68,37 +70,57 @@ export default function SignUp() {
         </p>
         {error && <p className="text-sm text-red-600">{error}</p>}
         {step === 1 && (
-          <form className="space-y-4" onSubmit={handleNextStep}>
-            <div>
-              <label htmlFor="name" className="block text-sm font-medium text-gray-700">
-                Name
-              </label>
-              <Input
-                id="name"
-                type="text"
-                placeholder="John Doe"
-                className="mt-1"
-                value={name}
-                onChange={e => setName(e.target.value)}
-              />
+          <>
+            <form className="space-y-4" onSubmit={handleNextStep}>
+              <div>
+                <label htmlFor="name" className="block text-sm font-medium text-gray-700">
+                  Name
+                </label>
+                <Input
+                  id="name"
+                  type="text"
+                  placeholder="John Doe"
+                  className="mt-1"
+                  value={name}
+                  onChange={e => setName(e.target.value)} />
+              </div>
+              <div>
+                <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+                  Email
+                </label>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="m@example.com"
+                  className="mt-1"
+                  value={email}
+                  onChange={e => setEmail(e.target.value)} />
+              </div>
+              <Button type="submit" className="w-full" disabled={isLoading}>
+                {isLoading ? "Loading..." : "Continue with email"}
+              </Button>
+            </form>
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-background px-2 text-muted-foreground">
+                  Other sign up options
+                </span>
+              </div>
             </div>
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                Email
-              </label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="m@example.com"
-                className="mt-1"
-                value={email}
-                onChange={e => setEmail(e.target.value)}
-              />
-            </div>
-            <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? "Loading..." : "Continue with email"}
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full text-gray-700 flex items-center justify-center gap-2"
+              onClick={() => signIn('google', { callbackUrl: '/' })}
+              disabled={isLoading}
+            >
+              <Image src="/assets/google-logo.svg" alt="Google logo" width={20} height={20} className="w-5 h-5" />
+              使用 Google 登入
             </Button>
-          </form>
+          </>
         )}
         {step === 2 && (
           <form className="space-y-4" onSubmit={handleSubmit}>

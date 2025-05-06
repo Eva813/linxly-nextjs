@@ -18,7 +18,7 @@ export function SiteHeader() {
 
   const handleLogout = async () => {
     await signOut({ redirect: false });
-    router.push("/");
+    router.push("login");
   };
 
   // 過濾需要登入的選項

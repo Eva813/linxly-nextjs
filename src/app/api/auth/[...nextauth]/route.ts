@@ -56,6 +56,7 @@ const handler = NextAuth({
         token.id = user.id; // 確保 id 被正確設定
         token.accessToken = account.access_token;
         token.email = token.email || user?.email;
+        token.image = user.image;
         
         // 確保 MongoDB 物件 ID 格式正確
         try {
@@ -74,6 +75,7 @@ const handler = NextAuth({
         email: token.email,
         token: token.token,
         accessToken: token.accessToken,
+        image: typeof token.image === 'string' ? token.image : undefined
       };
       return session;
     },

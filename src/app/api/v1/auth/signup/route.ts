@@ -79,7 +79,7 @@ export async function POST(req: Request) {
     session.endSession();
 
     return NextResponse.json(
-      { message: "Login successful" },
+      { message: "Sign up successful" },
       { status: 200 }
     );
   } catch (err: unknown) {

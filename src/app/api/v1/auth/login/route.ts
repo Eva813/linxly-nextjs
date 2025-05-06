@@ -55,6 +55,7 @@ export async function POST(req: Request) {
       process.env.NEXTAUTH_SECRET as string,
       { expiresIn: "7d" }
     );
+    console.log("登入參數：", { email, password });
     return NextResponse.json(
       { id: user._id.toString(), email: user.email, token: jwtToken },
       { status: 200 }

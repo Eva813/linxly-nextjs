@@ -17,7 +17,7 @@ export async function middleware(request: NextRequest) {
   }
 
   // Public paths
-  const publicPaths = ["/api/v1/auth/login", "/api/v1/auth/register", "/api/health"];
+  const publicPaths = ["/api/v1/auth/login", "/api/v1/auth/signup", "/api/health"];
   if (publicPaths.includes(path)) {
     return NextResponse.next();
   }

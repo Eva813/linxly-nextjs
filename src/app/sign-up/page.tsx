@@ -7,8 +7,7 @@ import { useRouter } from "next/navigation";
 import { signup } from "@/api/auth";
 import { signIn } from "next-auth/react";
 import Image from "next/image";
-
-
+import { Eye, EyeOff } from "lucide-react";
 
 export default function SignUp() {
   const router = useRouter();
@@ -18,6 +17,7 @@ export default function SignUp() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleNextStep = (e: React.FormEvent) => {
     e.preventDefault();
@@ -118,24 +118,34 @@ export default function SignUp() {
               disabled={isLoading}
             >
               <Image src="/assets/google-logo.svg" alt="Google logo" width={20} height={20} className="w-5 h-5" />
-              使用 Google 登入
+              Sign up with Google
             </Button>
           </>
         )}
         {step === 2 && (
           <form className="space-y-4" onSubmit={handleSubmit}>
-            <div>
+            <div className="space-y-2 relative">
               <label htmlFor="password" className="block text-sm font-medium text-gray-700">
                 Password
               </label>
-              <Input
-                id="password"
-                type="password"
-                placeholder="Enter your password"
-                className="mt-1"
-                value={password}
-                onChange={e => setPassword(e.target.value)}
-              />
+              <div className="relative">
+                <Input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  placeholder="Enter your password"
+                  className="mt-1"
+                  value={password}
+                  onChange={e => setPassword(e.target.value)}
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                  onClick={() => setShowPassword(!showPassword)}
+                >
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </Button>
+              </div>
             </div>
             <Button type="submit" className="w-full" disabled={isLoading}>
               {isLoading ? "Loading..." : "Sign up"}

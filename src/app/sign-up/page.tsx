@@ -1,6 +1,6 @@
 'use client'
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { signup } from "@/api/auth";
 import { signIn } from "next-auth/react";
@@ -12,6 +12,12 @@ import { ErrorMessage } from "@/components/ui/errorMessage";
 import { SocialLoginButton } from "@/components/ui/socialLoginButton";
 import { Eye, EyeOff } from "lucide-react";
 
+const ERROR_MESSAGES = {
+  INVALID_EMAIL: "Invalid email address",
+  EMPTY_FIELDS: "Please fill in all fields",
+  SIGN_UP_FAILED: "Sign up failed",
+};
+
 export default function SignUp() {
   const router = useRouter();
   const [step, setStep] = useState(1); // 追蹤當前步驟
@@ -22,13 +28,26 @@ export default function SignUp() {
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
-  const handleNextStep = (e: React.FormEvent) => {
+  // 驗證電子郵件的函式
+  const validateEmail = useCallback((email: string): boolean => {
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    return emailRegex.test(email);
+  }, []);
+
+    const handleNextStep = (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
-    if (!name || !email) {
-      setError("Please fill in all fields");
+
+    if (!name.trim() || !email.trim()) {
+      setError(ERROR_MESSAGES.EMPTY_FIELDS);
       return;
     }
+
+    if (!validateEmail(email)) {
+      setError(ERROR_MESSAGES.INVALID_EMAIL);
+      return;
+    }
+
     setStep(2);
   };
 
@@ -36,7 +55,7 @@ export default function SignUp() {
     e.preventDefault();
     setError("");
     if (!password) {
-      setError("Please fill in all fields");
+      setError(ERROR_MESSAGES.EMPTY_FIELDS);
       return;
     }
     setIsLoading(true);
@@ -57,21 +76,26 @@ export default function SignUp() {
         router.push("/");
       }
     } catch (err: Error | unknown) {
-      const errorMessage = err instanceof Error ? err.message : "sign up failed";
+      const errorMessage = err instanceof Error ? err.message : ERROR_MESSAGES.SIGN_UP_FAILED;
       setError(errorMessage);
     } finally {
       setIsLoading(false);
     }
   };
 
+  useEffect(() => {
+    if (error === ERROR_MESSAGES.INVALID_EMAIL && validateEmail(email)) {
+      setError("");
+    }
+  }, [email, error, validateEmail]);
+
   return (
     <AuthLayout
       title="Sign up"
       description={step === 1 ? "Enter your name and email to continue" : "Enter your password to complete registration"}
     >
-      <ErrorMessage message={error} />
       {step === 1 && (
-        <form className="space-y-4" onSubmit={handleNextStep}>
+        <form className="space-y-4" onSubmit={handleNextStep}  noValidate>
           <InputField
             id="name"
             label="Name"
@@ -87,7 +111,10 @@ export default function SignUp() {
             placeholder="m@example.com"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-          />
+            aria-invalid={!!error}
+            aria-describedby="email-error"
+          /> 
+          {error && <ErrorMessage message={error} id="email-error" />}
           <LoadingButton type="submit" className="w-full" isLoading={isLoading}>
             Continue with email
           </LoadingButton>

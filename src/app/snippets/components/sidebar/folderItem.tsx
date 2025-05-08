@@ -30,8 +30,8 @@ const FolderItem: React.FC<FolderItemProps> = ({
       {/* 資料夾本身的連結區塊 */}
       <Link
         prefetch
-        className={`px-2 py-1 w-full block rounded font-extrabold hover:bg-light dark:hover:text-black flex items-center justify-between text-lg ${
-          isActiveFolder ? "bg-light text-primary dark:text-black" : ""
+        className={`px-2 py-1 w-full block rounded font-extrabold hover:bg-light dark:hover:text-third flex items-center justify-between text-lg ${
+          isActiveFolder ? "bg-light text-primary dark:text-third" : ""
         }`}
         href={`/snippets/folder/${folder.id}`}
       >
@@ -44,7 +44,7 @@ const FolderItem: React.FC<FolderItemProps> = ({
               e.stopPropagation();
               toggleCollapse(folder.id);
             }}
-            className="focus:outline-none hover:bg-gray-200 dark:hover:bg-gray-800 p-1 rounded mr-1"
+            className="focus:outline-none hover:bg-gray-200 dark:hover:bg-light p-1 rounded mr-1"
           >
             {isCollapsed ? (
               <FaCaretRight className="text-gray-400" />
@@ -63,14 +63,14 @@ const FolderItem: React.FC<FolderItemProps> = ({
                     activeFolderMenu === folder.id ? null : folder.id
                   );
                 }}
-                className="focus:outline-none hover:bg-gray-200 dark:hover:bg-gray-800 p-1 rounded"
+                className="focus:outline-none hover:bg-gray-200 dark:hover:bg-light p-1 rounded"
               >
                 <BsThreeDotsVertical className="text-gray-400" />
               </button>
             </DropdownMenuTrigger>
             {activeFolderMenu === folder.id && (
               <DropdownMenuContent>
-                <DropdownMenuItem>
+                <DropdownMenuItem className="dark:hover:bg-light">
                   <button
                     onClick={() => deleteFolder(folder.id)}
                     className="w-full text-left"

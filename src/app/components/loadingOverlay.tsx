@@ -9,7 +9,7 @@ export default function LoadingOverlay() {
   if (!isLoading) return null;
   
   return (
-    <div className="loading-overlay">
+    <div className="loading-overlay bg-white bg-opacity-60 dark:bg-black dark:bg-opacity-40">
       <LoadingSpinner />
     </div>
   );

@@ -49,10 +49,10 @@ const config: Config = {
 					foreground: 'hsl(var(--secondary-foreground))'
 				},
 				third: {
-					DEFAULT: '#cad5f0',
+					DEFAULT: 'var(--third)',
 				},
 				light: {
-					DEFAULT: '#edf1fa',
+					DEFAULT: 'var(--light)'
 				},
 				muted: {
 					DEFAULT: 'var(--muted)',

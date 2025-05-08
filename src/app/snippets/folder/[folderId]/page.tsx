@@ -45,7 +45,7 @@ const FolderPage = ({ params }: FolderPageProps) => {
         new Promise(resolve => setTimeout(resolve, 300)), 
       ]);
     } catch (error) {
-      console.error("儲存時發生錯誤:", error);
+      console.error("Error saving folder:", error);
     } finally {
       setLoading(false); 
     }
@@ -55,14 +55,14 @@ const FolderPage = ({ params }: FolderPageProps) => {
     <div className='flex flex-col'>
       <input
         type="text"
-        className="text-2xl focus:outline-none mb-2"
+        className="text-2xl focus:outline-none mb-2 dark:bg-black"
         value={name}
         onChange={(e) => setName(e.target.value)}
       />
       <Textarea
         value={description}
         rows={4}
-        className='hover:ring-1 hover:ring-gray-400 p-2 rounded mb-2'
+        className='hover:ring-1 hover:ring-gray-400 p-2 rounded mb-2 dark:border-gray-200'
         onChange={(e) => setDescription(e.target.value)}
         placeholder="input description"
       />

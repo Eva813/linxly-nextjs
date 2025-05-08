@@ -24,8 +24,8 @@ const SnippetItem: React.FC<SnippetItemProps> = React.memo(({
   return (
     <li className="mb-2">
       <div
-        className={`flex items-center justify-between px-2 py-1 w-full font-bold block rounded hover:bg-light dark:hover:text-black ${
-          isActiveSnippet ? "bg-light text-primary dark:text-black" : "bg-transparent"
+        className={`flex items-center justify-between px-2 py-1 w-full font-bold block rounded hover:bg-light dark:hover:text-third ${
+          isActiveSnippet ? "bg-light text-primary dark:text-third" : "bg-transparent"
         }`}
       >
         <Link
@@ -34,7 +34,7 @@ const SnippetItem: React.FC<SnippetItemProps> = React.memo(({
           href={`/snippets/snippet/${snippet.id}`}
         >
           {snippet.name}
-          <span className="inline-flex items-center px-3 py-1 border-2 border-secondary text-sm h-6 font-medium rounded-full">
+          <span className="inline-flex items-center px-3 py-1 border-2 border-secondary dark:text-third  dark:border-third text-sm h-6 font-medium rounded-full">
             {snippet.shortcut}
           </span>
         </Link>
@@ -48,14 +48,14 @@ const SnippetItem: React.FC<SnippetItemProps> = React.memo(({
                   activeSnippetMenu === snippet.id ? null : snippet.id
                 );
               }}
-              className="focus:outline-none hover:bg-gray-200 dark:hover:bg-gray-800 p-1 rounded"
+              className="focus:outline-none hover:bg-light dark:hover:bg-light p-1 rounded"
             >
               <BsThreeDotsVertical className="text-gray-400" />
             </button>
           </DropdownMenuTrigger>
           {activeSnippetMenu === snippet.id && (
             <DropdownMenuContent>
-              <DropdownMenuItem>
+              <DropdownMenuItem className="dark:hover:bg-light">
                 <button
                   onClick={() => deleteFile(folderId, snippet.id)}
                   className="w-full text-left"

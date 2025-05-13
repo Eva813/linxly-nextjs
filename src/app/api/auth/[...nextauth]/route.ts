@@ -6,6 +6,8 @@ import GoogleProvider from "next-auth/providers/google";
 import clientPromise from "@/lib/mongodb";
 import { connectToDatabase } from '@/lib/mongodb';
 import { ObjectId } from 'mongodb';
+import bcrypt from "bcryptjs";
+import { sign } from "jsonwebtoken";
 
 const handler = NextAuth({
   debug: true,
@@ -20,25 +22,59 @@ const handler = NextAuth({
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
-        const { email, password } = credentials || {};
-        const res = await fetch(
-          `${process.env.NEXTAUTH_URL}/api/v1/auth/login`,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "x-vercel-protection-bypass": process.env.VERCEL_AUTOMATION_BYPASS_SECRET || "",
-              "x-vercel-set-bypass-cookie": "true"
-            },
-            body: JSON.stringify({ email, password }),
+        try {
+          const { email, password } = credentials || {};
+          
+          // 基本驗證
+          if (!email || !password) {
+            throw new Error("電子郵件與密碼必填");
           }
-        );
-        if (!res.ok) throw new Error("Invalid email or password");
-        const user = await res.json();
-        if (user && user.token) {
-          return { id: user.id, email: user.email, token: user.token };
+          
+          // 電子郵件格式驗證
+          if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+            throw new Error("電子郵件格式無效");
+          }
+          
+          // 直接連接資料庫
+          const { db } = await connectToDatabase();
+          
+          // 查找使用者
+          const user = await db.collection("users").findOne({ email });
+          if (!user) {
+            throw new Error("找不到使用者");
+          }
+          
+          // 取得認證提供者
+          const authProvider = await db
+            .collection("authProviders")
+            .findOne({ userId: user._id, type: "credentials" });
+          
+          if (!authProvider || !authProvider.passwordHash) {
+            throw new Error("認證失敗");
+          }
+          
+          // 比對密碼
+          const valid = await bcrypt.compare(password, authProvider.passwordHash);
+          if (!valid) {
+            throw new Error("密碼錯誤");
+          }
+          
+          // 簽發 JWT
+          const jwtToken = sign(
+            { sub: user._id.toString(), email: user.email },
+            process.env.NEXTAUTH_SECRET as string,
+            { expiresIn: "7d" }
+          );
+          
+          return { 
+            id: user._id.toString(), 
+            email: user.email, 
+            token: jwtToken 
+          };
+        } catch (error) {
+          console.error("登入失敗:", error);
+          throw new Error("電子郵件或密碼錯誤");
         }
-        return null;
       },
     }),
     GoogleProvider({

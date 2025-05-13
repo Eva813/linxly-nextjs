@@ -22,7 +22,7 @@ const handler = NextAuth({
       async authorize(credentials) {
         const { email, password } = credentials || {};
         const res = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/v1/auth/login`,
+          `${process.env.NEXTAUTH_URL}/api/v1/auth/login`,
           {
             method: "POST",
             headers: { "Content-Type": "application/json" },

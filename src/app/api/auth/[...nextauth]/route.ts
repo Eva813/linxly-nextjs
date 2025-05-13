@@ -25,7 +25,11 @@ const handler = NextAuth({
           `${process.env.NEXTAUTH_URL}/api/v1/auth/login`,
           {
             method: "POST",
-            headers: { "Content-Type": "application/json" ,  "VERCEL_PREVIEW_BYPASS": process.env.VERCEL_AUTOMATION_BYPASS_SECRE || ""},
+            headers: {
+              "Content-Type": "application/json",
+              "x-vercel-protection-bypass": process.env.VERCEL_AUTOMATION_BYPASS_SECRET || "",
+              "x-vercel-set-bypass-cookie": "true"
+            },
             body: JSON.stringify({ email, password }),
           }
         );

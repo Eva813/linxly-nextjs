@@ -51,17 +51,40 @@ export function useLoginForm() {
         setError(res.error);
       } else {
         router.push('/');
+
+      // 通知內容腳本 (Content Script)
+      window.postMessage({
+        type: 'FROM_LOGIN_PAGE', // 自訂訊息類型
+        action: 'USER_LOGGED_IN',
+        data: {
+          // 傳遞一些使用者資訊，注意不要洩漏敏感資訊
+          // 例如：status: 'loggedIn' 或部分使用者 ID
+          status: 'loggedIn'
+        }
+      }, window.location.origin)
       }
     } catch {
       setError('Login failed');
     } finally {
       setIsLoading(false);
+      
     }
   };
 
   const handleGoogleSignIn = async () => {
     setIsLoading(true);
     signIn('google', { callbackUrl: '/login?callbackUrl=/' });
+
+      // 通知內容腳本 (Content Script)
+      window.postMessage({
+        type: 'FROM_LOGIN_PAGE', // 自訂訊息類型
+        action: 'USER_LOGGED_IN',
+        data: {
+          // 傳遞一些使用者資訊，注意不要洩漏敏感資訊
+          // 例如：status: 'loggedIn' 或部分使用者 ID
+          status: 'loggedIn'
+        }
+      }, window.location.origin)
   };
 
   return {

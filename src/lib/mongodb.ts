@@ -7,9 +7,9 @@ declare global {
   var _mongoClientPromise: Promise<MongoClient>;
 }
 
-const uri = process.env.MONGODB_URI;
+const uri = process.env.MONGODB_URI_AUTH;
 if (!uri) {
-  throw new Error('請設定 MONGODB_URI 環境變數');
+  throw new Error('請設定 MONGODB_URI_AUTH 環境變數');
 }
 
 const options = {};  // 依需要可補 { useNewUrlParser: true, useUnifiedTopology: true }
@@ -27,9 +27,9 @@ if (process.env.NODE_ENV === 'development') {
 
 export async function connectToDatabase() {
   const client = await clientPromise;
-  const dbName = process.env.MONGODB_DB;
+  const dbName = process.env.MONGODB_DB_AUTH;
   if (!dbName) {
-    throw new Error('請設定 MONGODB_DB 環境變數');
+    throw new Error('請設定 MONGODB_DB_AUTH 環境變數');
   }
   const db = client.db(dbName);
   return { client, db };

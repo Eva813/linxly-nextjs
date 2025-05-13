@@ -18,6 +18,19 @@ export function SiteHeader() {
 
   const handleLogout = async () => {
     await signOut({ redirect: false })
+    
+    // 通知 Chrome 擴充功能使用者已登出
+    window.postMessage(
+      {
+        type: 'FROM_SITE_HEADER', // 自訂訊息類型
+        action: 'USER_LOGGED_OUT',
+        data: {
+          status: 'loggedOut',
+        },
+      },
+      window.location.origin
+    )
+
     router.push("/login")
   }
 

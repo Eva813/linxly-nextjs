@@ -10,7 +10,7 @@ import { ObjectId } from 'mongodb';
 const handler = NextAuth({
   debug: true,
   adapter: MongoDBAdapter(clientPromise, { 
-    databaseName: process.env.MONGODB_DB || 'snippets-auth' 
+    databaseName: process.env.MONGODB_DB_AUTH || 'snippets-auth' 
   }), 
   providers: [
     CredentialsProvider({

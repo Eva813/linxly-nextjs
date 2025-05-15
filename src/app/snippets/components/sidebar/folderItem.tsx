@@ -11,6 +11,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { FolderItemProps } from "@/types/snippets";
+import ShareFolderDialog from "./shareFolderDialog";
 
 const FolderItem: React.FC<FolderItemProps> = ({
   folder,
@@ -22,6 +23,7 @@ const FolderItem: React.FC<FolderItemProps> = ({
   pathname,
   children,
 }) => {
+  const [isShareDialogOpen, setShareDialogOpen] = React.useState(false);
   const isActiveFolder = pathname === `/snippets/folder/${folder.id}`;
   const isCollapsed = collapsedFolders.has(folder.id);
 
@@ -72,6 +74,17 @@ const FolderItem: React.FC<FolderItemProps> = ({
               <DropdownMenuContent>
                 <DropdownMenuItem className="dark:hover:bg-light">
                   <button
+                    onClick={() => {
+                      setShareDialogOpen(true);
+                      setActiveFolderMenu(null);
+                    }}
+                    className="w-full text-left"
+                  >
+                    share folder
+                  </button>
+                </DropdownMenuItem>
+                <DropdownMenuItem className="dark:hover:bg-light">
+                  <button
                     onClick={() => deleteFolder(folder.id)}
                     className="w-full text-left"
                   >
@@ -83,6 +96,11 @@ const FolderItem: React.FC<FolderItemProps> = ({
           </DropdownMenu>
         </div>
       </Link>
+      <ShareFolderDialog
+        isOpen={isShareDialogOpen}
+        onClose={() => setShareDialogOpen(false)}
+        folderId={folder.id}
+      />
       {/* 如果沒有折疊，顯示 children（也就是 snippet 列表） */}
       {!isCollapsed && children}
     </li>

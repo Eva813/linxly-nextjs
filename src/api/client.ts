@@ -14,6 +14,7 @@ async function request<T>(
   // const token = localStorage.getItem('token');
   const session = await getSession();
   const token = session?.user?.token;
+  const userId = session?.user?.id; // 取得使用者 ID
   
   // 確保 options.headers 存在，並使用正確的合併方式
   const requestOptions: RequestInit = {
@@ -21,6 +22,7 @@ async function request<T>(
     headers: {
       'Content-Type': 'application/json',
       ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+      ...(userId    ? { 'x-user-id': userId } : {}),
       ...(options.headers || {})
     }
   };

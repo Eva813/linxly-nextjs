@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, {useState, useEffect} from "react";
 import Link from "next/link";
 import { BsThreeDotsVertical } from "react-icons/bs";
 import { FaCaretDown, FaCaretRight } from "react-icons/fa";
@@ -12,6 +12,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { FolderItemProps } from "@/types/snippets";
 import ShareFolderDialog from "./shareFolderDialog";
+import { getFolderShares } from "@/api/folders";
+import { useSession } from "next-auth/react";
 
 const FolderItem: React.FC<FolderItemProps> = ({
   folder,
@@ -26,6 +28,39 @@ const FolderItem: React.FC<FolderItemProps> = ({
   const [isShareDialogOpen, setShareDialogOpen] = React.useState(false);
   const isActiveFolder = pathname === `/snippets/folder/${folder.id}`;
   const isCollapsed = collapsedFolders.has(folder.id);
+  const [shares, setShares] = useState<{ email: string; permission: string }[]>([]);
+  const { data: session } = useSession();
+
+  // const fetchShares = async () => {
+  //   try {
+  //     // const list = await getFolderShares(folder.id);
+  //     if ( session?.user?.email && session.user.id) {
+  //     const ownerShare = { email: session.user.email, permission: "Owner" };
+  //     getFolderShares(folder.id)
+  //       .then((list) => {
+  //         const others = list.filter((s) => s.email !== session.user.email);
+  //         setShares([ownerShare, ...others]);
+  //       })
+  //       .catch((err) => console.error("載入已分享清單失敗", err));
+  //   }
+  //     // setShares(list);
+  //   } catch (err) {
+  //     console.error("載入分享清單失敗", err);
+  //   }
+  // };
+
+  // 在元件載入或 folder.id／session.email 變動時預先呼叫 getFolderShares
+  useEffect(() => {
+    if (session?.user?.email && session.user.id) {
+      const ownerShare = { email: session.user.email, permission: "Owner" };
+      getFolderShares(folder.id)
+        .then((list) => {
+          const others = list.filter((s) => s.email !== session.user.email);
+          setShares([ownerShare, ...others]);
+        })
+        .catch((err) => console.error("載入已分享清單失敗", err));
+    }
+  }, [folder.id, session?.user?.email, session?.user?.id]);
 
   return (
     <li className="mb-2">
@@ -100,6 +135,8 @@ const FolderItem: React.FC<FolderItemProps> = ({
         isOpen={isShareDialogOpen}
         onClose={() => setShareDialogOpen(false)}
         folderId={folder.id}
+        setShares={setShares}
+        shares={shares}
       />
       {/* 如果沒有折疊，顯示 children（也就是 snippet 列表） */}
       {!isCollapsed && children}

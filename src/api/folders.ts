@@ -34,3 +34,37 @@ export function deleteFolder(folderId: string): Promise<void> {
     method: 'DELETE',
   });
 }
+
+export function shareFolder(
+  folderId: string,
+  emails: string[],
+  permission: string,
+): Promise<void> {
+  return request<void>(`/folders/${folderId}/share`, {
+    method: 'POST',
+    body: JSON.stringify({ emails, permission }),
+  });
+}
+
+
+export interface Share {
+  email: string;
+  permission: string;
+}
+export function getFolderShares(folderId: string): Promise<Share[]> {
+  return request<Share[]>(`/folders/${folderId}/share`, {
+    cache: 'no-store',
+  });
+}
+
+export function deleteShareFolder(
+  folderId: string,
+  // emails: string[],
+  // permission: string,
+  shareId: string
+): Promise<void> {
+  return request<void>(`/folders/${folderId}/share`, {
+    method: 'DELETE',
+    body: JSON.stringify({ shareId }),
+  });
+}

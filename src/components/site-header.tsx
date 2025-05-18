@@ -1,6 +1,7 @@
 'use client'
 import Link from "next/link"
 import { useRouter } from 'next/navigation'
+import React, { useState, useEffect } from 'react'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { siteConfig } from "@/config/site"
 import { MainNav } from "@/components/main-nav"
@@ -8,13 +9,29 @@ import { FaGithub } from "react-icons/fa"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { useSession, signOut } from "next-auth/react"
 import Image from "next/image"
-import { FaUserAlt } from "react-icons/fa";
+import { FaUserAlt, FaBell } from "react-icons/fa";
 import { LuLogOut } from "react-icons/lu";
 
 export function SiteHeader() {
   const { data: session, status } = useSession()
   const isLoggedIn = status === "authenticated"
   const router = useRouter()
+  const [invitations, setInvitations] = useState<{
+    folderId: string;
+    folderName: string;
+    ownerEmail: string;
+  }[]>([])
+  // 讀取待接受的分享邀請
+  useEffect(() => {
+    if (session?.user?.id) {
+      fetch('/api/v1/folders/invitations', {
+        headers: { 'x-user-id': session.user.id }
+      })
+        .then(res => res.json())
+        .then(data => setInvitations(data))
+        .catch(console.error)
+    }
+  }, [session])
 
   const handleLogout = async () => {
     await signOut({ redirect: false })
@@ -55,6 +72,46 @@ export function SiteHeader() {
         <MainNav items={filteredNav} />
         <div className="flex flex-1 items-center justify-end space-x-4">
           <nav className="flex items-center space-x-1">
+            {/* 邀請通知 */}
+            {isLoggedIn && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button className="p-2 rounded hover:bg-gray-100 focus:outline-none">
+                    <span className="sr-only">Notifications</span>
+                    <FaBell className="w-5 h-5" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-64">
+                  <div className="p-2 text-sm font-medium">通知</div>
+                  {invitations.length > 0 ? (
+                    invitations.map((inv) => (
+                      <div key={inv.folderId} className="p-2 border-b last:border-b-0">
+                        <p className="truncate text-sm">
+                          {inv.ownerEmail} 分享了資料夾 {inv.folderName}
+                        </p>
+                        <button
+                          className="mt-1 text-xs text-blue-600 hover:underline"
+                          onClick={async () => {
+                            await fetch(`/api/v1/folders/${inv.folderId}/share/accept`, {
+                              method: 'POST',
+                              headers: { 'x-user-id': session.user.id }
+                            })
+                            // 重新整理 sidebar 與資料
+                            router.refresh()
+                            // 更新通知列表
+                            setInvitations((prev) => prev.filter(i => i.folderId !== inv.folderId))
+                          }}
+                        >
+                          接受
+                        </button>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="p-4 text-xs text-gray-500">沒有新的邀請</div>
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
             <Link
               href={siteConfig.links.github}
               target="_blank"

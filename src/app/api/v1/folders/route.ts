@@ -13,9 +13,15 @@ export async function GET(req: Request) {
     }
 
     const { db } = await connectToDatabase();
+    // 取得擁有或已接受分享的資料夾
     const folders = await db
       .collection('folders')
-      .find({ userId: new ObjectId(userId) })
+      .find({
+        $or: [
+          { userId: new ObjectId(userId) },
+          { 'shares.userId': new ObjectId(userId), 'shares.status': 'accepted' }
+        ]
+      })
       .toArray();
 
     // 處理每個資料夾，並獲取其關聯的程式碼片段

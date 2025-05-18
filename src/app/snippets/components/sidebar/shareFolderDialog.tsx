@@ -1,5 +1,4 @@
-import React, { useState, useEffect } from "react";
-import { useSession } from "next-auth/react";
+import React, { useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -15,48 +14,62 @@ import {
   SelectContent,
   SelectItem,
 } from "@/components/ui/select";
+import { shareFolder, deleteShareFolder } from "@/api/folders";
+import { Cross2Icon } from "@radix-ui/react-icons"
 
 interface ShareFolderDialogProps {
   isOpen: boolean;
   onClose: () => void;
   folderId: string;
+  shares: { email: string; permission: string, _id: string }[];
+  setShares: React.Dispatch<React.SetStateAction<{ email: string; permission: string }[]>>;
 }
 
 const ShareFolderDialog: React.FC<ShareFolderDialogProps> = ({
   isOpen,
   onClose,
   folderId,
+  shares,
+  setShares,
 }) => {
-  const { data: session } = useSession();
   const [emails, setEmails] = useState("");
   const [permission, setPermission] = useState("Viewer");
-  const [shares, setShares] = useState<{ email: string; permission: string }[]>([]);
+  // 目前點擊 Share 按鈕後會直接呼叫 shareFolder API，就會阻擋預設的表單提交
 
-  // 初始化目前使用者為第一筆 Owner
-  useEffect(() => {
-    if (session?.user?.email && shares.length === 0) {
-      setShares([{ email: session.user.email, permission: "Owner" }]);
-    }
-  }, [session?.user?.email, shares.length]);
-  
-  const handleShare = () => {
-    console.log("Sharing folder", folderId);
+  const handleShare = async () => {
+    if (!emails.trim()) return;
     const list = emails
       .split(",")
       .map((e) => e.trim())
       .filter((e) => e);
-    const newItems = list.map((e) => ({ email: e, permission }));
-    setShares((prev) => [...prev, ...newItems]);
-    setEmails("");
+    try {
+      await shareFolder(folderId, list, permission);
+      const newItems = list.map((e) => ({ email: e, permission }));
+      setShares((prev) => [...prev, ...newItems]);
+      setEmails("");
+    } catch (error: unknown) {
+      console.error(error);
+    }
   };
+  const handleRemoveShare = async (shareId: string, idx: number) => {
+    if (!shareId) return;
+    try {
+      console.log("handleRemoveShare", shareId, idx);
+      await deleteShareFolder(folderId, shareId);
+      setShares((prev) => prev.filter((_, i) => i !== idx));
+    } catch (error: unknown) {
+      console.error(error);
+    }
+  }
+
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-w-2xl" aria-describedby="share-folder-description">
         <DialogHeader>
           <DialogTitle>Share My Sample Snippets</DialogTitle>
         </DialogHeader>
-        <div>
+        <div id="share-folder-description">
             <span>Enter email to share (comma separated)</span>
           <div className="w-full flex items-center space-x-2 mb-4">
             <div className="flex-1 flex border rounded overflow-hidden">
@@ -100,6 +113,14 @@ const ShareFolderDialog: React.FC<ShareFolderDialogProps> = ({
                   <tr key={idx} className="border-b">
                     <td className="px-2 py-2">{s.email}</td>
                     <td className="px-2 py-2">{s.permission}</td>
+                    <td className="px-2 py-2">
+                      {idx !== 0 && (
+                      <Cross2Icon
+                        className="h-4 w-4 cursor-pointer"
+                        onClick={() => handleRemoveShare(s._id, idx)}
+                      />
+                      )}
+                    </td>
                   </tr>
                 ))}
               </tbody>

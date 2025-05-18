@@ -14,15 +14,15 @@ import {
   SelectContent,
   SelectItem,
 } from "@/components/ui/select";
-import { shareFolder, deleteShareFolder } from "@/api/folders";
+import { shareFolder, deleteShareFolder, getFolderShares } from "@/api/folders";
 import { Cross2Icon } from "@radix-ui/react-icons"
 
 interface ShareFolderDialogProps {
   isOpen: boolean;
   onClose: () => void;
   folderId: string;
-  shares: { email: string; permission: string, _id: string }[];
-  setShares: React.Dispatch<React.SetStateAction<{ email: string; permission: string }[]>>;
+  shares: { email: string; permission: string; _id: string }[];
+  setShares: React.Dispatch<React.SetStateAction<{ email: string; permission: string; _id: string }[]>>;
 }
 
 const ShareFolderDialog: React.FC<ShareFolderDialogProps> = ({
@@ -38,14 +38,17 @@ const ShareFolderDialog: React.FC<ShareFolderDialogProps> = ({
 
   const handleShare = async () => {
     if (!emails.trim()) return;
-    const list = emails
-      .split(",")
-      .map((e) => e.trim())
-      .filter((e) => e);
+    const list = emails.split(",").map((e) => e.trim()).filter((e) => e);
     try {
+      // 呼叫後端建立分享
       await shareFolder(folderId, list, permission);
-      const newItems = list.map((e) => ({ email: e, permission }));
-      setShares((prev) => [...prev, ...newItems]);
+      // 重新從後端拉取完整分享清單
+      const fetched = await getFolderShares(folderId);
+      // 系統使用者預設在 shares[0]，作為第一筆 Owner
+      const [ownerShare] = shares;
+      // 將 fetched 中與 owner 相同的項目過濾掉，再將 owner 放最前
+      const others = fetched.filter((s) => s._id !== ownerShare._id);
+      setShares([ownerShare, ...others]);
       setEmails("");
     } catch (error: unknown) {
       console.error(error);
@@ -70,7 +73,7 @@ const ShareFolderDialog: React.FC<ShareFolderDialogProps> = ({
           <DialogTitle>Share My Sample Snippets</DialogTitle>
         </DialogHeader>
         <div id="share-folder-description">
-            <span>Enter email to share (comma separated)</span>
+          <span>Enter email to share (comma separated)</span>
           <div className="w-full flex items-center space-x-2 mb-4">
             <div className="flex-1 flex border rounded overflow-hidden">
               <input
@@ -80,7 +83,7 @@ const ShareFolderDialog: React.FC<ShareFolderDialogProps> = ({
                 placeholder="jane@example.com, john@example.com"
                 className="flex-1 px-2 py-1 border-none focus:ring-0 focus:outline-none"
               />
-                <Select value={permission} onValueChange={setPermission}>
+              <Select value={permission} onValueChange={setPermission}>
                 <SelectTrigger className="h-full px-2  border-l border-none bg-transparent focus:ring-0 focus:outline-none w-1/4">
                   <SelectValue placeholder="Viewer" />
                 </SelectTrigger>
@@ -89,11 +92,11 @@ const ShareFolderDialog: React.FC<ShareFolderDialogProps> = ({
                   <SelectItem value="Editor">Editor</SelectItem>
                   {/* <SelectItem value="Owner">Owner</SelectItem> */}
                 </SelectContent>
-                </Select>
+              </Select>
             </div>
-            <Button 
-              className="flex" 
-              onClick={handleShare} 
+            <Button
+              className="flex"
+              onClick={handleShare}
               disabled={!emails.trim()}
             >
               Share
@@ -115,10 +118,10 @@ const ShareFolderDialog: React.FC<ShareFolderDialogProps> = ({
                     <td className="px-2 py-2">{s.permission}</td>
                     <td className="px-2 py-2">
                       {idx !== 0 && (
-                      <Cross2Icon
-                        className="h-4 w-4 cursor-pointer"
-                        onClick={() => handleRemoveShare(s._id, idx)}
-                      />
+                        <Cross2Icon
+                          className="h-4 w-4 cursor-pointer"
+                          onClick={() => handleRemoveShare(s._id, idx)}
+                        />
                       )}
                     </td>
                   </tr>

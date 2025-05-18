@@ -1,6 +1,6 @@
 "use client";
 
-import React, {useState, useEffect} from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { BsThreeDotsVertical } from "react-icons/bs";
 import { FaCaretDown, FaCaretRight } from "react-icons/fa";
@@ -28,7 +28,7 @@ const FolderItem: React.FC<FolderItemProps> = ({
   const [isShareDialogOpen, setShareDialogOpen] = React.useState(false);
   const isActiveFolder = pathname === `/snippets/folder/${folder.id}`;
   const isCollapsed = collapsedFolders.has(folder.id);
-  const [shares, setShares] = useState<{ email: string; permission: string }[]>([]);
+  const [shares, setShares] = useState<{ email: string; permission: string; _id: string }[]>([]);
   const { data: session } = useSession();
 
   // const fetchShares = async () => {
@@ -50,26 +50,50 @@ const FolderItem: React.FC<FolderItemProps> = ({
   // };
 
   // 在元件載入或 folder.id／session.email 變動時預先呼叫 getFolderShares
+  // useEffect(() => {
+  //   if (session?.user?.email && session.user.id) {
+  //     const ownerShare = { email: session.user.email, permission: "Owner" };
+  //     getFolderShares(folder.id)
+  //       .then((list) => {
+  //         const others = list.filter((s) => s.email !== session.user.email);
+  //         setShares([ownerShare, ...others]);
+  //       })
+  //       .catch((err) => console.error("載入已分享清單失敗", err));
+  //   }
+  // }, [folder.id, session?.user?.email, session?.user?.id]);
+
   useEffect(() => {
     if (session?.user?.email && session.user.id) {
-      const ownerShare = { email: session.user.email, permission: "Owner" };
       getFolderShares(folder.id)
         .then((list) => {
-          const others = list.filter((s) => s.email !== session.user.email);
+          // 使用者自己作為第一筆 Owner
+          const ownerShare = {
+            _id: session.user.id,
+            email: session.user.email,
+            permission: "Owner",
+          };
+          // 其餘分享者，保留後端 _id
+          const others = list
+            .filter((s) => s.email !== session.user.email)
+            .map((s) => ({
+              _id: s._id,
+              email: s.email,
+              permission: s.permission,
+            }));
           setShares([ownerShare, ...others]);
         })
         .catch((err) => console.error("載入已分享清單失敗", err));
     }
   }, [folder.id, session?.user?.email, session?.user?.id]);
 
+
   return (
     <li className="mb-2">
       {/* 資料夾本身的連結區塊 */}
       <Link
         prefetch
-        className={`px-2 py-1 w-full block rounded font-extrabold hover:bg-light dark:hover:text-third flex items-center justify-between text-lg ${
-          isActiveFolder ? "bg-light text-primary dark:text-third" : ""
-        }`}
+        className={`px-2 py-1 w-full block rounded font-extrabold hover:bg-light dark:hover:text-third flex items-center justify-between text-lg ${isActiveFolder ? "bg-light text-primary dark:text-third" : ""
+          }`}
         href={`/snippets/folder/${folder.id}`}
       >
         <strong className="cursor-pointer">{folder.name}</strong>

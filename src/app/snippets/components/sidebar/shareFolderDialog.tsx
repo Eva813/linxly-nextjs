@@ -4,7 +4,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
+  DialogFooter
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import {
@@ -40,7 +40,6 @@ const ShareFolderDialog: React.FC<ShareFolderDialogProps> = ({
     if (!emails.trim()) return;
     const list = emails.split(",").map((e) => e.trim()).filter((e) => e);
     try {
-      // 呼叫後端建立分享
       await shareFolder(folderId, list, permission);
       // 重新從後端拉取完整分享清單
       const fetched = await getFolderShares(folderId);
@@ -68,12 +67,12 @@ const ShareFolderDialog: React.FC<ShareFolderDialogProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl" aria-describedby="share-folder-description">
+      <DialogContent className="max-w-2xl" aria-describedby={undefined}>
         <DialogHeader>
           <DialogTitle>Share My Sample Snippets</DialogTitle>
         </DialogHeader>
-        <div id="share-folder-description">
-          <span>Enter email to share (comma separated)</span>
+        <div>
+          {/* <span>Enter email to share (comma separated)</span> */}
           <div className="w-full flex items-center space-x-2 mb-4">
             <div className="flex-1 flex border rounded overflow-hidden">
               <input

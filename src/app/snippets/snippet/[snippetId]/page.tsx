@@ -131,7 +131,6 @@ const SnippetPage = ({ params }: SnippetPageProps) => {
         shortcut,
         content,
       };
-      console.log("Updating snippet:", updatedSnippet);
       
       try {
         await Promise.all([

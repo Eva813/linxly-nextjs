@@ -78,7 +78,14 @@ export function SiteHeader() {
                 <DropdownMenuTrigger asChild>
                   <button className="p-2 rounded hover:bg-gray-100 focus:outline-none">
                     <span className="sr-only">Notifications</span>
-                    <FaBell className="w-5 h-5" />
+                    <div className="relative">
+                      <FaBell className="w-5 h-5" />
+                      {invitations.length > 0 && (
+                        <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">
+                          {invitations.length}
+                        </span>
+                      )}
+                    </div>
                   </button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-64">
@@ -99,15 +106,18 @@ export function SiteHeader() {
                             // 重新整理 sidebar 與資料
                             router.refresh()
                             // 更新通知列表
-                            setInvitations((prev) => prev.filter(i => i.folderId !== inv.folderId))
+                            setInvitations((prev) => {
+                              const updated = prev.filter(i => i.folderId !== inv.folderId);
+                              return updated;
+                            })
                           }}
                         >
-                          接受
+                          Accept 
                         </button>
                       </div>
                     ))
                   ) : (
-                    <div className="p-4 text-xs text-gray-500">沒有新的邀請</div>
+                    <div className="p-4 text-xs text-gray-500">No new invitations</div>
                   )}
                 </DropdownMenuContent>
               </DropdownMenu>

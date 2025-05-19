@@ -26,14 +26,17 @@ export async function GET(req: Request) {
 
     // 處理每個資料夾，並獲取其關聯的程式碼片段
     const result = await Promise.all(folders.map(async (folder) => {
+        const isSharedFolder = folder.shares.some(
+          (share: { userId: { toString: () => string; }; status: string; }) => share.userId?.toString() === userId && share.status === 'accepted'
+        );
       // 從 snippets 集合獲取該資料夾的程式碼片段
       const snippets = await db
         .collection('snippets')
         .find({
-          folderId: folder._id.toString(),         // 或 ObjectId(folder._id) 視 schema 而定
-          userId: new ObjectId(userId),           // 加上 userId 過濾
+          folderId: folder._id.toString(),
+          ...(isSharedFolder ? {} : { userId: new ObjectId(userId) }) // 分享的資料夾不過濾 userId
         })
-        .project({                             // 告訴 MongoDB「只回傳這四個欄位」，其他一律排除
+        .project({      // 告訴 MongoDB「只回傳這四個欄位」，其他一律排除
           _id: 1,
           name: 1,
           content: 1,
@@ -69,7 +72,11 @@ export async function GET(req: Request) {
 }
 
 export async function POST(req: Request) {
-  const userId = req.headers.get('x-user-id')
+  const userId = req.headers.get('x-user-id');
+  if (!userId) {
+    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+  }
+
   try {
     const body = await req.json();
     if (!body.name) {
@@ -80,26 +87,44 @@ export async function POST(req: Request) {
     }
 
     const { db } = await connectToDatabase();
-    const insertRes = await db
-      .collection('folders')
-      .insertOne({
-        userId: userId ? new ObjectId(userId) : null,
-        name: body.name,
-        description: body.description || '',
-        createdAt: new Date(),
-        updatedAt: new Date()
-      });
+
+    // 查詢創建者的 Email
+    const user = await db.collection('users').findOne({ _id: new ObjectId(userId) });
+    if (!user || !user.email) {
+      return NextResponse.json({ message: 'User email not found' }, { status: 404 });
+    }
+
+    // 初始化 shares，包含創建者的資訊
+    const now = new Date();
+    const ownerShare = {
+      _id: new ObjectId(),
+      email: user.email,
+      permission: 'owner',
+      status: 'accepted',
+      invitedAt: now,
+    };
+
+    const insertRes = await db.collection('folders').insertOne({
+      userId: new ObjectId(userId),
+      name: body.name,
+      description: body.description || '',
+      shares: [ownerShare], // 初始化 shares
+      ownerEmail: user.email,
+      createdAt: now,
+      updatedAt: now,
+    });
 
     const created = {
       id: insertRes.insertedId.toString(),
       name: body.name,
       description: body.description || '',
-      snippets: [] // 新資料夾初始沒有程式碼片段
+      shares: [ownerShare], // 返回 shares
+      snippets: [], // 新資料夾初始沒有程式碼片段
     };
 
     return NextResponse.json(created, { status: 201 });
   } catch (error: unknown) {
-    const errorMessage = error instanceof Error ? error.message : 'unknow error';
+    const errorMessage = error instanceof Error ? error.message : 'unknown error';
     return NextResponse.json(
       { message: 'server error', error: errorMessage },
       { status: 500 }

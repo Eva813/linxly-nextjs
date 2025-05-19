@@ -26,7 +26,8 @@ export async function GET(req: Request) {
     // 取出 owner email
     const results = await Promise.all(
       folders.map(async (f) => {
-        const owner = await db.collection('users').findOne({ _id: new ObjectId(f.ownerId) });
+        // 取得資料夾擁有者的 email，folder 中的 userId 是擁有者的 id
+        const owner = await db.collection('users').findOne({ _id: new ObjectId(f.userId) });
         return {
           folderId: f._id.toString(),
           folderName: f.name,

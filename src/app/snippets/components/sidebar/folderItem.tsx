@@ -31,58 +31,15 @@ const FolderItem: React.FC<FolderItemProps> = ({
   const [shares, setShares] = useState<{ email: string; permission: string; _id: string }[]>([]);
   const { data: session } = useSession();
 
-  // const fetchShares = async () => {
-  //   try {
-  //     // const list = await getFolderShares(folder.id);
-  //     if ( session?.user?.email && session.user.id) {
-  //     const ownerShare = { email: session.user.email, permission: "Owner" };
-  //     getFolderShares(folder.id)
-  //       .then((list) => {
-  //         const others = list.filter((s) => s.email !== session.user.email);
-  //         setShares([ownerShare, ...others]);
-  //       })
-  //       .catch((err) => console.error("載入已分享清單失敗", err));
-  //   }
-  //     // setShares(list);
-  //   } catch (err) {
-  //     console.error("載入分享清單失敗", err);
-  //   }
-  // };
-
-  // 在元件載入或 folder.id／session.email 變動時預先呼叫 getFolderShares
-  // useEffect(() => {
-  //   if (session?.user?.email && session.user.id) {
-  //     const ownerShare = { email: session.user.email, permission: "Owner" };
-  //     getFolderShares(folder.id)
-  //       .then((list) => {
-  //         const others = list.filter((s) => s.email !== session.user.email);
-  //         setShares([ownerShare, ...others]);
-  //       })
-  //       .catch((err) => console.error("載入已分享清單失敗", err));
-  //   }
-  // }, [folder.id, session?.user?.email, session?.user?.id]);
-
   useEffect(() => {
     if (session?.user?.email && session.user.id) {
       getFolderShares(folder.id)
         .then((list) => {
-          // 使用者自己作為第一筆 Owner
-          const ownerShare = {
-            _id: session.user.id,
-            email: session.user.email,
-            permission: "Owner",
-          };
-          // 其餘分享者，保留後端 _id
-          const others = list
-            .filter((s) => s.email !== session.user.email)
-            .map((s) => ({
-              _id: s._id,
-              email: s.email,
-              permission: s.permission,
-            }));
-          setShares([ownerShare, ...others]);
+          console.log("已分享清單", list);
+          // 從後端直接使用返回的資料
+          setShares(list);
         })
-        .catch((err) => console.error("載入已分享清單失敗", err));
+        .catch((err) => console.error("Share folder error", err));
     }
   }, [folder.id, session?.user?.email, session?.user?.id]);
 

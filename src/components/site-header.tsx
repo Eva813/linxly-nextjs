@@ -11,6 +11,7 @@ import { useSession, signOut } from "next-auth/react"
 import Image from "next/image"
 import { FaUserAlt, FaBell } from "react-icons/fa";
 import { LuLogOut } from "react-icons/lu";
+import { fetchInvitations } from "@/api/folders"
 
 export function SiteHeader() {
   const { data: session, status } = useSession()
@@ -21,17 +22,50 @@ export function SiteHeader() {
     folderName: string;
     ownerEmail: string;
   }[]>([])
+  
   // 讀取待接受的分享邀請
-  useEffect(() => {
+  const loadInvitations = React.useCallback(async () => {
     if (session?.user?.id) {
-      fetch('/api/v1/folders/invitations', {
-        headers: { 'x-user-id': session.user.id }
-      })
-        .then(res => res.json())
-        .then(data => setInvitations(data))
-        .catch(console.error)
+      try {
+        const data = await fetchInvitations();
+        setInvitations(data);
+      } catch (error) {
+        console.error(error);
+      }
     }
-  }, [session])
+  }, [session]);
+
+  // 接受資料夾分享邀請
+  const acceptInvitation = React.useCallback(async (folderId: string) => {
+    if (!session?.user?.id) return;
+    
+    try {
+      // 接受邀請
+      await fetch(`/api/v1/folders/${folderId}/share/accept`, {
+        method: 'POST',
+        headers: { 'x-user-id': session.user.id }
+      });
+      
+      // 重新整理 sidebar 與資料
+      router.refresh();
+      
+      // 更新通知列表
+      setInvitations((prev) => prev.filter(i => i.folderId !== folderId));
+      
+      // 重新取得資料夾資訊
+      await loadInvitations();
+      
+      // 重新載入頁面以獲取最新的資料夾列表
+      window.location.reload();
+    } catch (error) {
+      console.error('接受邀請失敗:', error);
+    }
+  }, [session, router, loadInvitations]);
+
+  // 初始載入邀請資料
+  useEffect(() => {
+    loadInvitations();
+  }, [loadInvitations]);
 
   const handleLogout = async () => {
     await signOut({ redirect: false })
@@ -98,19 +132,7 @@ export function SiteHeader() {
                         </p>
                         <button
                           className="mt-1 text-xs text-blue-600 hover:underline"
-                          onClick={async () => {
-                            await fetch(`/api/v1/folders/${inv.folderId}/share/accept`, {
-                              method: 'POST',
-                              headers: { 'x-user-id': session.user.id }
-                            })
-                            // 重新整理 sidebar 與資料
-                            router.refresh()
-                            // 更新通知列表
-                            setInvitations((prev) => {
-                              const updated = prev.filter(i => i.folderId !== inv.folderId);
-                              return updated;
-                            })
-                          }}
+                          onClick={() => acceptInvitation(inv.folderId)}
                         >
                           Accept 
                         </button>

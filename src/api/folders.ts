@@ -69,3 +69,11 @@ export function deleteShareFolder(
     body: JSON.stringify({ shareId }),
   });
 }
+
+export async function fetchInvitations(): Promise<{
+  folderId: string;
+  folderName: string;
+  ownerEmail: string;
+}[]> {
+  return request('/folders/invitations');
+}

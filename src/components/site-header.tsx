@@ -129,12 +129,11 @@ export function SiteHeader() {
                   </button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-64">
-                  <div className="p-2 text-sm font-medium">通知</div>
                   {invitations.length > 0 ? (
                     invitations.map((inv) => (
                       <div key={inv.folderId} className="p-2 border-b last:border-b-0">
                         <p className="truncate text-sm">
-                          {inv.ownerEmail} 分享了資料夾 {inv.folderName}
+                          {inv.ownerEmail} share folder {inv.folderName}
                         </p>
                         <button
                           className="mt-1 text-xs text-blue-600 hover:underline"
@@ -154,7 +153,7 @@ export function SiteHeader() {
               href={siteConfig.links.github}
               target="_blank"
               rel="noreferrer"
-              className="inline-flex items-center justify-center rounded-md p-2.5 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground h-10 w-10"
+              className="inline-flex items-center justify-center text-sm font-medium transition-colors hover:text-accent-foreground p-2 rounded hover:bg-gray-100 focus:outline-none"
             >
               <div>
                 <FaGithub className="w-5 h-5" />

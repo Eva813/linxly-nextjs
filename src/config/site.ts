@@ -19,8 +19,6 @@ export const siteConfig = {
     }
   ],
   links: {
-    twitter: "https://twitter.com/shadcn",
-    github: "https://github.com/Eva813/linxly-nextjs",
-    docs: "https://ui.shadcn.com",
+    github: "https://github.com/Eva813",
   },
 }

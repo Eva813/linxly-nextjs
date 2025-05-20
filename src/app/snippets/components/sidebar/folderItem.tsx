@@ -11,6 +11,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { FolderItemProps } from "@/types/snippets";
+import { FaFolder } from "react-icons/fa";
 
 const FolderItem: React.FC<FolderItemProps> = ({
   folder,
@@ -35,7 +36,10 @@ const FolderItem: React.FC<FolderItemProps> = ({
         }`}
         href={`/snippets/folder/${folder.id}`}
       >
-        <strong className="cursor-pointer">{folder.name}</strong>
+        <div className="flex items-center space-x-2">
+          <FaFolder className="text-gray-500" size={20} />
+          <strong className="cursor-pointer">{folder.name}</strong>
+        </div>
         <div className="flex items-center">
           {/* 折疊/展開按鈕 */}
           <button

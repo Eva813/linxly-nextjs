@@ -29,6 +29,8 @@ interface TipTapEditorProps {
   }) => void;
   onFormMenuNodeClick?: FormMenuClickHandler;
   onEditorClick?: () => void;
+  /** 是否可編輯 **/
+  editable?: boolean;
 }
 const TipTapEditor = ({
   value,
@@ -39,7 +41,8 @@ const TipTapEditor = ({
   onEditorReady,
   onFormTextNodeClick,
   onFormMenuNodeClick,
-  onEditorClick
+  onEditorClick, // 用於點擊編輯器空白處關閉面板
+  editable = true, // 是否可編輯
 }: TipTapEditorProps) => {
   const [hasError, setHasError] = useState(false);
   // const [currentColor, setCurrentColor] = useState('');
@@ -49,7 +52,9 @@ const TipTapEditor = ({
 
   const editor = useEditor({
     content: value,
+    editable,
     onUpdate: ({ editor }) => {
+      if (!editable) return;
       const updatedValue = editor.getHTML();
       onChange(updatedValue);
       validateContent(updatedValue);
@@ -118,6 +123,12 @@ const TipTapEditor = ({
     }
   }, [editor, onEditorReady]);
 
+  useEffect(() => {
+  if (editor) {
+    editor.setEditable(editable);
+  }
+}, [editable, editor]);
+
   return (
     <div className="editor-container flex flex-col mb-4">
       <div className="toolbar flex flex-wrap items-center py-2 px-1">
@@ -129,12 +140,13 @@ const TipTapEditor = ({
             </div>
           </PopoverTrigger>
           <PopoverContent className="w-35 flex flex-col gap-2 p-2">
-            <Button onClick={unsetFontSize}>Default</Button>
+            <Button onClick={unsetFontSize} disabled={!editable}>Default</Button>
             {fontSizes.map((size) => (
               <Button
                 key={size}
                 onClick={() => setFontSize(`${size}px`)}
                 variant={currentFontSize === `${size}px` ? 'default' : 'ghost'}
+                disabled={!editable}
               >
                 {size}
               </Button>
@@ -147,6 +159,7 @@ const TipTapEditor = ({
           className='mx-1 px-2'
           variant={editor?.isActive('bold') ? 'default' : 'ghost'}
           onClick={() => editor?.chain().focus().toggleBold().run()}
+          disabled={!editable}
         >
           <FaBold />
         </Button>
@@ -156,6 +169,7 @@ const TipTapEditor = ({
           className='mx-1 px-2'
           variant={editor?.isActive('italic') ? 'default' : 'ghost'}
           onClick={() => editor?.chain().focus().toggleItalic().run()}
+          disabled={!editable}
         >
           <FaItalic />
         </Button>
@@ -165,6 +179,7 @@ const TipTapEditor = ({
           className='mx-1 px-2'
           variant={editor?.isActive('bulletList') ? 'default' : 'ghost'}
           onClick={() => editor?.chain().focus().toggleBulletList().run()}
+          disabled={!editable}
         >
           <FaList />
         </Button>
@@ -174,6 +189,7 @@ const TipTapEditor = ({
           className='mx-1 px-2'
           variant={editor?.isActive('orderedList') ? 'default' : 'ghost'}
           onClick={() => editor?.chain().focus().toggleOrderedList().run()}
+          disabled={!editable}
         >
           <FaListOl />
         </Button>
@@ -183,6 +199,7 @@ const TipTapEditor = ({
           className='mx-1 px-2'
           variant={editor?.isActive({ textAlign: 'left' }) ? 'default' : 'ghost'}
           onClick={() => editor?.chain().focus().setTextAlign('left').run()}
+          disabled={!editable}
         >
           <FaAlignLeft />
         </Button>
@@ -190,12 +207,14 @@ const TipTapEditor = ({
           className='mx-1 px-2'
           variant={editor?.isActive({ textAlign: 'center' }) ? 'default' : 'ghost'}
           onClick={() => editor?.chain().focus().setTextAlign('center').run()}
+          disabled={!editable}
         >
           <FaAlignCenter />
         </Button>
         <Button
           variant={editor?.isActive({ textAlign: 'right' }) ? 'default' : 'ghost'}
           onClick={() => editor?.chain().focus().setTextAlign('right').run()}
+          disabled={!editable}
         >
           <FaAlignRight />
         </Button>
@@ -226,6 +245,7 @@ const TipTapEditor = ({
 
       <EditorContent
         editor={editor}
+        contentEditable={editable}
         className={`border tiptap-container overflow-y-scroll ${hasError ? 'border-red-500' : 'border-gray-300'}`}
         style={{ minHeight, maxHeight }}
         onClick={onEditorClick}

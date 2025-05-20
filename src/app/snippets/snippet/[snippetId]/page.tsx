@@ -21,6 +21,9 @@ import PreviewSnippet from "@/app/snippets/components/previewSnippet";
 import TryItOutPopup from './tryItOutPopup';
 import ShortcutErrorAlert  from "@/app/snippets/components/shortcutErrorAlert";
 import { useLoadingStore } from '@/stores/loading';
+// 權限判斷用
+import { getFolderShares } from '@/api/folders';
+import { useSession } from 'next-auth/react';
 import { useCurrentSnippet } from '@/lib/useCurrentSnippet';
 import EditorSkeleton from '@/app/snippets/components/editorSkeleton';
 
@@ -116,10 +119,30 @@ const SnippetPage = ({ params }: SnippetPageProps) => {
     }
   }, [currentSnippet]);
 
+  // 根據 snippet 所屬 folder 拿分享清單，設定 canEdit
+  const { data: session } = useSession();
+  const [canEdit, setCanEdit] = useState<boolean | null>(null);
+  useEffect(() => {
+    if (currentSnippet && session?.user?.email) {
+      // 找到此 snippet 所屬 folder
+      const parent = folders.find(f => f.snippets.some(s => s.id === currentSnippet.id));
+      if (!parent) return;
+      getFolderShares(parent.id)
+        .then(list => {
+          const permission = list.find(s => s.email === session.user.email)?.permission;
+          const editable = permission !== 'viewer';
+          setCanEdit(editable);
+        })
+        .catch(err => console.error("取得分享清單失敗:", err));
+    }
+  }, [currentSnippet, session?.user?.email, folders]);
 
-  if (loading) {
+  if (loading || canEdit === null) {
     return <EditorSkeleton />;
   }
+  // if (loading) {
+  //   return <EditorSkeleton />;
+  // }
 
   const handleSave = async () => {
     if (currentSnippet) {
@@ -341,13 +364,13 @@ const SnippetPage = ({ params }: SnippetPageProps) => {
         <div className="grid grid-cols-2 gap-x-4 pr-4">
           {/** Snippet 名稱與捷徑 **/}
           <div className="relative">
-            <Input className="pl-9 h-12" placeholder="Type snippet name..." value={name} onChange={e => setName(e.target.value)} />
+          <Input className="pl-9 h-12" placeholder="Type snippet name..." value={name} onChange={e => setName(e.target.value)} disabled={!canEdit} />
             <FaTag className="absolute left-[10px] top-1/2 h-4 w-4 text-muted-foreground -translate-y-1/2" />
           </div>
           {/** Shortcut **/}
           <div className="relative">
             <div className="relative">
-              <Input className="pl-9 h-12" placeholder="Add a shortcut..." value={shortcut} onChange={handleShortcutChange} />
+              <Input className="pl-9 h-12" placeholder="Add a shortcut..." value={shortcut} onChange={handleShortcutChange} disabled={!canEdit} />
               <FaKeyboard className="absolute left-[10px] top-1/2 h-4 w-4 text-muted-foreground -translate-y-1/2" />
               <Button
                 ref={tryItOutButtonRef}
@@ -377,13 +400,15 @@ const SnippetPage = ({ params }: SnippetPageProps) => {
               onFormTextNodeClick={handleFormTextNodeClick}
               onFormMenuNodeClick={handleFormMenuNodeClick}
               onEditorClick={handleEditorClick}
-              maxHeight='calc(100vh - 300px)'
+              maxHeight="calc(100vh - 300px)"
+              editable={canEdit}
             />
-            <Button className="w-20" onClick={handleSave}>Save</Button>
+            <Button className="w-20" onClick={handleSave} disabled={!canEdit}>Save</Button>
           </section>
-
+            {canEdit && (
             <aside className="min-h-0 overflow-y-auto">
               {isEditPanelVisible && activeEditInfo ? (
+                // 編輯，textInputEditInfo 或 dropdownEditInfo
                 <EditPanel editInfo={activeEditInfo} onChange={handleTextInputChange} />
               ) : (
                 <Sidebar
@@ -391,7 +416,7 @@ const SnippetPage = ({ params }: SnippetPageProps) => {
                   onInsertMenuFieldClick={handleInsertMenuFieldClick}
                 />
               )}
-            </aside></>)
+            </aside>)} </>)
           : <div className="border-r border-gray-200">
             <PreviewSnippet content={content} shortcut={shortcut} />
           </div>

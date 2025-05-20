@@ -30,6 +30,7 @@ const FolderItem: React.FC<FolderItemProps> = ({
   const isCollapsed = collapsedFolders.has(folder.id);
   const [shares, setShares] = useState<{ email: string; permission: string; _id: string }[]>([]);
   const { data: session } = useSession();
+  const userPermission = shares.find(s => s.email === session?.user?.email)?.permission;
 
   useEffect(() => {
     if (session?.user?.email && session.user.id) {
@@ -97,11 +98,11 @@ const FolderItem: React.FC<FolderItemProps> = ({
                     share folder
                   </button>
                 </DropdownMenuItem>
-                <DropdownMenuItem className="dark:hover:bg-light">
-                  <button
-                    onClick={() => deleteFolder(folder.id)}
-                    className="w-full text-left"
-                  >
+                <DropdownMenuItem 
+                    className="dark:hover:bg-light disabled:opacity-50 disabled:cursor-not-allowed"
+                    disabled={userPermission !== "owner"}
+                    onSelect={() => deleteFolder(folder.id)}>
+                  <button>
                     Delete
                   </button>
                 </DropdownMenuItem>

@@ -5,6 +5,8 @@ import { useState, useEffect } from 'react';
 import { Textarea } from "@/components/ui/textarea";
 import EditorSkeleton from '@/app/snippets/components/editorSkeleton';
 import { useLoadingStore } from '@/stores/loading';
+import { getFolderShares } from '@/api/folders';
+import { useSession } from 'next-auth/react';
 
 interface FolderPageProps {
   params: {
@@ -18,6 +20,20 @@ const FolderPage = ({ params }: FolderPageProps) => {
 
   const currentFolder = folders.find(folder => folder.id === folderId);
   const { setLoading } = useLoadingStore();
+
+    // 新增：分享清單與權限判斷
+  const [shares, setShares] = useState<{ email: string; permission: string; _id: string }[]>([]);
+  const { data: session } = useSession();
+  const userPermission = shares.find(s => s.email === session?.user?.email)?.permission;
+  const canEdit = userPermission !== 'viewer';
+
+  useEffect(() => {
+    if (session?.user?.email) {
+      getFolderShares(folderId)
+        .then(list => setShares(list))
+        .catch(err => console.error("取得分享清單失敗", err));
+    }
+  }, [folderId, session?.user?.email]);
   
 
   // 本地狀態，用於雙向綁定
@@ -58,6 +74,7 @@ const FolderPage = ({ params }: FolderPageProps) => {
         className="text-2xl focus:outline-none mb-2 dark:bg-black"
         value={name}
         onChange={(e) => setName(e.target.value)}
+        disabled={!canEdit}
       />
       <Textarea
         value={description}
@@ -65,8 +82,9 @@ const FolderPage = ({ params }: FolderPageProps) => {
         className='hover:ring-1 hover:ring-gray-400 p-2 rounded mb-2 dark:border-gray-200'
         onChange={(e) => setDescription(e.target.value)}
         placeholder="input description"
+        disabled={!canEdit}
       />
-      <Button className='w-20' onClick={handleSave}>Save</Button>
+      <Button className='w-20' onClick={handleSave} disabled={!canEdit}>Save</Button>
     </div>
   );
 };

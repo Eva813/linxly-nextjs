@@ -33,7 +33,7 @@ const ShareFolderDialog: React.FC<ShareFolderDialogProps> = ({
   setShares,
 }) => {
   const [emails, setEmails] = useState("");
-  const [permission, setPermission] = useState("Viewer");
+  const [permission, setPermission] = useState("viewer");
   // 目前點擊 Share 按鈕後會直接呼叫 shareFolder API，就會阻擋預設的表單提交
 
   const handleShare = async () => {
@@ -87,8 +87,8 @@ const ShareFolderDialog: React.FC<ShareFolderDialogProps> = ({
                   <SelectValue placeholder="Viewer" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Viewer">Viewer</SelectItem>
-                  <SelectItem value="Editor">Editor</SelectItem>
+                  <SelectItem value="viewer">Viewer</SelectItem>
+                  <SelectItem value="editor">Editor</SelectItem>
                   {/* <SelectItem value="Owner">Owner</SelectItem> */}
                 </SelectContent>
               </Select>

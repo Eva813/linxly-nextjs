@@ -35,8 +35,6 @@ const FolderItem: React.FC<FolderItemProps> = ({
     if (session?.user?.email && session.user.id) {
       getFolderShares(folder.id)
         .then((list) => {
-          console.log("已分享清單", list);
-          // 從後端直接使用返回的資料
           setShares(list);
         })
         .catch((err) => console.error("Share folder error", err));

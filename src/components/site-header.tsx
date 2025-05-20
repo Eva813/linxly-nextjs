@@ -11,12 +11,14 @@ import { useSession, signOut } from "next-auth/react"
 import Image from "next/image"
 import { FaUserAlt, FaBell } from "react-icons/fa";
 import { LuLogOut } from "react-icons/lu";
-import { fetchInvitations } from "@/api/folders"
+import { fetchInvitations, acceptFolderShare } from "@/api/folders"
+import { useSnippetStore } from "@/stores/snippet"
 
 export function SiteHeader() {
   const { data: session, status } = useSession()
   const isLoggedIn = status === "authenticated"
   const router = useRouter()
+  const fetchFolders = useSnippetStore((state) => state.fetchFolders)
   const [invitations, setInvitations] = useState<{
     folderId: string;
     folderName: string;
@@ -35,32 +37,36 @@ export function SiteHeader() {
     }
   }, [session]);
 
-  // 接受資料夾分享邀請
   const acceptInvitation = React.useCallback(async (folderId: string) => {
     if (!session?.user?.id) return;
     
     try {
-      // 接受邀請
-      await fetch(`/api/v1/folders/${folderId}/share/accept`, {
-        method: 'POST',
-        headers: { 'x-user-id': session.user.id }
-      });
-      
-      // 重新整理 sidebar 與資料
-      router.refresh();
-      
-      // 更新通知列表
+      // 先在本地更新通知列表，避免使用者重複點擊
       setInvitations((prev) => prev.filter(i => i.folderId !== folderId));
       
-      // 重新取得資料夾資訊
-      await loadInvitations();
+      // 接受邀請
+      await acceptFolderShare(folderId);
       
-      // 重新載入頁面以獲取最新的資料夾列表
-      window.location.reload();
+      await fetchFolders();
+      
+      // 僅在需要時重新載入邀請列表
+      await loadInvitations();
+
+      // 取得目前路徑
+      const currentPath = window.location.pathname;
+      const isInSnippets = currentPath.startsWith('/snippets');
+      if (isInSnippets) {
+        router.refresh();
+      } else {
+        router.push(`/snippets/folder/${folderId}`);
+      }
+      
     } catch (error) {
       console.error('接受邀請失敗:', error);
+      // 發生錯誤時恢復邀請列表
+      loadInvitations();
     }
-  }, [session, router, loadInvitations]);
+  }, [session, router, loadInvitations, fetchFolders]);
 
   // 初始載入邀請資料
   useEffect(() => {

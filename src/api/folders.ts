@@ -60,8 +60,6 @@ export function getFolderShares(folderId: string): Promise<Share[]> {
 
 export function deleteShareFolder(
   folderId: string,
-  // emails: string[],
-  // permission: string,
   shareId: string
 ): Promise<void> {
   return request<void>(`/folders/${folderId}/share`, {
@@ -76,4 +74,10 @@ export async function fetchInvitations(): Promise<{
   ownerEmail: string;
 }[]> {
   return request('/folders/invitations');
+}
+
+export function acceptFolderShare(folderId: string): Promise<void> {
+  return request<void>(`/folders/${folderId}/share/accept`, {
+    method: 'POST',
+  });
 }

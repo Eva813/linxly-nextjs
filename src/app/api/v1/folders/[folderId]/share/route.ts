@@ -112,10 +112,14 @@ export async function GET(
 
   try {
     const { db } = await connectToDatabase();
-    // 驗證擁有權
+    // 驗證擁有權或分享權限
+    // 使資料夾擁有者 或 被接受分享的使用者都能取得 shares 資訊
     const folder = await db.collection('folders').findOne({
       _id: new ObjectId(folderId),
-      userId: new ObjectId(userId),
+      $or: [
+        { userId: new ObjectId(userId) }, 
+        { 'shares.userId': new ObjectId(userId), 'shares.status': 'accepted' }
+      ]
     });
     if (!folder) {
       return NextResponse.json(

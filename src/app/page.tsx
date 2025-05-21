@@ -4,6 +4,7 @@ import Image from "next/image";
 
 
 export default function Home () {
+
   return (
     <div className="dark:bg-[radial-gradient(circle_at_center,rgba(0,0,0,0.8)_0%,rgba(0,0,20,0.9)_50%,rgba(0,0,50,0.8)_100%)]">
       <section className="bg-white py-20">
@@ -44,7 +45,7 @@ export default function Home () {
                 marginTop: "-10px",
               }}
             >
-              <circle cx="50" cy="50" r="50" fill="#C0F7E6" />
+              <circle cx="50" cy="50" r="50" fill="#BDCCED" />
             </svg>
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -60,6 +61,9 @@ export default function Home () {
               <circle cx="50" cy="50" r="50" fill="#98B1E4" />
             </svg>
             <Image src="/assets/manWithPuzzle.svg" alt="Man with puzzle"  width={380} height={380} />
+            <Image src="/assets/puzzle.svg" alt="puzzle"  style={{ transform: 'rotate(-15deg)' }}  className="hidden md:block absolute top-[-32px] right-[90px] hover:animate-swing-left"  width={80} height={80} />
+            <Image src="/assets/puzzle.svg" alt="puzzle"  style={{ transform: 'rotate(5deg)' }}  className="hidden md:block absolute top-[-20px] right-[-10px] hover:animate-swing-right"  width={80} height={80} />
+
               <svg
               xmlns="http://www.w3.org/2000/svg"
               viewBox="0 0 100 100"

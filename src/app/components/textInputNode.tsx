@@ -1,7 +1,7 @@
 import { Handle, Position, useReactFlow } from '@xyflow/react';
 import { useState, memo, useRef, useCallback } from 'react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { useSnippetInsertion } from '@/lib/useSnippetInsertion'
+import { usePromptInsertion } from '@/lib/usePromptInsertion'
 
 interface CustomNodeData {
   data: {
@@ -93,7 +93,7 @@ const TextInputNode = ({ data }: CustomNodeData) => {
     }
   };
 
-  useSnippetInsertion({
+  usePromptInsertion({
     inputRef: textareaRef,
     onInsert: updateNodeData
   });

@@ -12,13 +12,13 @@ import Image from "next/image"
 import { FaUserAlt, FaBell } from "react-icons/fa";
 import { LuLogOut } from "react-icons/lu";
 import { fetchInvitations, acceptFolderShare } from "@/api/folders"
-import { useSnippetStore } from "@/stores/snippet"
+import { usePromptStore } from "@/stores/prompt"
 
 export function SiteHeader() {
   const { data: session, status } = useSession()
   const isLoggedIn = status === "authenticated"
   const router = useRouter()
-  const fetchFolders = useSnippetStore((state) => state.fetchFolders)
+  const fetchFolders = usePromptStore((state) => state.fetchFolders)
   const [invitations, setInvitations] = useState<{
     folderId: string;
     folderName: string;
@@ -93,7 +93,7 @@ export function SiteHeader() {
 
   // 過濾需要登入的選項
   const filteredNav = siteConfig.mainNav.filter((item) => {
-    if (["/snippets", "/workspace"].includes(item.href)) {
+    if (["/prompts", "/workspace"].includes(item.href)) {
       return isLoggedIn // 僅在登入時顯示
     }
     return true // 其他選項始終顯示

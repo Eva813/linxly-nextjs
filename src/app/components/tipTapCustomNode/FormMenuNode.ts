@@ -13,26 +13,26 @@ export const FormMenuNode = Node.create({
 
   addAttributes() {
     return {
-      snippetData: {
+      promptData: {
         default: {}, // 預設是空物件
         parseHTML: (element: HTMLElement) => {
-          // 假設我們把 data-snippet 存在 DOM attribute
-          const data = element.getAttribute('data-snippet')
+          // 假設我們把 data-prompt 存在 DOM attribute
+          const data = element.getAttribute('data-prompt')
           if (!data) return {}
 
           try {
             // 假設 data 是字串化後的 JSON
             return JSON.parse(data)
           } catch (error) {
-            console.error('parse snippetData error:', error)
+            console.error('parse promptData error:', error)
             return {}
           }
         },
-        renderHTML: (attributes: { snippetData?: { type?: string } }) => {
-          if (!attributes.snippetData) return {}
+        renderHTML: (attributes: { promptData?: { type?: string } }) => {
+          if (!attributes.promptData) return {}
           // 將物件序列化為字串
           return {
-            'data-snippet': JSON.stringify(attributes.snippetData),
+            'data-prompt': JSON.stringify(attributes.promptData),
           }
         },
       },

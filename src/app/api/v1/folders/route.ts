@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server';
 import { connectToDatabase } from '@/lib/mongodb';
 import { ObjectId } from 'mongodb';
 
-// 後端會從資料庫中取得所有資料夾，並且對每個資料夾進行處理，將其關聯的程式碼片段（snippets）一併查詢並格式化後返回
+// 後端會從資料庫中取得所有資料夾，並且對每個資料夾進行處理，將其關聯的（prompts）一併查詢並格式化後返回
 export async function GET(req: Request) {
   
   try {
@@ -29,9 +29,9 @@ export async function GET(req: Request) {
         const isSharedFolder = folder.shares.some(
           (share: { userId: { toString: () => string; }; status: string; }) => share.userId?.toString() === userId && share.status === 'accepted'
         );
-      // 從 snippets 集合獲取該資料夾的程式碼片段
-      const snippets = await db
-        .collection('snippets')
+      // 從 prompts 集合獲取該資料夾的 prompts
+      const prompts = await db
+        .collection('prompts')
         .find({
           folderId: folder._id.toString(),
           ...(isSharedFolder ? {} : { userId: new ObjectId(userId) }) // 分享的資料夾不過濾 userId
@@ -45,19 +45,19 @@ export async function GET(req: Request) {
         .toArray();
       
       // 格式化程式碼片段資料
-      const formattedSnippets = snippets.map(s => ({
+      const formattedPrompts = prompts.map(s => ({
         id: s._id.toString(),
         name: s.name,
         content: s.content,
         shortcut: s.shortcut
       }));
       
-      // 返回完整的資料夾物件，包含 snippets
+      // 返回完整的資料夾物件，包含 prompts
       return {
         id: folder._id.toString(),
         name: folder.name,
         description: folder.description || '',
-        snippets: formattedSnippets
+        prompts: formattedPrompts
       };
     }));
 
@@ -119,7 +119,7 @@ export async function POST(req: Request) {
       name: body.name,
       description: body.description || '',
       shares: [ownerShare], // 返回 shares
-      snippets: [], // 新資料夾初始沒有程式碼片段
+      prompts: [] // 新資料夾初始沒有 prompts
     };
 
     return NextResponse.json(created, { status: 201 });

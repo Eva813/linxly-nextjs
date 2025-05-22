@@ -1,6 +1,6 @@
 // src/api/folders.ts
 import request from './client';
-import { Folder } from '@/types/snippets';
+import { Folder } from '@/types/prompt';
 
 export function getFolders(): Promise<Folder[]> {
   return request<Folder[]>('/folders', {

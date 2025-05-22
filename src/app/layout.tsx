@@ -3,7 +3,7 @@ import localFont from "next/font/local";
 import "./globals.css";
 import { SiteHeader } from '@/components/site-header';
 import { ThemeProvider } from "@/components/theme-provider";
-import SnippetDialog from "@/app/components/snippetDialog";
+import PromptDialog from "@/app/components/promptDialog";
 import ClientProvider from "./SessionProvider";
 
 const geistSans = localFont({
@@ -36,7 +36,7 @@ export default function RootLayout({
           <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
                 <SiteHeader />
                 {children}
-                <SnippetDialog />
+                <PromptDialog />
           </ThemeProvider>
         </ClientProvider>
       </body>

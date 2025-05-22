@@ -12,7 +12,7 @@ import { sign } from "jsonwebtoken";
 const handler = NextAuth({
   debug: true,
   adapter: MongoDBAdapter(clientPromise, { 
-    databaseName: process.env.MONGODB_DB_AUTH || 'snippets-auth' 
+    databaseName: process.env.MONGODB_DB_AUTH || 'prompts-auth' 
   }), 
   providers: [
     CredentialsProvider({

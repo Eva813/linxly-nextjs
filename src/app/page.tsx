@@ -14,15 +14,15 @@ export default function Home () {
               Don&apos;t hesitate to try it out
             </span>
             <h1 className="text-4xl md:text-5xl font-extrabold text-gray-900 mb-4">
-              Revolutionizing <span className="text-mask">Snippet</span> management
+              Amazing <span className="text-mask">Prompt</span> management
             </h1>
             <div className="lines relative w-50 overflow-hidden">
               <div className="animatedLine"></div>
             </div>
             <div className="flex justify-center gap-4 mt-4">
               <button className="bg-primary text-white font-semibold px-6 py-3 rounded-lg">
-                <Link href="/snippets" className="text-lg font-medium hover:underline">
-                  To Snippets Management
+                <Link href="/prompts" className="text-lg font-medium hover:underline">
+                  To Prompts Management
                 </Link>
               </button>
               <button className="flex items-center border border-gray-300 hover:bg-gray-100 text-gray-800 font-semibold px-6 py-3 rounded-lg transition">
@@ -82,8 +82,8 @@ export default function Home () {
       </section>
       <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
         <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-          <Link href="/snippets" className="text-lg font-medium hover:underline">
-            To Snippets Management
+          <Link href="/prompts" className="text-lg font-medium hover:underline">
+            To Prompts Management
           </Link>
         </main>
         <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">

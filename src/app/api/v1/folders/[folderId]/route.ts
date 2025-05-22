@@ -33,9 +33,9 @@ export async function GET(
       );
     }
     
-    // 獲取該資料夾的所有 snippet 片段
-    const snippets = await db
-      .collection('snippets')
+    // 獲取該資料夾的所有 prompt 片段
+    const prompts = await db
+      .collection('prompts')
       .find({ folderId, userId: new ObjectId(userId) })
       .project({ _id: 1, name: 1, content: 1, shortcut: 1 })
       .toArray();
@@ -45,7 +45,7 @@ export async function GET(
       id: folder._id.toString(),
       name: folder.name,
       description: folder.description || '',
-      snippets: snippets.map(s => ({
+      prompts: prompts.map(s => ({
         id: s._id.toString(),
         name: s.name,
         content: s.content,
@@ -109,9 +109,9 @@ export async function PUT(
       );
     }
     
-    // 獲取該資料夾的所有 snippet 片段
-    const snippets = await db
-      .collection('snippets')
+    // 獲取該資料夾的所有 prompt 片段
+    const prompts = await db
+      .collection('prompts')
       .find({ folderId: folderId, userId: new ObjectId(userId) })
       .project({ _id: 1, name: 1, content: 1, shortcut: 1 })
       .toArray();
@@ -120,7 +120,7 @@ export async function PUT(
       id: updatedFolder._id.toString(),
       name: updatedFolder.name,
       description: updatedFolder.description || '',
-      snippets: snippets.map(s => ({
+      prompts: prompts.map(s => ({
         id: s._id.toString(),
         name: s.name,
         content: s.content,
@@ -164,9 +164,9 @@ export async function DELETE(
         { status: 404 }
       );
     }
-    
-    // 刪除資料夾中的所有程式碼片段
-    await db.collection('snippets').deleteMany({
+
+    // 刪除資料夾中的所有 prompt 片段
+    await db.collection('prompts').deleteMany({
       folderId: folderId,
       userId: new ObjectId(userId)
     });

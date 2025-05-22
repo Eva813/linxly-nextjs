@@ -4,7 +4,7 @@ import { MdSend } from "react-icons/md";
 import TextContentDialog from './UI/textContentDialog'; // 引入 CustomDialog 組件
 import ReactMarkdown from 'react-markdown';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { useSnippetInsertion } from '@/lib/useSnippetInsertion'
+import { usePromptInsertion } from '@/lib/usePromptInsertion'
 
 interface CustomNodeData {
   data: {
@@ -269,13 +269,13 @@ const AIPromptNode = ({ data }: CustomNodeData)  => {
       });
     });
   }, [data.id, setNodes]);
-  // 為兩個 textarea 添加 snippet 功能
-  useSnippetInsertion({
+  // 為兩個 textarea 添加 prompt 功能
+  usePromptInsertion({
     inputRef: systemPromptRef,
     onInsert: handleSystemPromptUpdate
   });
 
-  useSnippetInsertion({
+  usePromptInsertion({
     inputRef: userPromptRef,
     onInsert: handleUserPromptUpdate
   });

@@ -36,7 +36,7 @@ export function SiteHeader() {
 
   // 過濾需要登入的選項
   const filteredNav = siteConfig.mainNav.filter((item) => {
-    if (["/snippets", "/workspace"].includes(item.href)) {
+    if (["/prompts", "/workspace"].includes(item.href)) {
       return isLoggedIn // 僅在登入時顯示
     }
     return true // 其他選項始終顯示

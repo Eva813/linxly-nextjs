@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server';
 import { connectToDatabase } from '@/lib/mongodb';
 import { ObjectId } from 'mongodb';
 
-// 後端會從資料庫中取得所有資料夾，並且對每個資料夾進行處理，將其關聯的程式碼片段（snippets）一併查詢並格式化後返回
+// 後端會從資料庫中取得所有資料夾，並且對每個資料夾進行處理，將其關聯的（prompts）一併查詢並格式化後返回
 export async function GET(req: Request) {
   
   try {
@@ -20,9 +20,9 @@ export async function GET(req: Request) {
 
     // 處理每個資料夾，並獲取其關聯的程式碼片段
     const result = await Promise.all(folders.map(async (folder) => {
-      // 從 snippets 集合獲取該資料夾的程式碼片段
-      const snippets = await db
-        .collection('snippets')
+      // 從 prompts 集合獲取該資料夾的 prompts
+      const prompts = await db
+        .collection('prompts')
         .find({
           folderId: folder._id.toString(),         // 或 ObjectId(folder._id) 視 schema 而定
           userId: new ObjectId(userId),           // 加上 userId 過濾
@@ -36,19 +36,19 @@ export async function GET(req: Request) {
         .toArray();
       
       // 格式化程式碼片段資料
-      const formattedSnippets = snippets.map(s => ({
+      const formattedPrompts = prompts.map(s => ({
         id: s._id.toString(),
         name: s.name,
         content: s.content,
         shortcut: s.shortcut
       }));
       
-      // 返回完整的資料夾物件，包含 snippets
+      // 返回完整的資料夾物件，包含 prompts
       return {
         id: folder._id.toString(),
         name: folder.name,
         description: folder.description || '',
-        snippets: formattedSnippets
+        prompts: formattedPrompts
       };
     }));
 
@@ -88,7 +88,7 @@ export async function POST(req: Request) {
       id: insertRes.insertedId.toString(),
       name: body.name,
       description: body.description || '',
-      snippets: [] // 新資料夾初始沒有程式碼片段
+      prompts: [] // 新資料夾初始沒有 prompts
     };
 
     return NextResponse.json(created, { status: 201 });

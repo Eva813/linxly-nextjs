@@ -2,7 +2,7 @@
 import React, { useCallback, MouseEvent } from 'react'
 import { NodeViewWrapper, NodeViewProps } from '@tiptap/react'
 import { DynamicChip } from './dynamicChip'
-import { useSnippetStore } from '@/stores/snippet/index'
+import { usePromptStore } from '@/stores/prompt/index'
 import { MdOutlineShortText } from "react-icons/md";
 
 // 我們再擴充一下 options 裡可能用到的 onFormTextClick
@@ -27,8 +27,8 @@ type FormTextViewProps = NodeViewProps & {
 
 export default function FormTextView(props: FormTextViewProps) {
   const { node, getPos, extension } = props
-  const snippetData = node.attrs.snippetData
-  const attributesArray = (snippetData.attributes as Array<{ name: string; value: string }>) || []
+  const promptData = node.attrs.promptData
+  const attributesArray = (promptData.attributes as Array<{ name: string; value: string }>) || []
   // 只將 value 不為 null 的欄位加入 chipData
   const chipData = attributesArray.reduce<Record<string, string>>((acc, cur) => {
     if (cur.value !== null) {
@@ -40,7 +40,7 @@ export default function FormTextView(props: FormTextViewProps) {
   const name = chipData['name'] || ''
   const defaultValue = chipData['default'] || ''
   // Use store’s setFocusKey to update focus state from a chip click event
-  const setFocusKey = useSnippetStore((state) => state.setFocusKey);
+  const setFocusKey = usePromptStore((state) => state.setFocusKey);
 
   // 獲取當前位置作為唯一識別符
   const position = getPos ? String(getPos()) : '';
@@ -75,7 +75,7 @@ export default function FormTextView(props: FormTextViewProps) {
       role="button"
       contentEditable={false}
       onClick={handleClick}
-      data-snippet={JSON.stringify(node.attrs.snippetData)}
+      data-prompt={JSON.stringify(node.attrs.promptData)}
     >
       <DynamicChip
         icon={<MdOutlineShortText className="h-4 w-4" />}

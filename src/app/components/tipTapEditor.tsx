@@ -13,7 +13,7 @@ import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover
 import { ImFontSize } from "react-icons/im";
 import { FormTextNode } from './tipTapCustomNode/FormTextNode'
 import { FormMenuNode } from './tipTapCustomNode/FormMenuNode'
-import { FormMenuClickHandler, FormMenuData } from '@/types/snippets'
+import { FormMenuClickHandler, FormMenuData } from '@/types/prompt'
 interface TipTapEditorProps {
   value: string;
   minHeight?: string;

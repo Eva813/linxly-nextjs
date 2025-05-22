@@ -10,8 +10,8 @@ export const siteConfig = {
       href: "/",
     },
     {
-      title: "Snippets",
-      href: "/snippets"
+      title: "Prompts",
+      href: "/prompts"
     },
     {
       title: "Workspace",

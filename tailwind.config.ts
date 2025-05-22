@@ -49,10 +49,10 @@ const config: Config = {
 					foreground: 'hsl(var(--secondary-foreground))'
 				},
 				third: {
-					DEFAULT: '#cad5f0',
+					DEFAULT: 'var(--third)',
 				},
 				light: {
-					DEFAULT: '#edf1fa',
+					DEFAULT: 'var(--light)'
 				},
 				muted: {
 					DEFAULT: 'var(--muted)',
@@ -88,16 +88,26 @@ const config: Config = {
 			},
 			keyframes: {
 				highlight: {
-				'0%': { backgroundColor: '#edf1fa' },
-				'100%': { backgroundColor: 'transparent' },
+					'0%': { backgroundColor: '#edf1fa' },
+					'100%': { backgroundColor: 'transparent' },
 				},
 				"pulse-strong": {
-					'0%, 100%': {opacity: '1' },
-					'50%': {  opacity: '0.5' },
+					'0%, 100%': { opacity: '1' },
+					'50%': { opacity: '0.5' },
 				},
 				spin: {
 					'0%': { transform: 'rotate(0deg)' },
 					'100%': { transform: 'rotate(360deg)' },
+				},
+				"swing-left": {
+					"0%": { transform: "rotate(-15deg)" },
+					"50%": { transform: "rotate(-25deg)" },
+					"100%": { transform: "rotate(-15deg)" },
+				},
+				"swing-right": {
+					"0%": { transform: "rotate(5deg)" },
+					"50%": { transform: "rotate(-5deg)" },
+					"100%": { transform: "rotate(5deg)" },
 				},
 			}
 		},
@@ -107,11 +117,13 @@ const config: Config = {
 				boxShadow: ['focus']
 			}
 		},
-    animation: {
-      highlight: 'highlight 2s ease-out forwards', // 動畫持續時間和效果
-	  "pulse-strong": 'pulse-strong 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-	  spin: 'spin 1s linear infinite'
-    }
+		animation: {
+			highlight: 'highlight 2s ease-out forwards', // 動畫持續時間和效果
+			"pulse-strong": 'pulse-strong 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+			spin: 'spin 1s linear infinite',
+			"swing-left": "swing-left 1.5s ease-in-out",
+			"swing-right": "swing-right 1.5s ease-in-out",
+		}
 	},
 	plugins: [tailwindAnimate],
 };

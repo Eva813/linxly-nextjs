@@ -2,8 +2,8 @@
 import React, { useCallback, MouseEvent, useMemo } from 'react'
 import { NodeViewWrapper, NodeViewProps } from '@tiptap/react'
 import { DynamicChip } from './dynamicChip'
-import { FormMenuClickHandler } from '@/types/snippets'
-import { useSnippetStore } from '@/stores/snippet/index'
+import { FormMenuClickHandler } from '@/types/prompt'
+import { usePromptStore } from '@/stores/prompt/index'
 import { MdMenuOpen } from "react-icons/md";
 
 type FormMenuViewProps = NodeViewProps & {
@@ -14,17 +14,17 @@ type FormMenuViewProps = NodeViewProps & {
 
 export default function FormMenuView(props: FormMenuViewProps) {
   const { node, getPos, extension } = props
-  const snippetData = node.attrs.snippetData
-  const setFocusKey = useSnippetStore((state) => state.setFocusKey);
+  const promptData = node.attrs.promptData
+  const setFocusKey = usePromptStore((state) => state.setFocusKey);
   const position = getPos ? String(getPos()) : '';
 
   // 將 attributes 陣列轉為 Map，方便取得欄位值
   // 這會影響傳入 EditPanel 的資料
   const attrMap = useMemo(() => {
     return new Map(
-      (snippetData.attributes as Array<{ name: string; value: string }>).map(attr => [attr.name, attr.value])
+      (promptData.attributes as Array<{ name: string; value: string }>).map(attr => [attr.name, attr.value])
     );
-  }, [snippetData.attributes]);
+  }, [promptData.attributes]);
   // 取得重要欄位資料
   const name = attrMap.get('name') ?? '';
   const defaultValue = attrMap.get('default') ?? '';
@@ -48,7 +48,7 @@ export default function FormMenuView(props: FormMenuViewProps) {
   // 組合顯示用資料（chipData）+ 處理 multiple 的 Yes / No 顯示
   const chipData = useMemo(() => {
     // 轉換 attributes 陣列成物件形式
-    const attributesArray = snippetData.attributes as Array<{ name: string; value: string }>;
+    const attributesArray = promptData.attributes as Array<{ name: string; value: string }>;
     const map = attributesArray
       .filter(({ name, value }) => value !== null && name !== 'multiple')
       .reduce<Record<string, string>>((acc, { name, value }) => {
@@ -60,7 +60,7 @@ export default function FormMenuView(props: FormMenuViewProps) {
     map['multiple'] = multiple ? 'Yes' : 'No';
 
     return map;
-  }, [multiple, snippetData.attributes]);
+  }, [multiple, promptData.attributes]);
 
   // 樣式對應設定
   const fieldStyles = useMemo(() => ({
@@ -97,7 +97,7 @@ export default function FormMenuView(props: FormMenuViewProps) {
       role="button"
       contentEditable={false}
       onClick={handleClick}
-      data-snippet={JSON.stringify(node.attrs.snippetData)}
+      data-prompt={JSON.stringify(node.attrs.promptData)}
     >
       <DynamicChip
         icon={<MdMenuOpen className="h-4 w-4" />}

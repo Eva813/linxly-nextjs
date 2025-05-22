@@ -1,4 +1,4 @@
-import { EditInfo } from '@/types/snippets'
+import { EditInfo } from '@/types/prompt'
 
 export interface FieldGroupProps {
   editInfo: EditInfo;

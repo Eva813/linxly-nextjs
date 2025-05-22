@@ -69,7 +69,7 @@ const ShareFolderDialog: React.FC<ShareFolderDialogProps> = ({
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-2xl" aria-describedby={undefined}>
         <DialogHeader>
-          <DialogTitle>Share My Sample Snippets</DialogTitle>
+          <DialogTitle>Share My Sample prompts</DialogTitle>
         </DialogHeader>
         <div>
           {/* <span>Enter email to share (comma separated)</span> */}

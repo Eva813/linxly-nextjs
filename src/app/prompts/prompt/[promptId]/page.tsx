@@ -119,7 +119,7 @@ const PromptPage = ({ params }: PromptPageProps) => {
     }
   }, [currentPrompt]);
 
-  // 根據 snippet 所屬 folder 拿分享清單，設定 canEdit
+  // 根據 prompt 所屬 folder 拿分享清單，設定 canEdit
   const { data: session } = useSession();
   const [canEdit, setCanEdit] = useState<boolean | null>(null);
   useEffect(() => {

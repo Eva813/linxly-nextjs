@@ -54,11 +54,11 @@ export function SiteHeader() {
 
       // 取得目前路徑
       const currentPath = window.location.pathname;
-      const isInSnippets = currentPath.startsWith('/snippets');
-      if (isInSnippets) {
+      const isInPrompts = currentPath.startsWith('/prompts');
+      if (isInPrompts) {
         router.refresh();
       } else {
-        router.push(`/snippets/folder/${folderId}`);
+        router.push(`/prompts/folder/${folderId}`);
       }
       
     } catch (error) {

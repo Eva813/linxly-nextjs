@@ -6,8 +6,8 @@ import Image from "next/image";
 export default function Home () {
 
   return (
-    <div className="dark:bg-[radial-gradient(circle_at_center,rgba(0,0,0,0.8)_0%,rgba(0,0,20,0.9)_50%,rgba(0,0,50,0.8)_100%)]">
-      <section className="bg-white py-20">
+<div className="dark:bg-[radial-gradient(circle_at_center,rgba(0,0,0,0.8)_0%,rgba(0,0,20,0.9)_50%,rgba(0,0,50,0.8)_100%)]">
+      <section className="bg-white min-h-[calc(100vh-4rem-1px)] flex items-center">
         <div className="container mx-auto px-4 text-center flex flex-col md:flex-row items-center md:items-start">
           <div className="md:w-1/2 flex flex-col justify-center h-full">
             <span className="inline-block bg-gray-100 text-gray-800 text-sm font-medium px-3 py-1 rounded-full mb-4 max-w-max text-center mx-auto">
@@ -23,11 +23,6 @@ export default function Home () {
               <button className="bg-primary text-white font-semibold px-6 py-3 rounded-lg">
                 <Link href="/prompts" className="text-lg font-medium hover:underline">
                   To Prompts Management
-                </Link>
-              </button>
-              <button className="flex items-center border border-gray-300 hover:bg-gray-100 text-gray-800 font-semibold px-6 py-3 rounded-lg transition">
-                <Link href="/workspace" className="text-lg font-medium hover:underline">
-                  To workspace
                 </Link>
               </button>
             </div>
@@ -80,15 +75,6 @@ export default function Home () {
           </div>
       </div>
       </section>
-      <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-        <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-          <Link href="/prompts" className="text-lg font-medium hover:underline">
-            To Prompts Management
-          </Link>
-        </main>
-        <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        </footer>
-      </div>
     </div>
   );
 }

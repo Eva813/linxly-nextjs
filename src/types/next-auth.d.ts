@@ -12,6 +12,7 @@ declare module "next-auth" {
       email: string;
       name?: string;
       image?: string;
+      token?: string;
     } & DefaultSession["user"];
   }
 
@@ -36,5 +37,6 @@ declare module "next-auth/jwt" {
     email: string;
     name?: string;
     picture?: string;
+    token?: string;
   }
 }

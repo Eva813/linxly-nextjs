@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
-import { connectToDatabase } from '@/lib/mongodb';
-import { ObjectId } from 'mongodb';
+import { adminDb } from '@/lib/firebaseAdmin';
 
 export async function GET(
   req: Request,
@@ -17,45 +16,51 @@ export async function GET(
     return NextResponse.json({ message: 'folderId required' }, { status: 400 });
   }
   try {
-
-    const { db } = await connectToDatabase();
-    
     // 獲取資料夾資訊
-    const folder = await db.collection('folders').findOne({
-      _id: new ObjectId(folderId),
-      userId: new ObjectId(userId)
-    });
-    
-    if (!folder) {
+    const folderDoc = await adminDb
+      .collection('folders')
+      .doc(folderId)
+      .get();
+
+    if (!folderDoc.exists || folderDoc.data()?.userId !== userId) {
       return NextResponse.json(
         { message: 'folder not found' },
         { status: 404 }
       );
     }
     
+    const folder = folderDoc.data()!;
+    
     // 獲取該資料夾的所有 prompt 片段
-    const prompts = await db
+    const promptsSnapshot = await adminDb
       .collection('prompts')
-      .find({ folderId, userId: new ObjectId(userId) })
-      .project({ _id: 1, name: 1, content: 1, shortcut: 1 })
-      .toArray();
+      .where('folderId', '==', folderId)
+      .where('userId', '==', userId)
+      .get();
+    
+    // 格式化回應資料
+    const formattedPrompts = promptsSnapshot.docs.map(promptDoc => {
+      const prompt = promptDoc.data();
+      return {
+        id: promptDoc.id,
+        name: prompt.name,
+        content: prompt.content,
+        shortcut: prompt.shortcut
+      };
+    });
     
     // 格式化回應資料
     const result = {
-      id: folder._id.toString(),
+      id: folderId,
       name: folder.name,
       description: folder.description || '',
-      prompts: prompts.map(s => ({
-        id: s._id.toString(),
-        name: s.name,
-        content: s.content,
-        shortcut: s.shortcut
-      }))
+      prompts: formattedPrompts
     };
     
     return NextResponse.json(result);
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'unknow error';
+    console.error("Firebase 錯誤詳情:", error); // 增加詳細錯誤記錄
     return NextResponse.json(
       { message: 'server error', error: errorMessage },
       { status: 500 }
@@ -78,59 +83,54 @@ export async function PUT(
     return NextResponse.json({ message: 'name required' }, { status: 400 });
   }
   try {
-    
-    const { db } = await connectToDatabase();
+    // 檢查資料夾是否存在
+    const folderDoc = await adminDb
+      .collection('folders')
+      .doc(folderId)
+      .get();
+
+    if (!folderDoc.exists || folderDoc.data()?.userId !== userId) {
+      return NextResponse.json(
+        { message: 'folder not found' },
+        { status: 404 }
+      );
+    }
     
     // 更新資料夾資訊
-    const updateResult = await db.collection('folders').updateOne(
-      { _id: new ObjectId(folderId), userId: new ObjectId(userId) },
-      { 
-        $set: { name, description: description || '', updatedAt: new Date() } 
-      }
-    );
-    
-    if (updateResult.matchedCount === 0) {
-      return NextResponse.json(
-        { message: 'folder not found' },
-        { status: 404 }
-      );
-    }
-    
-    // 獲取更新後的資料夾及其程式碼片段
-    const updatedFolder = await db.collection('folders').findOne({
-      _id: new ObjectId(folderId),
-      userId: new ObjectId(userId)
+    await adminDb.collection('folders').doc(folderId).update({
+      name,
+      description: description || '',
+      updatedAt: new Date()
     });
     
-    if (!updatedFolder) {
-      return NextResponse.json(
-        { message: 'folder not found' },
-        { status: 404 }
-      );
-    }
-    
     // 獲取該資料夾的所有 prompt 片段
-    const prompts = await db
+    const promptsSnapshot = await adminDb
       .collection('prompts')
-      .find({ folderId: folderId, userId: new ObjectId(userId) })
-      .project({ _id: 1, name: 1, content: 1, shortcut: 1 })
-      .toArray();
+      .where('folderId', '==', folderId)
+      .where('userId', '==', userId)
+      .get();
+    
+    const formattedPrompts = promptsSnapshot.docs.map(promptDoc => {
+      const prompt = promptDoc.data();
+      return {
+        id: promptDoc.id,
+        name: prompt.name,
+        content: prompt.content,
+        shortcut: prompt.shortcut
+      };
+    });
     
     const result = {
-      id: updatedFolder._id.toString(),
-      name: updatedFolder.name,
-      description: updatedFolder.description || '',
-      prompts: prompts.map(s => ({
-        id: s._id.toString(),
-        name: s.name,
-        content: s.content,
-        shortcut: s.shortcut
-      }))
+      id: folderId,
+      name,
+      description: description || '',
+      prompts: formattedPrompts
     };
     
     return NextResponse.json(result);
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'unknow error';
+    console.error("Firebase 錯誤詳情:", error); // 增加詳細錯誤記錄
     return NextResponse.json(
       { message: 'server error', error: errorMessage },
       { status: 500 }
@@ -149,37 +149,44 @@ export async function DELETE(
 
   const folderId = params.folderId;
   try {
-    
-    const { db } = await connectToDatabase();
-    
     // 檢查資料夾是否存在
-    const folder = await db.collection('folders').findOne({
-      _id: new ObjectId(folderId),
-      userId: new ObjectId(userId)
-    });
+    const folderDoc = await adminDb
+      .collection('folders')
+      .doc(folderId)
+      .get();
     
-    if (!folder) {
+    if (!folderDoc.exists || folderDoc.data()?.userId !== userId) {
       return NextResponse.json(
         { message: 'folder not found' },
         { status: 404 }
       );
     }
 
-    // 刪除資料夾中的所有 prompt 片段
-    await db.collection('prompts').deleteMany({
-      folderId: folderId,
-      userId: new ObjectId(userId)
+    // 查詢該資料夾的所有 prompt 片段
+    const promptsSnapshot = await adminDb
+      .collection('prompts')
+      .where('folderId', '==', folderId)
+      .where('userId', '==', userId)
+      .get();
+    
+    // 使用批次處理刪除所有 prompts
+    const batch = adminDb.batch();
+    
+    // 添加刪除 prompts 的操作到批次處理中
+    promptsSnapshot.docs.forEach(doc => {
+      batch.delete(doc.ref);
     });
     
-    // 刪除資料夾
-    await db.collection('folders').deleteOne({
-      _id: new ObjectId(folderId),
-      userId: new ObjectId(userId)
-    });
+    // 添加刪除資料夾的操作到批次處理中
+    batch.delete(adminDb.collection('folders').doc(folderId));
+    
+    // 執行批次處理
+    await batch.commit();
     
     return new NextResponse(null, { status: 204 });
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'unknow error';
+    console.error("Firebase 錯誤詳情:", error); // 增加詳細錯誤記錄
     return NextResponse.json(
       { message: 'server error', error: errorMessage },
       { status: 500 }

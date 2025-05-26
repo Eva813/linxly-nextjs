@@ -61,7 +61,7 @@ export async function middleware(request: NextRequest) {
 
   // 將 user id 掛在 response header 上，方便後端取得
   const response = NextResponse.next();
-  response.headers.set("x-user-id", token.id as string);
+  response.headers.set("x-user-id", token.sub as string);
   return response;
 }
 

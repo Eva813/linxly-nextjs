@@ -62,7 +62,7 @@ const FolderPage = ({ params }: FolderPageProps) => {
       <Textarea
         value={description}
         rows={4}
-        className='hover:ring-1 hover:ring-gray-400 p-2 rounded mb-2 dark:border-gray-200'
+        className='hover:ring-1 hover:ring-gray-400 p-2 rounded mb-2 dark:border-gray-200 resize-y max-h-64'
         onChange={(e) => setDescription(e.target.value)}
         placeholder="input description"
       />

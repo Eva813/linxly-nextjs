@@ -38,24 +38,17 @@ const Sidebar = () => {
   } = usePromptStore();
 
   const router = useRouter();
-  // 取得路由參數與當前路徑
   const pathname = usePathname() ?? "";
-  // 同時抓 folderId 與 promptId
   const params = useParams<{ folderId?: string; promptId?: string }>() || {};
   const currentFolderId = params.folderId;
   const currentPromptId = params.promptId;
-  console.log("Sidebar currentFolderId:", currentFolderId);
-  console.log("Sidebar currentPromptId:", currentPromptId);
 
   const [activeFolderMenu, setActiveFolderMenu] = useState<string | null>(null);
   const [collapsedFolders, setCollapsedFolders] = useState<Set<string>>(new Set());
   const [activePromptMenu, setActivePromptMenu] = useState<string | null>(null);
 
-
-  // 新增 Folder，將插入位置邏輯封裝進 store API
   const handleAddFolder = async () => {
     try {
-      // 建立新資料夾的資料
       const folderData = {
         name: "New Folder",
         description: "",
@@ -88,21 +81,28 @@ const Sidebar = () => {
     }
   };
 
-  // 刪除 Folder
-  const handleDeleteFolder = (fid: string) => {
-    deleteFolder(fid);
-    setActiveFolderMenu(null);
-    // 若當前正瀏覽此資料夾，刪除後導回列表
-    if (fid === currentFolderId) {
-      router.push("/prompts");
-    }
+    const handleDeleteFolder = async (fid: string) => {
+      try {
+        await deleteFolder(fid);
+        setActiveFolderMenu(null);
+
+        if (fid === currentFolderId) {
+          const updatedFolders = usePromptStore.getState().folders;
+
+          if (updatedFolders.length > 0) {
+            router.push(`/prompts/folder/${updatedFolders[0].id}`);
+          } else {
+            router.push("/prompts");
+          }
+        }
+      } catch (error) {
+        console.error("刪除 Folder 失敗:", error);
+      }
   };
 
-  // 刪除 Prompt
-  const handleDeletePrompt = (fid: string, pid: string) => {
-    deletePromptFromFolder(fid, pid);
+  const handleDeletePrompt = async (fid: string, pid: string) => {
+    await deletePromptFromFolder(fid, pid);
     setActivePromptMenu(null);
-    // 刪除後導回該資料夾
     router.push(`/prompts/folder/${fid}`);
   };
 

@@ -8,8 +8,11 @@ export function getPrompts(folderId: string): Promise<Prompt[]> {
 }
 
 // 建立新的prompt片段
+/**
+ * 建立新的 prompt 片段，支援插入位置 afterPromptId
+ */
 export function createPrompt(
-  data: { folderId: string } & Omit<Prompt, 'id'>
+  data: { folderId: string; afterPromptId?: string } & Omit<Prompt, 'id'>
 ): Promise<Prompt> {
   return request<Prompt>('/prompts', {
     method: 'POST',

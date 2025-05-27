@@ -4,7 +4,6 @@ import { useEditor, EditorContent, Editor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import TextStyle from '@tiptap/extension-text-style';
 import TextAlign from '@tiptap/extension-text-align';
-// import { Color } from '@tiptap/extension-color';
 import { FontSize } from './fontSizeExtension';
 import { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button"
@@ -16,8 +15,6 @@ import { FormMenuNode } from './tipTapCustomNode/FormMenuNode'
 import { FormMenuClickHandler, FormMenuData } from '@/types/prompt'
 interface TipTapEditorProps {
   value: string;
-  minHeight?: string;
-  maxHeight?: string;
   isRequired?: boolean;
   onChange: (value: string) => void;
   onEditorReady: (editor: Editor) => void;
@@ -32,8 +29,6 @@ interface TipTapEditorProps {
 }
 const TipTapEditor = ({
   value,
-  minHeight = '12rem',
-  maxHeight = '20rem',
   isRequired = false,
   onChange,
   onEditorReady,
@@ -42,10 +37,8 @@ const TipTapEditor = ({
   onEditorClick
 }: TipTapEditorProps) => {
   const [hasError, setHasError] = useState(false);
-  // const [currentColor, setCurrentColor] = useState('');
   const [currentFontSize, setCurrentFontSize] = useState('');
   const fontSizes = ['12', '14', '16', '18', '20', '24'];
-  // const textColors = ['#F44336', '#2196F3', '#FFC107', '#757575', '#BF360C', '#FF9800'];
 
   const editor = useEditor({
     content: value,
@@ -77,8 +70,6 @@ const TipTapEditor = ({
           onFormMenuNodeClick?.(params)
         },
       }),
-
-      // Color,
     ],
   });
 
@@ -95,16 +86,6 @@ const TipTapEditor = ({
     setCurrentFontSize('');
     editor?.chain().focus().unsetFontSize().run();
   };
-
-  // const setColor = (color) => {
-  //   setCurrentColor(color);
-  //   editor?.chain().focus().setColor(color).run();
-  // };
-
-  // const unsetColor = () => {
-  //   setCurrentColor('');
-  //   editor?.chain().focus().unsetColor().run();
-  // };
 
   useEffect(() => {
     if (editor && value !== editor.getHTML()) {
@@ -199,35 +180,11 @@ const TipTapEditor = ({
         >
           <FaAlignRight />
         </Button>
-
-        {/* Text Color */}
-        {/* <Popover>
-          <PopoverTrigger>
-            <Button
-              style={{ backgroundColor: currentColor }}
-              variant={currentColor ? 'solid' : 'ghost'}
-            >
-              Text Color
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent>
-            <Button onClick={unsetColor}>Default</Button>
-            {textColors.map((color) => (
-              <Button
-                key={color}
-                onClick={() => setColor(color)}
-                style={{ backgroundColor: color }}
-                variant={currentColor === color ? 'solid' : 'ghost'}
-              />
-            ))}
-          </PopoverContent>
-        </Popover> */}
       </div>
 
       <EditorContent
         editor={editor}
         className={`border tiptap-container overflow-y-scroll ${hasError ? 'border-red-500' : 'border-gray-300'}`}
-        style={{ minHeight, maxHeight }}
         onClick={onEditorClick}
       />
       {hasError && <div className="text-red-500 text-sm">This field is required.</div>}

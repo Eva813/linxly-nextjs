@@ -1,9 +1,13 @@
 .editor-container {
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 18rem);
+
   .tiptap-container {
     border: 1px solid #BDBDBD;
     border-radius: 0 0 4px 4px;
     outline: none;
-    max-height: calc(100vh - 120px);
+    flex-grow: 1;
   }
 
   .tiptap {

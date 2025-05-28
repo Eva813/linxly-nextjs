@@ -378,7 +378,6 @@ const PromptPage = ({ params }: PromptPageProps) => {
               onFormTextNodeClick={handleFormTextNodeClick}
               onFormMenuNodeClick={handleFormMenuNodeClick}
               onEditorClick={handleEditorClick}
-              maxHeight='calc(100vh - 300px)'
             />
             <Button className="w-20" onClick={handleSave}>Save</Button>
           </section>

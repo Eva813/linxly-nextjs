@@ -429,7 +429,7 @@ const PromptPage = ({ params }: PromptPageProps) => {
                     }, 300);
                   }}
                 />
-                <aside className={`relative w-3/4 max-w-xs bg-white overflow-y-auto ${isMobilePanelClosing ? 'animate-slide-out-right' : 'animate-slide-in-right'}`}>
+                <aside className={`relative w-1/4 max-w-xs bg-white overflow-y-auto ${isMobilePanelClosing ? 'animate-slide-out-right' : 'animate-slide-in-right'}`}>
                   {isEditPanelVisible && activeEditInfo ? (
                     <EditPanel editInfo={activeEditInfo} onChange={handleTextInputChange} />
                   ) : (

@@ -26,7 +26,7 @@ export function SiteHeader() {
     // 通知 Chrome 擴充功能使用者已登出
     window.postMessage(
       {
-        type: 'FROM_SITE_HEADER', // 自訂訊息類型
+        type: 'FROM_SITE_HEADER',
         action: 'USER_LOGGED_OUT',
         data: {
           status: 'loggedOut',
@@ -60,7 +60,7 @@ export function SiteHeader() {
         <button
           className="sm:hidden p-2 mr-4"
           onClick={toggleSidebar}
-          aria-label="開啟側欄"
+          aria-label="open sidebar"
         >
           <FaBars className="w-5 h-5" />
         </button>

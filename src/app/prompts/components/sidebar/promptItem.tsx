@@ -1,7 +1,8 @@
 "use client";
 
-import React from "react";
+import React, { useContext } from "react";
 import Link from "next/link";
+import { SidebarContext } from '@/app/ClientRootProvider';
 import { BsThreeDotsVertical } from "react-icons/bs";
 import {
   DropdownMenu,
@@ -20,6 +21,7 @@ const PromptItem: React.FC<PromptItemProps> = React.memo(({
   pathname,
 }) => {
   const isActivePrompt = pathname === `/prompts/prompt/${prompt.id}`;
+  const { isOpen, toggleSidebar } = useContext(SidebarContext);
 
   return (
     <li className="mb-2">
@@ -30,8 +32,11 @@ const PromptItem: React.FC<PromptItemProps> = React.memo(({
       >
         <Link
           prefetch
-          className="flex-1 flex justify-between block"
           href={`/prompts/prompt/${prompt.id}`}
+          onClick={() => {
+            if (isOpen) toggleSidebar();
+          }}
+          className="flex-1 flex justify-between block"
         >
           {prompt.name}
           <span className="inline-flex items-center px-3 py-1 border-2 border-secondary dark:text-third  dark:border-third text-sm h-6 font-medium rounded-full">

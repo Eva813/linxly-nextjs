@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useContext } from "react";
 import Link from "next/link";
 import { BsThreeDotsVertical } from "react-icons/bs";
 import { FaCaretDown, FaCaretRight } from "react-icons/fa";
@@ -13,6 +13,7 @@ import {
 import { FolderItemProps } from "@/types/prompt";
 import { FaFolder } from "react-icons/fa";
 
+import { SidebarContext } from '@/app/ClientRootProvider';
 const FolderItem: React.FC<FolderItemProps> = ({
   folder,
   activeFolderMenu,
@@ -25,16 +26,20 @@ const FolderItem: React.FC<FolderItemProps> = ({
 }) => {
   const isActiveFolder = pathname === `/prompts/folder/${folder.id}`;
   const isCollapsed = collapsedFolders.has(folder.id);
+  const { isOpen, toggleSidebar } = useContext(SidebarContext);
 
   return (
     <li className="mb-2">
       {/* 資料夾本身的連結區塊 */}
       <Link
         prefetch
+        href={`/prompts/folder/${folder.id}`}
+        onClick={() => {
+          if (isOpen) toggleSidebar();
+        }}
         className={`px-2 py-1 w-full block rounded font-extrabold hover:bg-light dark:hover:text-third flex items-center justify-between text-lg ${
           isActiveFolder ? "bg-light text-primary dark:text-third" : ""
         }`}
-        href={`/prompts/folder/${folder.id}`}
       >
         <div className="flex items-center space-x-2">
           <FaFolder className="text-gray-500" size={20} />

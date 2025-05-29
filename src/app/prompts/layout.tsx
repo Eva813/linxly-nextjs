@@ -32,7 +32,7 @@ export default function PromptsLayout({ children }: { children: ReactNode }) {
         />
         {/* 側欄：手機 overlay or 桌面 inline */}
         <div
-          className={`${isOpen ? 'fixed inset-y-0 left-0 z-50 w-80 bg-white shadow-lg transform transition-transform translate-x-0' : 'hidden -translate-x-full'} sm:block sm:relative sm:inset-auto sm:z-auto sm:w-auto sm:transform-none`}
+          className={`fixed inset-y-0 left-0 z-50 w-80 bg-white shadow-lg transform transition-transform duration-500 ease-in-out ${isOpen ? 'translate-x-0' : '-translate-x-full'} sm:block sm:relative sm:inset-auto sm:z-auto sm:w-auto sm:transform-none`}
         >
           <Sidebar />
         </div>

@@ -73,7 +73,7 @@ const PromptPage = ({ params }: PromptPageProps) => {
     useState<DropdownEditInfo | null>(null);
   const [isTextDialogOpen, setIsTextDialogOpen] = useState(false);
   const [isDropdownDialogOpen, setIsDropdownDialogOpen] = useState(false);
-  const [isEditPanelVisible, setIsEditPanelVisible] = useState(false); // 新增狀態
+  const [isEditPanelVisible, setIsEditPanelVisible] = useState(false);
   const [mode, setMode] = useState<Mode>("edit");
   // 移動裝置工具面板開關狀態
   const [isMobilePanelOpen, setIsMobilePanelOpen] = useState(false);
@@ -425,7 +425,7 @@ const PromptPage = ({ params }: PromptPageProps) => {
                     }, 300);
                   }}
                 />
-                <aside className={`relative w-1/4 max-w-xs bg-white overflow-y-auto ${isMobilePanelClosing ? 'animate-slide-out-right' : 'animate-slide-in-right'}`}>
+                <aside className={`relative md:w-1/4 max-w-xs bg-white overflow-y-auto ${isMobilePanelClosing ? 'animate-slide-out-right' : 'animate-slide-in-right'}`}>
                   {isEditPanelVisible && activeEditInfo ? (
                     <EditPanel editInfo={activeEditInfo} onChange={handleTextInputChange} />
                   ) : (

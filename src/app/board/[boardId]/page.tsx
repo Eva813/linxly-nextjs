@@ -39,26 +39,26 @@ export default function BoardPage() {
   useEffect(() => {
     const savedBoardName = localStorage.getItem(`boardName-${boardId}`);
     if (savedBoardName) {
-      if (savedBoardName !== boardName) setBoardName(savedBoardName);
+      setBoardName(savedBoardName);
     } else {
       const board = boards.find((b: Board) => b.id === boardId);
-      if (board && board.name !== boardName) {
+      if (board) {
         setBoardName(board.name);
       }
     }
-  }, [boardId, boardName, boards]);
+  }, [boardId, boards]);
 
   const saveBoardName = () => {
     if (!boardId) return;
 
     localStorage.setItem(`boardName-${boardId}`, boardName);
-    console.log('Board name saved:', boardName);
 
     // 更新 boards 並存回 localStorage
     const updatedBoards = boards.map((board: Board) =>
       board.id === boardId ? { ...board, name: boardName } : board
     );
     localStorage.setItem('boards', JSON.stringify(updatedBoards));
+    setBoards(updatedBoards);
   };
 
   return (
@@ -67,7 +67,7 @@ export default function BoardPage() {
         <Input
           type="text"
           value={boardName}
-          onChange={(e) => setBoardName(e.target.value)} // 更新 board 名稱
+          onChange={(e) => setBoardName(e.target.value)}
           placeholder="Enter board name"
           className="bord-none w-64"
         />

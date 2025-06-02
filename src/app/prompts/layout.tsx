@@ -25,14 +25,13 @@ export default function PromptsLayout({ children }: { children: ReactNode }) {
   return (
     <FullPageLoading>
       <div className="flex h-[calc(100vh-4rem)] overflow-hidden relative">
-        {/* 手機遮罩層 */}
         <div
           className={`${isOpen ? 'fixed inset-0 bg-black/40 z-40' : 'hidden'} sm:hidden`}
           onClick={toggleSidebar}
         />
         {/* 側欄：手機 overlay or 桌面 inline */}
         <div
-          className={`fixed inset-y-0 left-0 z-50 w-80 bg-white shadow-lg transform transition-transform duration-500 ease-in-out ${isOpen ? 'translate-x-0' : '-translate-x-full'} sm:block sm:relative sm:inset-auto sm:z-auto sm:w-auto sm:transform-none`}
+          className={`fixed inset-y-0 left-0 z-50 w-80 bg-white transform transition-transform duration-500 ease-in-out ${isOpen ? 'translate-x-0' : '-translate-x-full'} sm:block sm:relative sm:inset-auto sm:z-auto sm:w-auto sm:transform-none`}
         >
           <Sidebar />
         </div>

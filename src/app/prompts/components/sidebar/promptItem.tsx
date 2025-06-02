@@ -36,10 +36,10 @@ const PromptItem: React.FC<PromptItemProps> = React.memo(({
           onClick={() => {
             if (isOpen) toggleSidebar();
           }}
-          className="flex-1 flex justify-between block"
+          className="flex-1 flex items-center justify-between block"
         >
-          {prompt.name}
-          <span className="inline-flex items-center px-3 py-1 border-2 border-secondary dark:text-third  dark:border-third text-sm h-6 font-medium rounded-full">
+          <span className="max-w-[120px] truncate">{prompt.name}</span>
+          <span className="inline-block px-3 py-0 border-2 border-secondary dark:text-third dark:border-third text-sm leading-5 rounded-full max-w-[120px] truncate">
             {prompt.shortcut}
           </span>
         </Link>

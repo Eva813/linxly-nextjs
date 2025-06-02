@@ -117,6 +117,16 @@ const config: Config = {
 					"0%": { transform: "translateX(0)" },
 					"100%": { transform: "translateX(100%)" },
 				},
+				"progress-sm": {
+            "0%":   { width: "0%",   opacity: "1" },
+            "80%":  { width: "100%", opacity: "1" },
+            "100%": { width: "100%", opacity: "0" },
+					},
+					"progress-md": {
+            "0%":   { width: "0%",   opacity: "1" },
+            "80%":  { width: "100%", opacity: "1" },
+            "100%": { width: "100%", opacity: "0" },
+					},
 			}
 		},
 		variants: {
@@ -130,9 +140,11 @@ const config: Config = {
 			"pulse-strong": 'pulse-strong 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
 			spin: 'spin 1s linear infinite',
 			"swing-left": "swing-left 1.5s ease-in-out",
-				"swing-right": "swing-right 1.5s ease-in-out",
+			"swing-right": "swing-right 1.5s ease-in-out",
 			"slide-in-right": "slide-in-right 0.3s ease-out forwards",
 			"slide-out-right": "slide-out-right 0.3s ease-out forwards",
+			"progress-sm": "progress-sm 0.8s ease-in-out forwards",
+			"progress-md": "progress-md 1.2 s ease-in-out forwards",
 		}
 	},
 	plugins: [tailwindAnimate],

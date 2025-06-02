@@ -22,7 +22,6 @@ import TryItOutPopup from './tryItOutPopup';
 import ShortcutErrorAlert  from "@/app/prompts/components/shortcutErrorAlert";
 import { useLoadingStore } from '@/stores/loading';
 import { useCurrentPrompt } from '@/lib/useCurrentPrompt';
-import EditorSkeleton from '@/app/prompts/components/editorSkeleton';
 
 interface PromptDataMapping {
   formtext: IBuiltFormData<typeof formTextSpec>;
@@ -53,7 +52,7 @@ type UpdateHandler<T extends EditInfo> = {
 const PromptPage = ({ params }: PromptPageProps) => {
   const { promptId } = params;
   const { folders, updatePrompt } = usePromptStore();
-  const { prompt: currentPrompt, loading } = useCurrentPrompt(promptId);
+  const { prompt: currentPrompt } = useCurrentPrompt(promptId);
 
   const [name, setName] = useState("");
   const [shortcut, setShortcut] = useState("");
@@ -119,9 +118,6 @@ const PromptPage = ({ params }: PromptPageProps) => {
   }, [currentPrompt]);
 
 
-  if (loading) {
-    return <EditorSkeleton />;
-  }
 
   const handleSave = async () => {
     if (currentPrompt) {

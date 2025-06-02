@@ -2,7 +2,7 @@
 
 import React, { useContext } from "react";
 import Link from "next/link";
-import { SidebarContext } from '@/app/ClientRootProvider';
+import { SidebarContext } from '@/providers/clientRootProvider';
 import { BsThreeDotsVertical } from "react-icons/bs";
 import {
   DropdownMenu,

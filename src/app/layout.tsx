@@ -1,14 +1,10 @@
 import {  ReactNode } from "react";
-// import { usePathname } from "next/navigation";
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
 import { SiteHeader } from '@/components/site-header';
-import { ThemeProvider } from "@/components/theme-provider";
-import PromptDialog from "@/app/components/promptDialog";
-import ClientProvider from "./SessionProvider";
-import ClientRootProvider from '@/app/ClientRootProvider';
-import ClientRouteHandler from "./ClientRouteHandler";
+import PromptDialog from '@/app/components/promptDialog';
+import { Providers } from '@/providers';
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -31,17 +27,11 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-        <ClientRootProvider>
-          <ClientProvider>
-          <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-            <SiteHeader />
-              <ClientRouteHandler>
-                {children}
-                <PromptDialog />
-              </ClientRouteHandler>
-          </ThemeProvider>
-          </ClientProvider>
-        </ClientRootProvider>
+        <Providers>
+          <SiteHeader />
+          {children}
+          <PromptDialog />
+        </Providers>
       </body>
     </html>
   );

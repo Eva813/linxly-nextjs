@@ -3,7 +3,7 @@ import { FaBars } from 'react-icons/fa'
 import Link from "next/link"
 import { useRouter } from 'next/navigation'
 import { useContext } from 'react';
-import { SidebarContext } from '@/app/ClientRootProvider';
+import { SidebarContext } from '@/providers/clientRootProvider';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { siteConfig } from "@/config/site"
 import { MainNav } from "@/components/main-nav"

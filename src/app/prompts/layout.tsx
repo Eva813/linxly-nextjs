@@ -1,6 +1,6 @@
 "use client";
 import { useContext, ReactNode, useEffect } from 'react';
-import { SidebarContext } from '@/app/ClientRootProvider';
+import { SidebarContext } from '@/providers/clientRootProvider';
 import Sidebar from '@/app/prompts/components/sidebar/sidebar';
 import LoadingOverlay from "@/app/components/loadingOverlay";
 import FullPageLoading from '@/app/prompts/components/fullPageLoading';

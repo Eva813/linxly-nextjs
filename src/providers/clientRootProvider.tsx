@@ -6,7 +6,7 @@ export const SidebarContext = createContext<{ isOpen: boolean; toggleSidebar: ()
   toggleSidebar: () => {},
 });
 
-export default function ClientRootProvider({ children }: { children: ReactNode }) {
+export function ClientRootProvider({ children }: { children: ReactNode }) {
   const [isOpen, setIsOpen] = useState(false);
   const toggleSidebar = () => setIsOpen(prev => !prev);
 

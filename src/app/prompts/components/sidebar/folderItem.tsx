@@ -13,7 +13,7 @@ import {
 import { FolderItemProps } from "@/types/prompt";
 import { FaFolder } from "react-icons/fa";
 
-import { SidebarContext } from '@/app/ClientRootProvider';
+import { SidebarContext } from '@/providers/clientRootProvider';
 const FolderItem: React.FC<FolderItemProps> = ({
   folder,
   activeFolderMenu,

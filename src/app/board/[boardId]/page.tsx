@@ -2,14 +2,13 @@
 
 import dynamic from 'next/dynamic';
 import { useParams } from 'next/navigation';
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
+import { usePromptStore } from "@/stores/prompt";
+import { useBoardStorage } from './useBoardStorage';
 
-interface Board {
-  id: string;
-  name: string;
-}
+
 
 // 預載 Flow 組件
 const FlowWithNoSSR = dynamic(() => import('../../components/flow'), {
@@ -24,42 +23,27 @@ const FlowWithNoSSR = dynamic(() => import('../../components/flow'), {
 });
 
 export default function BoardPage() {
-  const [boardName, setBoardName] = useState<string>('');
-  const [boards, setBoards] = useState<Board[]>([]);
   const params = useParams();
   const boardId = params?.boardId as string;
+  const { boardName, setBoardName, saveBoardName } = useBoardStorage(boardId);
+  const { folders, fetchFolders } = usePromptStore();
 
   useEffect(() => {
-    const storedBoards = localStorage.getItem('boards');
-    if (storedBoards) {
-      setBoards(JSON.parse(storedBoards));
-    }
-  }, []);
-
-  useEffect(() => {
-    const savedBoardName = localStorage.getItem(`boardName-${boardId}`);
-    if (savedBoardName) {
-      setBoardName(savedBoardName);
-    } else {
-      const board = boards.find((b: Board) => b.id === boardId);
-      if (board) {
-        setBoardName(board.name);
+    const fetchData = async () => {
+      try {
+        await fetchFolders();
+      } catch (error) {
+        console.error('Failed to fetch folders:', error);
       }
-    }
-  }, [boardId, boards]);
+    };
+    fetchData();
+  }, [fetchFolders]);
 
-  const saveBoardName = () => {
-    if (!boardId) return;
-
-    localStorage.setItem(`boardName-${boardId}`, boardName);
-
-    // 更新 boards 並存回 localStorage
-    const updatedBoards = boards.map((board: Board) =>
-      board.id === boardId ? { ...board, name: boardName } : board
-    );
-    localStorage.setItem('boards', JSON.stringify(updatedBoards));
-    setBoards(updatedBoards);
-  };
+  useEffect(() => {
+      if (folders.length > 0) {
+        console.log('Fetched folders:', folders);
+      }
+  }, [folders]);
 
   return (
     <div className="w-full h-[calc(100vh-64px)] bg-white-50">
@@ -69,7 +53,7 @@ export default function BoardPage() {
           value={boardName}
           onChange={(e) => setBoardName(e.target.value)}
           placeholder="Enter board name"
-          className="bord-none w-64"
+          className="w-64"
         />
         <Button type="button" onClick={saveBoardName}>Save name</Button>
       </div>

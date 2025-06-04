@@ -16,6 +16,7 @@ import {
 import TextInputNode from './textInputNode'; // 導入 TextInputNode
 import AiPromptNode from './aiPromptNode';  // 導入 AiPromptNode
 import FileUploadNode from './FileUploadNode'; // 導入 FileUploadNode
+import CustomPromptNode from './customPromptNode'; // 導入 CustomPromptNode
 import { useTheme } from 'next-themes'
 import { useLocalFlowData } from '@/lib/useLocalFlowData';
 import FlowControlPanel from './flowControlPanel';
@@ -56,7 +57,8 @@ export default function Flow({ boardId, promptToAdd, onPromptHandled }:
     const nodeTypes = useMemo(() => ({
       textInputNode: TextInputNode,
       aiPromptNode: AiPromptNode,
-      fileUploadNode: FileUploadNode
+      fileUploadNode: FileUploadNode,
+      customPromptNode: CustomPromptNode
     }), []);
   
   // 用 useMemo 預先解析，避免多次讀取 localStorage
@@ -139,17 +141,32 @@ export default function Flow({ boardId, promptToAdd, onPromptHandled }:
   useEffect(() => {
     if (promptToAdd) {
       const newId = `${Date.now()}`;
-      const text = parseHtml(promptToAdd.content)?.textContent || promptToAdd.content;
       const position = getNewNodePosition();
-      setNodes((current) => [
-        ...current,
-        {
-          id: newId,
-          type: 'textInputNode',
-          data: { id: newId, label: text, inputContent: text, title: promptToAdd.name },
-          position,
-        },
-      ]);
+      // 判斷內容是否包含自定義表單元素
+      const isCustom = /<span[^>]*data-type/.test(promptToAdd.content);
+      if (isCustom) {
+        // 新增自定義 Prompt 節點
+        setNodes((current) => [
+          ...current,
+          {
+            id: newId,
+            type: 'customPromptNode',
+            data: { html: promptToAdd.content, title: promptToAdd.name },
+            position,
+          },
+        ]);
+      } else {
+        const text = parseHtml(promptToAdd.content)?.textContent || promptToAdd.content;
+        setNodes((current) => [
+          ...current,
+          {
+            id: newId,
+            type: 'textInputNode',
+            data: { id: newId, label: text, inputContent: text, title: promptToAdd.name },
+            position,
+          },
+        ]);
+      }
       onPromptHandled?.();
     }
   }, [promptToAdd, getNewNodePosition, onPromptHandled]);

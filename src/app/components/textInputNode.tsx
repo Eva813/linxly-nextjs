@@ -125,7 +125,7 @@ const TextInputNode = ({ data }: CustomNodeData) => {
 
       <textarea
         ref={textareaRef}
-        className="border border-gray-300 p-1 rounded w-full resize-y focus:outline-none focus:border-gray-600 focus:ring-0.5 focus:ring-gray-600 nowheel nodrag dark:bg-flow-darker"
+        className="border border-gray-300 p-1 rounded w-full resize-y max-h-[22rem] focus:outline-none focus:border-gray-600 focus:ring-0.5 focus:ring-gray-600 nowheel nodrag dark:bg-flow-darker"
         value={inputValue}
         onChange={handleChange}
         onClick={(e) => e.stopPropagation()}

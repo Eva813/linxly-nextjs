@@ -25,9 +25,6 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { parseHtml } from "@/lib/utils/parseHtml";
 import { Prompt } from '@/types/prompt';
 
-
-
-// 預載 Flow 組件
 // 定義 Flow 元件 Props 型別以支援 promptToAdd
 type FlowProps = { boardId: string; promptToAdd?: Prompt; onPromptHandled?: () => void };
 import type { ComponentType } from 'react';
@@ -81,7 +78,6 @@ export default function BoardPage() {
     navigator.clipboard.writeText(text);
   };
 
-  // 加入提示為節點（待實作）
   // 加入提示為節點，透過狀態傳遞到 Flow
   const [promptToAdd, setPromptToAdd] = useState<Prompt | null>(null);
   const addPromptAsNode = (prompt: Prompt) => {

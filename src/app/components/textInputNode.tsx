@@ -110,11 +110,11 @@ const TextInputNode = ({ data }: CustomNodeData) => {
           </button>
         </DropdownMenuTrigger>
         <DropdownMenuContent side="right" align="start" sideOffset={15} alignOffset={-5} className="w-28 dark:bg-flow-darker">
-          <DropdownMenuItem onClick={handleCopyNode} className="text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700">
-            <span className="font-medium">複製</span> Card
+          <DropdownMenuItem onClick={handleCopyNode} className="text-gray-700 dark:!text-gray-200 hover:!bg-light dark:hover:!bg-gray-700">
+            <span className="font-medium">Copy</span> Card
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={handleDeleteNode} className="text-red-500 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700">
-            <span className="font-medium">刪除</span> Card
+          <DropdownMenuItem onClick={handleDeleteNode} className="text-red-500 dark:text-red-400 hover:!bg-light hover:!text-red-500 dark:hover:!bg-gray-700">
+            <span className="font-medium">Delete</span> Card
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>

@@ -7,13 +7,10 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { usePromptStore } from "@/stores/prompt";
 import { useBoardStorage } from './useBoardStorage';
-import { Sheet, SheetTrigger, SheetContent, SheetHeader, SheetTitle, SheetClose } from "@/components/ui/sheet";
+import { Sheet, SheetTrigger, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
-import { Card } from "@/components/ui/card"
 import {
-  Plus,
   Library,
-  Copy,
   Bookmark,
   ChevronDown,
   ChevronRight,
@@ -21,8 +18,7 @@ import {
   FolderOpen,
 } from "lucide-react"
 import { ScrollArea } from "@/components/ui/scroll-area"
-// import { Badge } from "@/components/ui/badge";
-import { parseHtml } from "@/lib/utils/parseHtml";
+import PromptCardOptimized from "./promptCard";
 import { Prompt } from '@/types/prompt';
 
 // 定義 Flow 元件 Props 型別以支援 promptToAdd
@@ -60,7 +56,7 @@ export default function BoardPage() {
     return { folders: folderList, flatPrompts };
   }, [folders, selectedFolder]);
 
-  const extractTextFromHtml = (html: string) => parseHtml(html)?.textContent || '';
+  // 資料處理已移至 PromptCardOptimized
 
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set());
   const toggleFolder = (id: string) => {
@@ -72,11 +68,6 @@ export default function BoardPage() {
     });
   };
 
-  // 複製提示至剪貼簿
-  const copyPromptToClipboard = (prompt: { content: string }) => {
-    const text = extractTextFromHtml(prompt.content);
-    navigator.clipboard.writeText(text);
-  };
 
   // 加入提示為節點，透過狀態傳遞到 Flow
   const [promptToAdd, setPromptToAdd] = useState<Prompt | null>(null);
@@ -178,33 +169,11 @@ export default function BoardPage() {
                         </CollapsibleTrigger>
                         <CollapsibleContent className="ml-6 space-y-2">
                           {folder.prompts.map((prompt) => (
-                            <Card key={prompt.id} className="p-3">
-                              <div className="space-y-2">
-                                <div className="flex items-start justify-between">
-                                  <h4 className="font-medium text-sm">{prompt.name}</h4>
-                                </div>
-                                <p className="text-xs text-muted-foreground line-clamp-2">
-                                  {extractTextFromHtml(prompt.content)}
-                                </p>
-                                <div className="flex gap-2 pt-2">
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    onClick={() => copyPromptToClipboard(prompt)}
-                                    className="flex-1"
-                                  >
-                                    <Copy className="w-3 h-3 mr-1" />
-                                    Copy
-                                  </Button>
-                                  <SheetClose asChild>
-                                    <Button size="sm" onClick={() => addPromptAsNode(prompt)} className="flex-1">
-                                      <Plus className="w-3 h-3 mr-1" />
-                                      Add to Board
-                                    </Button>
-                                  </SheetClose>
-                                </div>
-                              </div>
-                            </Card>
+                            <PromptCardOptimized
+                              key={prompt.id}
+                              prompt={prompt}
+                              onAdd={addPromptAsNode}
+                            />
                           ))}
                         </CollapsibleContent>
                       </Collapsible>
@@ -216,7 +185,6 @@ export default function BoardPage() {
           </SheetContent>
         </Sheet>
       </div>
-      {/* 傳遞 promptToAdd 並在新增後清除 */}
       <FlowWithNoSSR
         boardId={boardId}
         promptToAdd={promptToAdd ?? undefined}

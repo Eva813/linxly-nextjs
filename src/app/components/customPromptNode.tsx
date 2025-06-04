@@ -8,6 +8,10 @@ interface CustomPromptNodeData {
   html: string;
   title: string;
 }
+const VOID_TAGS = new Set([
+  "area", "base", "br", "col", "embed", "hr", "img", "input",
+  "link", "meta", "source", "track", "wbr"
+]);
 
 const CustomPromptNode: React.FC<{ id: string; data: CustomPromptNodeData }> = ({ id, data }) => {
   const [elements, setElements] = useState<React.ReactNode[]>([]);
@@ -20,9 +24,16 @@ const CustomPromptNode: React.FC<{ id: string; data: CustomPromptNodeData }> = (
     if (node.nodeType === Node.ELEMENT_NODE) {
       const el = node as HTMLElement;
       const tag = el.tagName.toLowerCase();
+
+      // void tag，不含 children
+      if (VOID_TAGS.has(tag)) {
+        return React.createElement(tag, { key });
+      }
+
       if (el.tagName === 'SPAN' && el.hasAttribute('data-type')) {
         return renderCustomElement(el, key);
       }
+
       const children = Array.from(el.childNodes).map((child, i) =>
         renderNode(child, `${key}-${i}`)
       );

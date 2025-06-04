@@ -142,7 +142,7 @@ const Sidebar = () => {
                 deleteFolder={handleDeleteFolder}
                 pathname={pathname}
               >
-                <ul className="ml-4 mt-1">
+                <ul className="ml-6 mt-1">
                   {folder.prompts.length === 0 ? (
                     <span className="ml-2 text-gray-500">
                       No prompts in the folder

@@ -8,6 +8,7 @@ interface CustomNodeData {
     id: string;
     label?: string;
     inputContent?: string;
+    title?: string;
   };
 }
 
@@ -118,7 +119,9 @@ const TextInputNode = ({ data }: CustomNodeData) => {
         </DropdownMenuContent>
       </DropdownMenu>
 
-      <div className="mb-2 font-bold">Text Input Node {data.id}</div>
+      <div className="mb-2 font-bold">
+        {data.title ? data.title : `Text Input Node ${data.id}`}
+      </div>
 
       <textarea
         ref={textareaRef}

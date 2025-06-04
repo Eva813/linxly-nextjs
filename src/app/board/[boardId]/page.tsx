@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { usePromptStore } from "@/stores/prompt";
 import { useBoardStorage } from './useBoardStorage';
-import { Sheet, SheetTrigger, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { Sheet, SheetTrigger, SheetContent, SheetHeader, SheetTitle, SheetClose } from "@/components/ui/sheet";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 import { Card } from "@/components/ui/card"
 import {
@@ -28,7 +28,13 @@ import { Prompt } from '@/types/prompt';
 
 
 // 預載 Flow 組件
-const FlowWithNoSSR = dynamic(() => import('../../components/flow'), {
+// 定義 Flow 元件 Props 型別以支援 promptToAdd
+type FlowProps = { boardId: string; promptToAdd?: Prompt; onPromptHandled?: () => void };
+import type { ComponentType } from 'react';
+// 使用 dynamic 加載 Flow，並指定 Props 類型
+const FlowWithNoSSR = dynamic(
+  () => import('../../components/flow'),
+  {
   ssr: false,
   loading: () => (
     <div className="w-full flex items-center justify-center" style={{
@@ -37,7 +43,7 @@ const FlowWithNoSSR = dynamic(() => import('../../components/flow'), {
       <div className="text-xl dark:text-white">Loading Flow Editor...</div>
     </div>
   )
-});
+}) as ComponentType<FlowProps>;
 
 export default function BoardPage() {
   const params = useParams();
@@ -76,8 +82,10 @@ export default function BoardPage() {
   };
 
   // 加入提示為節點（待實作）
+  // 加入提示為節點，透過狀態傳遞到 Flow
+  const [promptToAdd, setPromptToAdd] = useState<Prompt | null>(null);
   const addPromptAsNode = (prompt: Prompt) => {
-    console.log('Add prompt as node:', prompt);
+    setPromptToAdd(prompt);
   };
 
   useEffect(() => {
@@ -112,14 +120,14 @@ export default function BoardPage() {
 
         <Sheet>
           <SheetTrigger asChild>
-            <Button variant="outline" size="sm">
-              <Library className="w-4 h-4 mr-2" />
-              Prompt 庫
+            <Button variant="outline" size="sm" className='hover:bg-light hover:border-light h-9'>
+              <Library className="w-4 h-4 mr-1" />
+              Prompts
             </Button>
           </SheetTrigger>
           <SheetContent side="right" className="w-96 h-full flex flex-col p-4">
             <SheetHeader>
-              <SheetTitle>Prompt 庫</SheetTitle>
+              <SheetTitle>Prompts</SheetTitle>
             </SheetHeader>
             <div className="mt-2 space-y-2 flex-1 overflow-hidden flex flex-col">
               <div className="flex flex-wrap gap-2">
@@ -128,7 +136,7 @@ export default function BoardPage() {
                   size="sm"
                   onClick={() => setSelectedFolder(null)}
                 >
-                  全部資料夾
+                  All
                 </Button>
                 {folders.map((folder) => (
                   <Button
@@ -145,7 +153,6 @@ export default function BoardPage() {
 
               <ScrollArea className="flex-1 overflow-y-auto">
                 <div className="">
-                  {/* 資料夾檢視 */}
                   {filteredData.folders.map((folder) => (
                     <div key={folder.id} className="space-y-2 mr-4">
                       <Collapsible
@@ -153,7 +160,7 @@ export default function BoardPage() {
                         onOpenChange={() => toggleFolder(folder.id)}
                       >
                         <CollapsibleTrigger asChild>
-                          <Button variant="ghost" className="w-full justify-start py-2 h-12 mb-2">
+                          <Button variant="ghost" className="w-full justify-start py-2 h-12 mb-2 hover:bg-light">
                             {expandedFolders.has(folder.id) ? (
                               <ChevronDown className="w-4 h-4 mr-2" />
                             ) : (
@@ -179,9 +186,6 @@ export default function BoardPage() {
                               <div className="space-y-2">
                                 <div className="flex items-start justify-between">
                                   <h4 className="font-medium text-sm">{prompt.name}</h4>
-                                  {/* <Badge variant="outline" className="text-xs">
-                                    {prompt.shortcut}
-                                  </Badge> */}
                                 </div>
                                 <p className="text-xs text-muted-foreground line-clamp-2">
                                   {extractTextFromHtml(prompt.content)}
@@ -194,12 +198,14 @@ export default function BoardPage() {
                                     className="flex-1"
                                   >
                                     <Copy className="w-3 h-3 mr-1" />
-                                    複製
+                                    Copy
                                   </Button>
-                                  <Button size="sm" onClick={() => addPromptAsNode(prompt)} className="flex-1">
-                                    <Plus className="w-3 h-3 mr-1" />
-                                    加入
-                                  </Button>
+                                  <SheetClose asChild>
+                                    <Button size="sm" onClick={() => addPromptAsNode(prompt)} className="flex-1">
+                                      <Plus className="w-3 h-3 mr-1" />
+                                      Add to Board
+                                    </Button>
+                                  </SheetClose>
                                 </div>
                               </div>
                             </Card>
@@ -214,7 +220,12 @@ export default function BoardPage() {
           </SheetContent>
         </Sheet>
       </div>
-      <FlowWithNoSSR boardId={boardId} />
+      {/* 傳遞 promptToAdd 並在新增後清除 */}
+      <FlowWithNoSSR
+        boardId={boardId}
+        promptToAdd={promptToAdd ?? undefined}
+        onPromptHandled={() => setPromptToAdd(null)}
+      />
     </div>
   );
 }

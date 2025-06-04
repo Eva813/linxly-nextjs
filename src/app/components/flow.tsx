@@ -26,7 +26,12 @@ import FlowControlPanel from './flowControlPanel';
 const initialNodes: Node[] = [];
 const initialEdges: Edge[] = [];
 
-export default function Flow({ boardId }: { boardId: string; }) {
+import { Prompt } from '@/types/prompt';
+import { parseHtml } from '@/lib/utils/parseHtml';
+
+export default function Flow({ boardId, promptToAdd, onPromptHandled }:
+  { boardId: string; promptToAdd?: Prompt; onPromptHandled?: () => void; }
+) {
   const [nodes, setNodes] = useState<Node[]>(initialNodes);
   const [edges, setEdges] = useState<Edge[]>(initialEdges);
   const { theme } = useTheme()
@@ -129,6 +134,25 @@ export default function Flow({ boardId }: { boardId: string; }) {
       return [...currentNodes, newNode];
     });
   }, []);
+
+  // 當有外部 promptToAdd 時，新增為文字輸入節點
+  useEffect(() => {
+    if (promptToAdd) {
+      const newId = `${Date.now()}`;
+      const text = parseHtml(promptToAdd.content)?.textContent || promptToAdd.content;
+      const position = getNewNodePosition();
+      setNodes((current) => [
+        ...current,
+        {
+          id: newId,
+          type: 'textInputNode',
+          data: { id: newId, label: text, inputContent: text, title: promptToAdd.name },
+          position,
+        },
+      ]);
+      onPromptHandled?.();
+    }
+  }, [promptToAdd, getNewNodePosition, onPromptHandled]);
 
   // onSave 函數，用於儲存流程圖
   const onSave = useCallback(async () => {

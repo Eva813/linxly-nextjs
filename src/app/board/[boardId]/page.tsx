@@ -2,26 +2,14 @@
 
 import dynamic from 'next/dynamic';
 import { useParams } from 'next/navigation';
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState } from 'react';
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { usePromptStore } from "@/stores/prompt";
 import { useBoardStorage } from './useBoardStorage';
-import { Sheet, SheetTrigger, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
-import {
-  Library,
-  Bookmark,
-  ChevronDown,
-  ChevronRight,
-  Folder,
-  FolderOpen,
-} from "lucide-react"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import PromptCardOptimized from "./promptCard";
 import { Prompt } from '@/types/prompt';
+import PromptSheet from './promptSheet'
 
-// 定義 Flow 元件 Props 型別以支援 promptToAdd
 type FlowProps = { boardId: string; promptToAdd?: Prompt; onPromptHandled?: () => void };
 import type { ComponentType } from 'react';
 // 使用 dynamic 加載 Flow，並指定 Props 類型
@@ -42,35 +30,11 @@ export default function BoardPage() {
   const params = useParams();
   const boardId = params?.boardId as string;
   const { boardName, setBoardName, saveBoardName } = useBoardStorage(boardId);
-  const { folders, fetchFolders } = usePromptStore();
+  const { fetchFolders } = usePromptStore();
 
-  // 選取資料夾與分頁狀態
   const [selectedFolder, setSelectedFolder] = useState<string | null>(null);
-
-  // 根據選取資料夾與分頁產生過濾後的資料
-  const filteredData = useMemo(() => {
-    const folderList = selectedFolder
-      ? folders.filter((f) => f.id === selectedFolder)
-      : folders;
-    const flatPrompts = folders.flatMap((f) => f.prompts);
-    return { folders: folderList, flatPrompts };
-  }, [folders, selectedFolder]);
-
-  // 資料處理已移至 PromptCardOptimized
-
-  const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set());
-  const toggleFolder = (id: string) => {
-    setExpandedFolders((prev) => {
-      const newSet = new Set(prev);
-      if (newSet.has(id)) newSet.delete(id);
-      else newSet.add(id);
-      return newSet;
-    });
-  };
-
-
-  // 加入提示為節點，透過狀態傳遞到 Flow
   const [promptToAdd, setPromptToAdd] = useState<Prompt | null>(null);
+
   const addPromptAsNode = (prompt: Prompt) => {
     setPromptToAdd(prompt);
   };
@@ -86,12 +50,6 @@ export default function BoardPage() {
     fetchData();
   }, [fetchFolders]);
 
-  useEffect(() => {
-      if (folders.length > 0) {
-        console.log('Fetched folders:', folders);
-      }
-  }, [folders]);
-
   return (
     <div className="w-full h-[calc(100vh-64px)] bg-white-50">
       <div className="fixed top-19 left-4 flex items-center space-x-2 bg-white-50 p-2 rounded z-50">
@@ -103,87 +61,11 @@ export default function BoardPage() {
           className="w-64"
         />
         <Button type="button" onClick={saveBoardName}>Save name</Button>
-
-
-        <Sheet>
-          <SheetTrigger asChild>
-            <Button variant="outline" size="sm" className='hover:bg-light hover:border-light h-9'>
-              <Library className="w-4 h-4 mr-1" />
-              Prompts
-            </Button>
-          </SheetTrigger>
-          <SheetContent side="right" className="w-96 h-full flex flex-col p-4">
-            <SheetHeader>
-              <SheetTitle>Prompts</SheetTitle>
-            </SheetHeader>
-            <div className="mt-2 space-y-2 flex-1 overflow-hidden flex flex-col">
-              <div className="flex flex-wrap gap-2">
-                <Button
-                  variant={selectedFolder === null ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setSelectedFolder(null)}
-                >
-                  All
-                </Button>
-                {folders.map((folder) => (
-                  <Button
-                    key={folder.id}
-                    variant={selectedFolder === folder.id ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => setSelectedFolder(folder.id)}
-                  >
-                    <Bookmark className="w-3 h-3 mr-1" />
-                    {folder.name}
-                  </Button>
-                ))}
-              </div>
-
-              <ScrollArea className="flex-1 overflow-y-auto">
-                <div className="">
-                  {filteredData.folders.map((folder) => (
-                    <div key={folder.id} className="space-y-2 mr-4">
-                      <Collapsible
-                        open={expandedFolders.has(folder.id)}
-                        onOpenChange={() => toggleFolder(folder.id)}
-                      >
-                        <CollapsibleTrigger asChild>
-                          <Button variant="ghost" className="w-full justify-start py-2 h-12 mb-2 hover:bg-light">
-                            {expandedFolders.has(folder.id) ? (
-                              <ChevronDown className="w-4 h-4 mr-2" />
-                            ) : (
-                              <ChevronRight className="w-4 h-4 mr-2" />
-                            )}
-                            {expandedFolders.has(folder.id) ? (
-                              <FolderOpen className="w-4 h-4 mr-2" />
-                            ) : (
-                              <Folder className="w-4 h-4 mr-2" />
-                            )}
-                            <div className="text-left">
-                              <div className="font-medium">{folder.name}</div>
-                              <div className="text-xs text-muted-foreground">
-                                {folder.prompts.length} prompts
-                                {folder.description && ` • ${folder.description}`}
-                              </div>
-                            </div>
-                          </Button>
-                        </CollapsibleTrigger>
-                        <CollapsibleContent className="ml-6 space-y-2">
-                          {folder.prompts.map((prompt) => (
-                            <PromptCardOptimized
-                              key={prompt.id}
-                              prompt={prompt}
-                              onAdd={addPromptAsNode}
-                            />
-                          ))}
-                        </CollapsibleContent>
-                      </Collapsible>
-                    </div>
-                  ))}
-                </div>
-              </ScrollArea>
-            </div>
-          </SheetContent>
-        </Sheet>
+        <PromptSheet
+            selectedFolder={selectedFolder}
+            setSelectedFolder={setSelectedFolder}
+            onAddPrompt={addPromptAsNode}
+          />
       </div>
       <FlowWithNoSSR
         boardId={boardId}

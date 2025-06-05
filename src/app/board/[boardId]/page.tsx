@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button"
 import { usePromptStore } from "@/stores/prompt";
 import { useBoardStorage } from './useBoardStorage';
 import { Prompt } from '@/types/prompt';
-import PromptSheet from './promptSheet'
+import PromptSheet from './components/promptSheet'
 
 type FlowProps = { boardId: string; promptToAdd?: Prompt; onPromptHandled?: () => void };
 import type { ComponentType } from 'react';

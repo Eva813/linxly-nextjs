@@ -8,7 +8,7 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { Button } from "@/components/ui/button"
 import { Bookmark, ChevronDown, ChevronRight, Folder, FolderOpen, Library } from "lucide-react"
 import { useState, useMemo, useCallback } from "react"
-import PromptCardOptimized from "./promptCard"
+import PromptCard from "./promptCard"
 import { usePromptStore } from "@/stores/prompt"
 import { Prompt } from "@/types/prompt"
 
@@ -107,7 +107,7 @@ export default function PromptSheet({
                   </CollapsibleTrigger>
                   <CollapsibleContent className="ml-6 space-y-2">
                     {folder.prompts.map((prompt) => (
-                      <PromptCardOptimized
+                      <PromptCard
                         key={prompt.id}
                         prompt={prompt}
                         onAdd={onAddPrompt}

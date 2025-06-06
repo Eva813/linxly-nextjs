@@ -45,7 +45,7 @@ const extractContentInfo = (html: string) => {
   }
 }
 
-export default function PromptCardOptimized({ prompt, onAdd }: PromptCardProps) {
+export default function PromptCard({ prompt, onAdd }: PromptCardProps) {
   const { interactiveCount, cleanText, formTextCount, formMenuCount } = extractContentInfo(prompt.content)
   const hasInteractiveElements = interactiveCount > 0
 

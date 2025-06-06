@@ -132,6 +132,7 @@ const TextInputNode = ({ data }: CustomNodeData) => {
         className="border border-gray-300 p-1 rounded w-full resize-y max-h-[22rem] focus:outline-none focus:border-gray-600 focus:ring-0.5 focus:ring-gray-600 nowheel nodrag dark:bg-flow-darker"
         value={textareaValue}
         onChange={handleChange}
+        onClickCapture={e => e.stopPropagation()}
       />
 
       <Handle type="source" id={`source-${data.id}`} position={Position.Right} style={handleStyle} className="bg-[#555] dark:bg-white" />

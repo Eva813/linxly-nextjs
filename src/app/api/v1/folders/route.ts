@@ -51,7 +51,6 @@ export async function GET(req: Request) {
     return NextResponse.json(result);
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'unknow error';
-    console.error("Firebase 錯誤詳情:", error); // 增加詳細錯誤記錄
     return NextResponse.json(
       { message: 'server error', error: errorMessage },
       { status: 500 }

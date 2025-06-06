@@ -1,15 +1,15 @@
 import React from 'react'
-import { ToolFieldItem } from "@/app/prompts/components/toolFieldItem"
+import { ToolFieldItem } from "@/app/prompts/components/toolSidebar/toolFieldItem"
 import { MdOutlineShortText } from "react-icons/md";
 import { MdMenuOpen } from "react-icons/md";
-
+import SigmaTags from '@/app/prompts/components/toolSidebar/sigmaTags';
+import { MdOutlineNewLabel } from "react-icons/md";
 interface SidebarProps {
   onInsertTextFieldClick: () => void;
   onInsertMenuFieldClick: () => void;
 }
 
 const EditorSidebar: React.FC<SidebarProps> = React.memo(({ onInsertTextFieldClick, onInsertMenuFieldClick }) => {
-  console.log('EditorSidebar rendered');
   return (
     <>
       <h2 className="font-bold px-4 pt-4 pb-2">Tools</h2>
@@ -27,6 +27,7 @@ const EditorSidebar: React.FC<SidebarProps> = React.memo(({ onInsertTextFieldCli
         pro={false} // 不顯示 PRO 狀態
         onClick={onInsertMenuFieldClick}
       />
+      <SigmaTags  icon={<MdOutlineNewLabel className="h-8 w-8 text-grey-500" />} />
     </>
   )
 })

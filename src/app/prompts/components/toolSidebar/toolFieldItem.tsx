@@ -23,7 +23,7 @@ export function ToolFieldItem({
   return (
     <button type="button" onClick={onClick} className="w-full text-left flex gap-3 py-2 px-4 cursor-pointer hover:bg-light transition-colors">
       {/* 左側 Icon */}
-      <div className="flex flex-col justify-center text-gray-600 ">
+      <div className="flex flex-col justify-center text-gray-600">
         {icon}
       </div>
 

@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
-import { connectToDatabase } from '@/lib/mongodb';
-import { ObjectId } from 'mongodb';
+import { adminDb } from '@/lib/firebaseAdmin';
 
 export async function GET(
   req: Request,
@@ -18,31 +17,24 @@ export async function GET(
     return NextResponse.json({ message: 'promptId required' }, { status: 400 });
   }
   try {
-    const { db } = await connectToDatabase();
-    
     // 獲取程式碼片段資訊
-    const prompt = await db
+    const promptDoc = await adminDb
       .collection('prompts')
-      .findOne(
-        {
-          _id: new ObjectId(promptId),
-          userId: new ObjectId(userId),
-        },
-        {
-          projection: { _id: 1, folderId: 1, name: 1, content: 1, shortcut: 1 }
-        }
-      );
+      .doc(promptId)
+      .get();
 
-    if (!prompt) {
+    if (!promptDoc.exists || promptDoc.data()?.userId !== userId) {
       return NextResponse.json(
         { message: 'prompt not found' },
         { status: 404 }
       );
     }
     
+    const prompt = promptDoc.data()!;
+    
     // 格式化回應資料
     const result = {
-      id: prompt._id.toString(),
+      id: promptId,
       folderId: prompt.folderId,
       name: prompt.name,
       content: prompt.content,
@@ -52,6 +44,7 @@ export async function GET(
     return NextResponse.json(result);
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'unknow error';
+    console.error("Firebase 錯誤詳情:", error); // 增加詳細錯誤記錄
     return NextResponse.json(
       { message: 'server error', error: errorMessage },
       { status: 500 }
@@ -78,49 +71,48 @@ export async function PUT(
   }
 
   try {
-    const { db } = await connectToDatabase();
+    // 檢查 prompt 是否存在
+    const promptDoc = await adminDb
+      .collection('prompts')
+      .doc(promptId)
+      .get();
 
-    // 用 filter 同時帶 _id + userId
+    if (!promptDoc.exists || promptDoc.data()?.userId !== userId) {
+      return NextResponse.json({ message: 'prompt not found' }, { status: 404 });
+    }
+
+    // 準備更新資料
     const updateData: { updatedAt: Date; name?: string; content?: string; shortcut?: string } = { updatedAt: new Date() };
     if (name) updateData.name = name;
     if (content !== undefined) updateData.content = content;
     if (shortcut) updateData.shortcut = shortcut;
 
-    const updateResult = await db.collection('prompts').updateOne(
-      {
-        _id: new ObjectId(promptId),
-        userId: new ObjectId(userId)
-      },
-      { $set: updateData }
-    );
-
-    if (updateResult.matchedCount === 0) {
-      return NextResponse.json({ message: 'prompt not found' }, { status: 404 });
-    }
-
-    // 回傳更新後的那筆
-    const updated = await db
+    // 更新文件
+    await adminDb
       .collection('prompts')
-      .findOne(
-        {
-          _id: new ObjectId(promptId),
-          userId: new ObjectId(userId)
-        },
-        {
-          projection: { _id: 1, folderId: 1, name: 1, content: 1, shortcut: 1 }
-        }
-      );
+      .doc(promptId)
+      .update(updateData);
+
+    // 獲取更新後的文件
+    const updatedDoc = await adminDb
+      .collection('prompts')
+      .doc(promptId)
+      .get();
+    
+    const updated = updatedDoc.data()!;
 
     return NextResponse.json({
-      id: updated!._id.toString(),
-      folderId: updated!.folderId,
-      name: updated!.name,
-      content: updated!.content,
-      shortcut: updated!.shortcut
+      id: promptId,
+      folderId: updated.folderId,
+      name: updated.name,
+      content: updated.content,
+      shortcut: updated.shortcut
     });
   } catch (err: unknown) {
+    const errorMessage = err instanceof Error ? err.message : 'unknown error';
+    console.error("Firebase 錯誤詳情:", err); // 增加詳細錯誤記錄
     return NextResponse.json(
-      { message: 'server error', error: err instanceof Error ? err.message : 'unknown error' },
+      { message: 'server error', error: errorMessage },
       { status: 500 }
     );
   }
@@ -139,23 +131,27 @@ export async function DELETE(
   const promptId = params.promptId;
 
   try {
+    // 檢查 prompt 是否存在並屬於當前使用者
+    const promptDoc = await adminDb
+      .collection('prompts')
+      .doc(promptId)
+      .get();
     
-    const { db } = await connectToDatabase();
-    
-    // 直接嘗試刪除，filter 同時帶 _id + userId
-    const { deletedCount } = await db.collection('prompts').deleteOne({
-      _id: new ObjectId(promptId),
-      userId: new ObjectId(userId)
-    });
-
-    if (deletedCount === 0) {
-      // 刪不到，代表不存在或不屬於這個 user
+    if (!promptDoc.exists || promptDoc.data()?.userId !== userId) {
+      // 不存在或不屬於這個 user
       return NextResponse.json({ message: 'prompt not found' }, { status: 404 });
     }
+    
+    // 刪除文件
+    await adminDb
+      .collection('prompts')
+      .doc(promptId)
+      .delete();
     
     return new NextResponse(null, { status: 204 });
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'unknow error';
+    console.error("Firebase 錯誤詳情:", error); // 增加詳細錯誤記錄
     return NextResponse.json(
       { message: 'server error', error: errorMessage },
       { status: 500 }

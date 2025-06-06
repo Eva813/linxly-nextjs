@@ -11,7 +11,7 @@ export interface FolderSlice {
   setFolders: (folders: Folder[]) => void;
   updateFolder: (id: string, updates: Partial<Folder>) => Promise<Folder>;
   addFolder: (folder: Omit<Folder, "id">) => Promise<Folder>;
-  deleteFolder: (id: string) => void;
+  deleteFolder: (id: string) => Promise<void>;
 }
 // 預設資料夾結構
 const DEFAULT_FOLDERS: Folder[] = [
@@ -19,21 +19,7 @@ const DEFAULT_FOLDERS: Folder[] = [
     id: 'sample-folder',
     name: 'My Sample Prompts',
     description: 'This is a sample folder',
-    prompts: [
-      // {
-      //   id: 'sample-prompt-1',
-      //   name: 'Demo - Plain text',
-      //   content: 'be a software engineer',
-      //   shortcut: '/do',
-      // },
-      // {
-      //   id: 'sample-prompt-2',
-      //   name: 'Demo - Styled Text',
-      //   content:
-      //     'be a translate expert, I will give you a sentence and help me translate to english',
-      //   shortcut: '/doT',
-      // },
-    ],
+    prompts: [],
   }
 ];
 
@@ -71,11 +57,7 @@ export const createFolderSlice: StateCreator<FolderSlice> = (set, get) => ({
       const msg = error instanceof Error ? error.message : 'unknown error';
 
       console.error('取得資料夾失敗:', msg);
-
-      // 若為未授權，直接拋出
       if (err.status === 401) throw error;
-
-      // 其他錯誤顯示訊息 + 設定預設資料夾
       set({
         error: msg,
         folders: DEFAULT_FOLDERS,
@@ -83,7 +65,7 @@ export const createFolderSlice: StateCreator<FolderSlice> = (set, get) => ({
       });
     }
   },
-  // 當 setFolders 被呼叫時，它會觸發 React 的重新渲染機制，更新依賴 folders 狀態的元件。
+  // setFolders 被呼叫時，它會觸發 React 的重新渲染機制，更新依賴 folders 狀態的元件。
   setFolders: (folders) => set({ folders }),
   // 更新資料夾
   updateFolder: async (id, updates) => {

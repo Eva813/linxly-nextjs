@@ -1,9 +1,8 @@
 "use client";
 
-import React from "react";
+import React, { useContext } from "react";
 import Link from "next/link";
 import { BsThreeDotsVertical } from "react-icons/bs";
-import { FaCaretDown, FaCaretRight } from "react-icons/fa";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -11,8 +10,14 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { FolderItemProps } from "@/types/prompt";
-import { FaFolder } from "react-icons/fa";
+import {
+  ChevronDown,
+  ChevronRight,
+  Folder,
+  FolderOpen,
+} from "lucide-react"
 
+import { SidebarContext } from '@/providers/clientRootProvider';
 const FolderItem: React.FC<FolderItemProps> = ({
   folder,
   activeFolderMenu,
@@ -25,37 +30,44 @@ const FolderItem: React.FC<FolderItemProps> = ({
 }) => {
   const isActiveFolder = pathname === `/prompts/folder/${folder.id}`;
   const isCollapsed = collapsedFolders.has(folder.id);
+  const { isOpen, toggleSidebar } = useContext(SidebarContext);
 
   return (
     <li className="mb-2">
-      {/* 資料夾本身的連結區塊 */}
       <Link
         prefetch
+        href={`/prompts/folder/${folder.id}`}
+        onClick={() => {
+          if (isOpen) toggleSidebar();
+        }}
         className={`px-2 py-1 w-full block rounded font-extrabold hover:bg-light dark:hover:text-third flex items-center justify-between text-lg ${
           isActiveFolder ? "bg-light text-primary dark:text-third" : ""
         }`}
-        href={`/prompts/folder/${folder.id}`}
       >
-        <div className="flex items-center space-x-2">
-          <FaFolder className="text-gray-500" size={20} />
-          <strong className="cursor-pointer">{folder.name}</strong>
-        </div>
         <div className="flex items-center">
-          {/* 折疊/展開按鈕 */}
+          {/* 折疊/展開按鈕 移到資料夾圖示左側 */}
           <button
             onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
               toggleCollapse(folder.id);
             }}
-            className="focus:outline-none hover:bg-gray-200 dark:hover:bg-light p-1 rounded mr-1"
+            className="focus:outline-none p-1 hover:bg-gray-light dark:hover:bg-light rounded"
           >
             {isCollapsed ? (
-              <FaCaretRight className="text-gray-400" />
+              <ChevronRight className="w-4 h-4 text-gray-400" />
             ) : (
-              <FaCaretDown className="text-gray-400" />
+              <ChevronDown className="w-4 h-4  text-gray-400" />
             )}
           </button>
+          {isCollapsed ? (
+            <Folder className="text-gray-500 w-4 h-4 mr-2" />
+          ) : (
+            <FolderOpen className="text-gray-500 w-4 h-4 mr-2" />
+          )}
+          <strong className="cursor-pointer">{folder.name}</strong>
+        </div>
+        <div className="flex items-center">
           {/* DropdownMenu */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>

@@ -1,51 +1,47 @@
 // app/api/v1/folders/route.ts
 import { NextResponse } from 'next/server';
-import { connectToDatabase } from '@/lib/mongodb';
-import { ObjectId } from 'mongodb';
+import { adminDb } from '@/lib/firebaseAdmin';
 
-// 後端會從資料庫中取得所有資料夾，並且對每個資料夾進行處理，將其關聯的（prompts）一併查詢並格式化後返回
+// 後端會從資料庫中取得所有資料夾，並且對每個資料夾進行處理，將其關聯的（程式碼片段）一併查詢並格式化後返回
 export async function GET(req: Request) {
-  
   try {
     const userId = req.headers.get('x-user-id')
     if (!userId) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 })
     }
 
-    const { db } = await connectToDatabase();
-    const folders = await db
+    // 查詢資料夾
+    const foldersSnapshot = await adminDb
       .collection('folders')
-      .find({ userId: new ObjectId(userId) })
-      .toArray();
-
+      .where('userId', '==', userId)
+      .get();
+    
     // 處理每個資料夾，並獲取其關聯的程式碼片段
-    const result = await Promise.all(folders.map(async (folder) => {
+    const result = await Promise.all(foldersSnapshot.docs.map(async (folderDoc) => {
+      const folder = folderDoc.data();
+      const folderId = folderDoc.id;
+      
       // 從 prompts 集合獲取該資料夾的 prompts
-      const prompts = await db
+      const promptsSnapshot = await adminDb
         .collection('prompts')
-        .find({
-          folderId: folder._id.toString(),         // 或 ObjectId(folder._id) 視 schema 而定
-          userId: new ObjectId(userId),           // 加上 userId 過濾
-        })
-        .project({                             // 告訴 MongoDB「只回傳這四個欄位」，其他一律排除
-          _id: 1,
-          name: 1,
-          content: 1,
-          shortcut: 1
-        })
-        .toArray();
+        .where('folderId', '==', folderId)
+        .where('userId', '==', userId)
+        .get();
       
       // 格式化程式碼片段資料
-      const formattedPrompts = prompts.map(s => ({
-        id: s._id.toString(),
-        name: s.name,
-        content: s.content,
-        shortcut: s.shortcut
-      }));
+      const formattedPrompts = promptsSnapshot.docs.map(promptDoc => {
+        const prompt = promptDoc.data();
+        return {
+          id: promptDoc.id,
+          name: prompt.name,
+          content: prompt.content,
+          shortcut: prompt.shortcut
+        };
+      });
       
       // 返回完整的資料夾物件，包含 prompts
       return {
-        id: folder._id.toString(),
+        id: folderId,
         name: folder.name,
         description: folder.description || '',
         prompts: formattedPrompts
@@ -63,8 +59,12 @@ export async function GET(req: Request) {
 }
 
 export async function POST(req: Request) {
-  const userId = req.headers.get('x-user-id')
   try {
+    const userId = req.headers.get('x-user-id')
+    if (!userId) {
+      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 })
+    }
+    
     const body = await req.json();
     if (!body.name) {
       return NextResponse.json(
@@ -73,19 +73,20 @@ export async function POST(req: Request) {
       );
     }
 
-    const { db } = await connectToDatabase();
-    const insertRes = await db
-      .collection('folders')
-      .insertOne({
-        userId: userId ? new ObjectId(userId) : null,
-        name: body.name,
-        description: body.description || '',
-        createdAt: new Date(),
-        updatedAt: new Date()
-      });
-
+    // 在 Firestore 中建立新的資料夾
+    const folderData = {
+      userId: userId,
+      name: body.name,
+      description: body.description || '',
+      createdAt: new Date(), // Admin SDK 使用 JavaScript Date 物件
+      updatedAt: new Date()
+    };
+    
+    // 使用 Admin SDK 的方式建立文件
+    const folderRef = await adminDb.collection('folders').add(folderData);
+    
     const created = {
-      id: insertRes.insertedId.toString(),
+      id: folderRef.id,
       name: body.name,
       description: body.description || '',
       prompts: [] // 新資料夾初始沒有 prompts
@@ -94,6 +95,7 @@ export async function POST(req: Request) {
     return NextResponse.json(created, { status: 201 });
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'unknow error';
+    console.error("Firebase 錯誤詳情:", error); // 增加詳細錯誤記錄
     return NextResponse.json(
       { message: 'server error', error: errorMessage },
       { status: 500 }

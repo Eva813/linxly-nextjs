@@ -2,17 +2,20 @@
 
 import dynamic from 'next/dynamic';
 import { useParams } from 'next/navigation';
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
+import { usePromptStore } from "@/stores/prompt";
+import { useBoardStorage } from './useBoardStorage';
+import { Prompt } from '@/types/prompt';
+import PromptSheet from './components/promptSheet'
 
-interface Board {
-  id: string;
-  name: string;
-}
-
-// 預載 Flow 組件
-const FlowWithNoSSR = dynamic(() => import('../../components/flow'), {
+type FlowProps = { boardId: string; promptToAdd?: Prompt; onPromptHandled?: () => void };
+import type { ComponentType } from 'react';
+// 使用 dynamic 加載 Flow，並指定 Props 類型
+const FlowWithNoSSR = dynamic(
+  () => import('../../components/flow'),
+  {
   ssr: false,
   loading: () => (
     <div className="w-full flex items-center justify-center" style={{
@@ -21,45 +24,31 @@ const FlowWithNoSSR = dynamic(() => import('../../components/flow'), {
       <div className="text-xl dark:text-white">Loading Flow Editor...</div>
     </div>
   )
-});
+}) as ComponentType<FlowProps>;
 
 export default function BoardPage() {
-  const [boardName, setBoardName] = useState<string>('');
-  const [boards, setBoards] = useState<Board[]>([]);
   const params = useParams();
   const boardId = params?.boardId as string;
+  const { boardName, setBoardName, saveBoardName } = useBoardStorage(boardId);
+  const { fetchFolders } = usePromptStore();
 
-  useEffect(() => {
-    const storedBoards = localStorage.getItem('boards');
-    if (storedBoards) {
-      setBoards(JSON.parse(storedBoards));
-    }
-  }, []);
+  const [selectedFolder, setSelectedFolder] = useState<string | null>(null);
+  const [promptToAdd, setPromptToAdd] = useState<Prompt | null>(null);
 
-  useEffect(() => {
-    const savedBoardName = localStorage.getItem(`boardName-${boardId}`);
-    if (savedBoardName) {
-      if (savedBoardName !== boardName) setBoardName(savedBoardName);
-    } else {
-      const board = boards.find((b: Board) => b.id === boardId);
-      if (board && board.name !== boardName) {
-        setBoardName(board.name);
-      }
-    }
-  }, [boardId, boardName, boards]);
-
-  const saveBoardName = () => {
-    if (!boardId) return;
-
-    localStorage.setItem(`boardName-${boardId}`, boardName);
-    console.log('Board name saved:', boardName);
-
-    // 更新 boards 並存回 localStorage
-    const updatedBoards = boards.map((board: Board) =>
-      board.id === boardId ? { ...board, name: boardName } : board
-    );
-    localStorage.setItem('boards', JSON.stringify(updatedBoards));
+  const addPromptAsNode = (prompt: Prompt) => {
+    setPromptToAdd(prompt);
   };
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        await fetchFolders();
+      } catch (error) {
+        console.error('Failed to fetch folders:', error);
+      }
+    };
+    fetchData();
+  }, [fetchFolders]);
 
   return (
     <div className="w-full h-[calc(100vh-64px)] bg-white-50">
@@ -67,13 +56,22 @@ export default function BoardPage() {
         <Input
           type="text"
           value={boardName}
-          onChange={(e) => setBoardName(e.target.value)} // 更新 board 名稱
+          onChange={(e) => setBoardName(e.target.value)}
           placeholder="Enter board name"
-          className="bord-none w-64"
+          className="w-64"
         />
         <Button type="button" onClick={saveBoardName}>Save name</Button>
+        <PromptSheet
+            selectedFolder={selectedFolder}
+            setSelectedFolder={setSelectedFolder}
+            onAddPrompt={addPromptAsNode}
+          />
       </div>
-      <FlowWithNoSSR boardId={boardId} />
+      <FlowWithNoSSR
+        boardId={boardId}
+        promptToAdd={promptToAdd ?? undefined}
+        onPromptHandled={() => setPromptToAdd(null)}
+      />
     </div>
   );
 }

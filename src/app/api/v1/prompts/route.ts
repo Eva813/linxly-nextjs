@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
-import { connectToDatabase } from '@/lib/mongodb';
-import { ObjectId } from 'mongodb';
+import { adminDb } from '@/lib/firebaseAdmin';
 
 export async function GET(req: Request) {
   const userId = req.headers.get('x-user-id');
@@ -18,16 +17,14 @@ export async function GET(req: Request) {
         { status: 400 }
       );
     }
-
-    const { db } = await connectToDatabase();
     
     // 檢查資料夾是否存在
-    const folder = await db.collection('folders').findOne({ 
-      _id: new ObjectId(folderId),
-      userId: new ObjectId(userId) 
-    });
+    const folderDoc = await adminDb
+      .collection('folders')
+      .doc(folderId)
+      .get();
     
-    if (!folder) {
+    if (!folderDoc.exists || folderDoc.data()?.userId !== userId) {
       return NextResponse.json(
         { message: 'folder not found' },
         { status: 404 }
@@ -35,25 +32,26 @@ export async function GET(req: Request) {
     }
     
     // 獲取此資料夾的所有 prompt
-    const prompts = await db
+    const promptsSnapshot = await adminDb
       .collection('prompts')
-      .find({
-        folderId: folderId,
-        userId: new ObjectId(userId)
-      })
-      .project({ _id: 1, name: 1, content: 1, shortcut: 1 })
-      .toArray();
+      .where('folderId', '==', folderId)
+      .where('userId', '==', userId)
+      .get();
 
-    const result = prompts.map(s => ({
-      id: s._id.toString(),
-      name: s.name,
-      content: s.content,
-      shortcut: s.shortcut
-    }));
+    const result = promptsSnapshot.docs.map(doc => {
+      const prompt = doc.data();
+      return {
+        id: doc.id,
+        name: prompt.name,
+        content: prompt.content,
+        shortcut: prompt.shortcut
+      };
+    });
 
     return NextResponse.json(result, { status: 200 });
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'unknow error';
+    console.error("Firebase 錯誤詳情:", error); // 增加詳細錯誤記錄
     return NextResponse.json(
       { message: 'server error', error: errorMessage },
       { status: 500 }
@@ -76,15 +74,13 @@ export async function POST(req: Request) {
       );
     }
 
-    const { db } = await connectToDatabase();
-    
     // 檢查資料夾是否存在
-    const folder = await db.collection('folders').findOne({ 
-      _id: new ObjectId(folderId),
-      userId: new ObjectId(userId) 
-    });
+    const folderDoc = await adminDb
+      .collection('folders')
+      .doc(folderId)
+      .get();
     
-    if (!folder) {
+    if (!folderDoc.exists || folderDoc.data()?.userId !== userId) {
       return NextResponse.json(
         { message: 'folder not found' },
         { status: 404 }
@@ -93,18 +89,20 @@ export async function POST(req: Request) {
 
     // 新增 prompt 片段到 prompts 集合
     const now = new Date();
-    const insertRes = await db.collection('prompts').insertOne({
+    const promptData = {
       folderId,
-      userId: new ObjectId(userId),
+      userId,
       name,
       content: content || '',
       shortcut,
       createdAt: now,
       updatedAt: now
-    });
+    };
+
+    const docRef = await adminDb.collection('prompts').add(promptData);
 
     const created = {
-      id: insertRes.insertedId.toString(),
+      id: docRef.id,
       folderId,
       name,
       content: content || '',
@@ -114,6 +112,7 @@ export async function POST(req: Request) {
     return NextResponse.json(created, { status: 201 });
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'unknow error';
+    console.error("Firebase 錯誤詳情:", error); // 增加詳細錯誤記錄
     return NextResponse.json(
       { message: 'server error', error: errorMessage },
       { status: 500 }

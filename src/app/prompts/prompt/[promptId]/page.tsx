@@ -22,7 +22,6 @@ import TryItOutPopup from './tryItOutPopup';
 import ShortcutErrorAlert  from "@/app/prompts/components/shortcutErrorAlert";
 import { useLoadingStore } from '@/stores/loading';
 import { useCurrentPrompt } from '@/lib/useCurrentPrompt';
-import EditorSkeleton from '@/app/prompts/components/editorSkeleton';
 
 interface PromptDataMapping {
   formtext: IBuiltFormData<typeof formTextSpec>;
@@ -39,8 +38,6 @@ interface ShortcutError {
   message: string;
 }
 
-
-// 使用泛型並依據傳入的 type 取得對應的 promptData 型別
 type UpdateHandler<T extends EditInfo> = {
   getAttributes: (
     editInfo: T,
@@ -55,7 +52,7 @@ type UpdateHandler<T extends EditInfo> = {
 const PromptPage = ({ params }: PromptPageProps) => {
   const { promptId } = params;
   const { folders, updatePrompt } = usePromptStore();
-  const { prompt: currentPrompt, loading } = useCurrentPrompt(promptId);
+  const { prompt: currentPrompt } = useCurrentPrompt(promptId);
 
   const [name, setName] = useState("");
   const [shortcut, setShortcut] = useState("");
@@ -76,8 +73,12 @@ const PromptPage = ({ params }: PromptPageProps) => {
     useState<DropdownEditInfo | null>(null);
   const [isTextDialogOpen, setIsTextDialogOpen] = useState(false);
   const [isDropdownDialogOpen, setIsDropdownDialogOpen] = useState(false);
-  const [isEditPanelVisible, setIsEditPanelVisible] = useState(false); // 新增狀態
+  const [isEditPanelVisible, setIsEditPanelVisible] = useState(false);
   const [mode, setMode] = useState<Mode>("edit");
+  // 移動裝置工具面板開關狀態
+  const [isMobilePanelOpen, setIsMobilePanelOpen] = useState(false);
+  // 手機版面板關閉動畫狀態
+  const [isMobilePanelClosing, setIsMobilePanelClosing] = useState(false);
 
   // 按下 sidebar 的 TextField
   const handleInsertTextFieldClick = useCallback(() => {
@@ -117,9 +118,6 @@ const PromptPage = ({ params }: PromptPageProps) => {
   }, [currentPrompt]);
 
 
-  if (loading) {
-    return <EditorSkeleton />;
-  }
 
   const handleSave = async () => {
     if (currentPrompt) {
@@ -338,8 +336,8 @@ const PromptPage = ({ params }: PromptPageProps) => {
 
   return (
     <div className="flex flex-col h-full">
-      <header className="grid grid-cols-[3fr_1fr] mb-4 pt-4">
-        <div className="grid grid-cols-2 gap-x-4 pr-4">
+      <header className="grid grid-cols-1 lg:grid-cols-[3fr_1fr] mb-4 pt-4 gap-y-4 lg:gap-y-0 justify-items-start sm:justify-items-stretch">
+        <div className="grid grid-cols-2 gap-x-4 lg:pr-4">
           {/** Prompt 名稱與捷徑 **/}
           <div className="relative">
             <Input className="pl-9 h-12" placeholder="Type prompt name..." value={name} onChange={e => setName(e.target.value)} />
@@ -348,11 +346,11 @@ const PromptPage = ({ params }: PromptPageProps) => {
           {/** Shortcut **/}
           <div className="relative">
             <div className="relative">
-              <Input className="pl-9 h-12" placeholder="Add a shortcut..." value={shortcut} onChange={handleShortcutChange} />
+              <Input className="pl-9 pr-24 h-12" placeholder="Add a shortcut..." value={shortcut} onChange={handleShortcutChange} />
               <FaKeyboard className="absolute left-[10px] top-1/2 h-4 w-4 text-muted-foreground -translate-y-1/2" />
               <Button
                 ref={tryItOutButtonRef}
-                className="absolute right-[10px] top-1/2 h-8 px-4 -translate-y-1/2"
+                className="absolute right-[10px] top-1/2 h-8 px-2 text-xs sm:text-sm -translate-y-1/2"
                 onClick={e => {
                   e.stopPropagation();
                   setIsPopupVisible(prev => !prev);
@@ -365,12 +363,31 @@ const PromptPage = ({ params }: PromptPageProps) => {
             {isPopupVisible && <TryItOutPopup tryItOutButtonRef={tryItOutButtonRef} shortcut={shortcut} onClose={() => setIsPopupVisible(false)} />}
           </div>
         </div>
-        <EditViewButtons mode={mode} onModeChange={setMode} />
+        <div className="flex items-center justify-between lg:justify-end space-x-2">
+          <EditViewButtons mode={mode} onModeChange={setMode} />
+          <Button
+            className="h-10 lg:hidden text-primary border-secondary hover:bg-light hover:text-primary"
+            variant="outline"
+            onClick={() => {
+              if (isMobilePanelOpen) {
+                setIsMobilePanelClosing(true);
+                setTimeout(() => {
+                  setIsMobilePanelClosing(false);
+                  setIsMobilePanelOpen(false);
+                }, 300);
+              } else {
+                setIsMobilePanelOpen(true);
+              }
+            }}
+          >
+            Tools
+          </Button>
+        </div>
       </header>
 
-      <main className="grid grid-cols-[3fr_1fr] flex-1 min-h-0">
+      <main className="grid grid-cols-1 lg:grid-cols-[3fr_1fr] flex-1 min-h-0">
         {mode === "edit" ? (
-          <><section className="flex flex-col pr-4 py-4 border-r border-gray-200">
+          <><section className="flex flex-col lg:pr-4 py-4 lg:border-r lg:border-gray-200 overflow-y-auto">
             <TipTapEditor
               value={content}
               onChange={setContent}
@@ -378,21 +395,49 @@ const PromptPage = ({ params }: PromptPageProps) => {
               onFormTextNodeClick={handleFormTextNodeClick}
               onFormMenuNodeClick={handleFormMenuNodeClick}
               onEditorClick={handleEditorClick}
-              maxHeight='calc(100vh - 300px)'
             />
             <Button className="w-20" onClick={handleSave}>Save</Button>
           </section>
 
-            <aside className="min-h-0 overflow-y-auto">
-              {isEditPanelVisible && activeEditInfo ? (
-                <EditPanel editInfo={activeEditInfo} onChange={handleTextInputChange} />
-              ) : (
-                <Sidebar
-                  onInsertTextFieldClick={handleInsertTextFieldClick}
-                  onInsertMenuFieldClick={handleInsertMenuFieldClick}
+            {/* 桌面版側邊欄 */}
+            <div className="hidden lg:block">
+              <aside className="min-h-0 overflow-y-auto">
+                {isEditPanelVisible && activeEditInfo ? (
+                  <EditPanel editInfo={activeEditInfo} onChange={handleTextInputChange} />
+                ) : (
+                  <Sidebar
+                    onInsertTextFieldClick={handleInsertTextFieldClick}
+                    onInsertMenuFieldClick={handleInsertMenuFieldClick}
+                  />
+                )}
+              </aside>
+            </div>
+            {/* 手機版覆蓋面板 */}
+            {(isMobilePanelOpen || isMobilePanelClosing) && (
+              <div className="fixed inset-0 z-50 flex justify-end">
+                <div
+                  className="fixed inset-0 bg-black opacity-50"
+                  onClick={() => {
+                    setIsMobilePanelClosing(true);
+                    setTimeout(() => {
+                      setIsMobilePanelClosing(false);
+                      setIsMobilePanelOpen(false);
+                    }, 300);
+                  }}
                 />
-              )}
-            </aside></>)
+                <aside className={`relative md:w-1/4 max-w-xs bg-white overflow-y-auto ${isMobilePanelClosing ? 'animate-slide-out-right' : 'animate-slide-in-right'}`}>
+                  {isEditPanelVisible && activeEditInfo ? (
+                    <EditPanel editInfo={activeEditInfo} onChange={handleTextInputChange} />
+                  ) : (
+                    <Sidebar
+                      onInsertTextFieldClick={handleInsertTextFieldClick}
+                      onInsertMenuFieldClick={handleInsertMenuFieldClick}
+                    />
+                  )}
+                </aside>
+              </div>
+            )}
+          </>)
           : <div className="border-r border-gray-200">
             <PreviewPrompt content={content} shortcut={shortcut} />
           </div>

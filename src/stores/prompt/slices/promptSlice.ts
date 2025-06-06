@@ -5,7 +5,7 @@ import { getPrompts, createPrompt, deletePrompt as apiDeletePrompt, updatePrompt
 
 export interface PromptSlice {
   fetchPromptsForFolder: (folderId: string) => Promise<void>;
-  addPromptToFolder: (folderId: string, prompt: Omit<Prompt, 'id'>) => Promise<Prompt>;
+  addPromptToFolder: (folderId: string, prompt: Omit<Prompt, 'id'>, afterPromptId?: string) => Promise<Prompt>;
   deletePromptFromFolder: (folderId: string, promptId: string) => Promise<void>;
   updatePrompt: (promptId: string, updatedPrompt: Partial<Prompt>) => Promise<Prompt>;
 }
@@ -32,15 +32,23 @@ export const createPromptSlice: StateCreator<
       console.error('Failed to fetch prompts:', error);
     }
   },
-  addPromptToFolder: async (folderId, prompt) => {
+  addPromptToFolder: async (folderId, prompt, afterPromptId) => {
     try {
-      const newPrompt = await createPrompt({ folderId, ...prompt });
+      
+      const newPrompt = await createPrompt({ folderId, afterPromptId, ...prompt });
+      
       set({
-        folders: get().folders.map((folder) =>
-          folder.id === folderId
-            ? { ...folder, prompts: [...folder.prompts, newPrompt] }
-            : folder
-        ),
+        folders: get().folders.map((folder) => {
+          if (folder.id !== folderId) return folder;
+          const updatedPrompts = [...folder.prompts];
+          if (afterPromptId) {
+            const idx = updatedPrompts.findIndex((p) => p.id === afterPromptId);
+            updatedPrompts.splice(idx + 1, 0, newPrompt);
+          } else {
+            updatedPrompts.push(newPrompt);
+          }
+          return { ...folder, prompts: updatedPrompts };
+        }),
       });
       return newPrompt;
     } catch (error) {

@@ -15,7 +15,8 @@ const VOID_TAGS = new Set([
 
 const CustomPromptNode: React.FC<{ id: string; data: CustomPromptNodeData }> = ({ id, data }) => {
   const [elements, setElements] = useState<React.ReactNode[]>([]);
-  const { deleteElements } = useReactFlow();
+  const { deleteElements, setNodes } = useReactFlow();
+  const [title, setTitle] = useState(data.title);
 
   const renderNode = useCallback((node: ChildNode, key: string): React.ReactNode => {
     if (node.nodeType === Node.TEXT_NODE) {
@@ -56,6 +57,25 @@ const CustomPromptNode: React.FC<{ id: string; data: CustomPromptNodeData }> = (
     deleteElements({ nodes: [{ id }] });
   };
 
+  const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newTitle: string = e.target.value;
+    setTitle(newTitle);
+    setNodes((nodes) =>
+    nodes.map((node) => {
+      if (node.id === id) {
+        return {
+          ...node,
+          data: {
+            ...node.data,
+            title: newTitle,
+          },
+        };
+      }
+      return node;
+    })
+    );
+  };
+
   return (
     <div className="relative p-2 bg-white rounded-md border border-gray-300 w-[16rem] dark:bg-flow-darker">
       <Handle type="target" position={Position.Left} style={{ width: 10, height: 10 }} />
@@ -74,7 +94,15 @@ const CustomPromptNode: React.FC<{ id: string; data: CustomPromptNodeData }> = (
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
-      <div className="font-bold mb-1">{data.title}</div>
+      <div className="mb-2 font-bold">
+        <input
+          type="text"
+          value={title}
+          onMouseDownCapture={(e: React.MouseEvent<HTMLInputElement>) => e.stopPropagation()}
+          onChange={handleTitleChange}
+          className="p-1 bg-transparent border-0 focus:border focus:border-gray-600 focus:outline-none rounded"
+        />
+      </div>
       <div className="space-y-1 border border-gray-300 p-2 rounded max-h-[22rem] overflow-y-auto">{elements}</div>
       <Handle type="source" position={Position.Right} style={{ width: 10, height: 10 }} />
     </div>

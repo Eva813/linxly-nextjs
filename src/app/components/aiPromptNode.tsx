@@ -12,13 +12,14 @@ interface CustomNodeData {
     label?: string;
     systemPrompt?: string;
     userPrompt?: string;
-    userPromptNodeId?: string; // 指定來源的 Text Node 的 id
-    result?: string; // 結果
+    userPromptNodeId?: string;
+    result?: string; 
+    title?: string;
   };
 }
 const handleStyle = {
-  width: 10,          // Custom width
-  height: 10,         // Custom height
+  width: 10, 
+  height: 10,     
 };
 
 const AIPromptNode = ({ data }: CustomNodeData)  => {
@@ -34,6 +35,8 @@ const AIPromptNode = ({ data }: CustomNodeData)  => {
   const [edgeCount, setEdgeCount] = useState(0);
   const systemPromptRef = useRef<HTMLTextAreaElement>(null);
   const userPromptRef = useRef<HTMLTextAreaElement>(null);
+  const systemPromptId = `system-prompt-${data.id}`;
+  const userPromptId   = `user-prompt-${data.id}`;
 
   // 獲取所有連接到這個節點的邊
   const edges = useStore((s) => s.edges.filter((e) => e.target === data.id));
@@ -280,6 +283,23 @@ const AIPromptNode = ({ data }: CustomNodeData)  => {
     onInsert: handleUserPromptUpdate
   });
 
+  const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newTitle = e.target.value;
+    setNodes((nodes) =>
+      nodes.map((node) => {
+        if (node.id === data.id) {
+          return {
+            ...node,
+            data: {
+              ...node.data,
+              title: newTitle,
+            },
+          };
+        }
+        return node;
+      })
+    );
+  };
 
   return (
     <div className="p-2 bg-white rounded-md border border-gray-300 w-[16rem] dark:bg-flow-darker">
@@ -313,21 +333,33 @@ const AIPromptNode = ({ data }: CustomNodeData)  => {
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
-      {/* 標題 */}
-      <div className="mb-2 font-bold text-gray-500 dark:text-white">未命名 AI Card</div>
+      <div className="mb-2 font-bold">
+        <input
+          type="text"
+          value={data?.title || `AI Prompt ${data.id}`}
+          onMouseDownCapture={(e) => e.stopPropagation()}
+          onChange={handleTitleChange}
+          className="p-1 bg-transparent border-0 focus:border focus:border-gray-600 focus:outline-none rounded"
+        />
+      </div>
       {/* System Prompt */}
-      <label className="block text-sm font-medium text-gray-700 mb-1 dark:text-white">System Prompt</label>
+      <label  htmlFor={systemPromptId}  className="block text-md text-gray-700 mb-1 dark:text-white">System Prompt</label>
       <textarea
         ref={systemPromptRef}
+        id={systemPromptId}
+        name="systemPrompt"
         className="border border-gray-300 p-1 rounded w-full resize-y nodrag nowheel focus:outline-none focus:border-gray-600 focus:ring-0.5 focus:ring-gray-600 dark:bg-flow-darker"
         value={systemPrompt}
         onChange={(e) => handleSystemPromptUpdate(e.target.value)}
         rows={2}
       />
       {/* User Prompt */}
-      <label className="block text-sm font-medium text-gray-700 mb-1 dark:text-white">User Prompt</label>
+      <label htmlFor={userPromptId} className="block text-md text-gray-700 mb-1 dark:text-white">User Prompt</label>
+      <span className="text-sm text-gray-500 mb-1 dark:text-gray-400">Use [:label:] to insert content from connected nodes.</span>
       <textarea
         ref={userPromptRef}
+        id={userPromptId}
+        name="userPrompt"
         className="border border-gray-300 p-1 rounded w-full resize-y nodrag nowheel focus:outline-none focus:border-gray-600 focus:ring-0.5 focus:ring-gray-600 dark:bg-flow-darker"
         value={userPrompt}
         onChange={(e) => handleUserPromptUpdate(e.target.value)}

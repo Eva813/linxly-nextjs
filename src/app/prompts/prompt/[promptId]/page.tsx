@@ -90,6 +90,36 @@ const PromptPage = ({ params }: PromptPageProps) => {
     setIsDropdownDialogOpen(true);
   }, []);
 
+
+  const handleInsertCalcTag = useCallback((tagData: { name: string; default?: string }) => {
+    const editor = editorRef.current;
+    if (!editor || editor.isDestroyed) {
+      console.error("Editor instance not available for calc insertion");
+      return;
+    }
+
+    try {
+      editor
+        .chain()
+        .focus()
+        .insertContent({
+          type: "calc",
+          attrs: {
+            promptData: {
+              name: tagData.name,
+              default: tagData.default || '',
+            },
+          },
+        })
+        .run();
+      
+      // 更新內容
+      setContent(editor.getHTML());
+    } catch (error) {
+      console.error('Failed to insert calc node:', error);
+    }
+  }, []);
+
   // 取得目前的編輯資訊
   const getActiveEditInfo = (
     textInputEditInfo: TextInputEditInfo | null,
@@ -116,6 +146,15 @@ const PromptPage = ({ params }: PromptPageProps) => {
       setContent(currentPrompt.content);
     }
   }, [currentPrompt]);
+
+  // 當 mode 切換時，重置編輯面板狀態
+  useEffect(() => {
+    if (mode === 'preview') {
+      setIsEditPanelVisible(false);
+      setTextInputEditInfo(null);
+      setDropdownEditInfo(null);
+    }
+  }, [mode]);
 
 
 
@@ -408,7 +447,8 @@ const PromptPage = ({ params }: PromptPageProps) => {
                   <Sidebar
                     onInsertTextFieldClick={handleInsertTextFieldClick}
                     onInsertMenuFieldClick={handleInsertMenuFieldClick}
-                    editor={editorRef.current}
+                    onInsertCalcTag={handleInsertCalcTag}
+                    key={mode} // 加入 key 強制重新渲染當 mode 變化時
                   />
                 )}
               </aside>
@@ -433,7 +473,8 @@ const PromptPage = ({ params }: PromptPageProps) => {
                     <Sidebar
                       onInsertTextFieldClick={handleInsertTextFieldClick}
                       onInsertMenuFieldClick={handleInsertMenuFieldClick}
-                      editor={editorRef.current}
+                      onInsertCalcTag={handleInsertCalcTag}
+                      key={mode} // 加入 key 強制重新渲染當 mode 變化時
                     />
                   )}
                 </aside>

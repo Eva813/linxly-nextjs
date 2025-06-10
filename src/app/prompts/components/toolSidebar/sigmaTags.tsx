@@ -4,16 +4,15 @@
 import React, { useEffect, useState } from "react";
 import { usePromptStore } from "@/stores/prompt";
 import { useParams } from "next/navigation";
-import { Editor } from "@tiptap/react";
 
 interface IconTitleDescriptionProps {
   icon?: React.ReactNode;
-  editor: Editor | null; // 新增 editor prop
+  onTagClick: (tagData: { name: string; default?: string }) => void;
 }
 
 export default function SigmaTags({
-  icon, // Destructure icon prop
-  editor, // 接收 editor 實例
+  icon,
+  onTagClick, // 接收回調函式
 }: IconTitleDescriptionProps) {
   const params = useParams();
   const promptId = params?.promptId as string; // Safely extract promptId and cast to string
@@ -52,20 +51,7 @@ export default function SigmaTags({
   }, [folders, promptId]);
 
   const handleTagClick = (tag: { name: string; default?: string }) => {
-    console.log(`Tag clicked: ${tag}`);
-    if (editor) {
-      editor.chain().focus().insertContent({
-        type: "calc",
-        attrs: {
-          promptData: {
-            name: tag.name,
-            default: tag.default,
-          },
-        },
-      }).run();
-    } else {
-      console.error("Editor instance not found");
-    }
+    onTagClick(tag);
   };
 
   //   const handleTagClick = (tag: { name: string; default: string }) => {

@@ -1,7 +1,8 @@
 "use client";
 import React, { useState, useEffect, useCallback } from "react";
 import { parseHtml } from "@/lib/utils/parseHtml";
-import { renderCustomElement } from "./renderers/renderCustomElement";
+import { PreviewContext } from "./renderers/PreviewContext";
+import CustomElementRenderer from "./renderers/CustomElementRenderer";
 
 interface PreviewPromptProps {
   content: string;
@@ -14,6 +15,7 @@ const VOID_TAGS = new Set([
 
 const PreviewPrompt: React.FC<PreviewPromptProps> = ({ content, shortcut }) => {
   const [rendered, setRendered] = useState<React.ReactNode[] | null>(null);
+  const [values, setValues] = useState<Record<string, string | string[]>>({})
   // 遞迴渲染 DOM ➝ React 元素
   const renderNode = useCallback((node: ChildNode, key: string): React.ReactNode => {
     if (node.nodeType === Node.TEXT_NODE) {
@@ -25,7 +27,7 @@ const PreviewPrompt: React.FC<PreviewPromptProps> = ({ content, shortcut }) => {
       const tagName = el.tagName.toLowerCase();
 
       if (el.tagName === "SPAN" && el.hasAttribute("data-type")) {
-        return renderCustomElement(el, key);
+        return <CustomElementRenderer el={el} nodeKey={key} />;
       }
 
       // 遞迴子節點
@@ -80,7 +82,8 @@ const PreviewPrompt: React.FC<PreviewPromptProps> = ({ content, shortcut }) => {
   }, [content, renderNode]);
 
   return (
-    <main className="p-4 space-y-4 w-full h-[calc(100vh-160px)] flex flex-col">
+    <PreviewContext.Provider value={{ values, setValues }}>
+      <main className="p-4 space-y-4 w-full h-[calc(100vh-160px)] flex flex-col">
       {/* 顯示提示 / shortcut */}
       <div className="h-4 bg-gray-200 rounded w-full" />
       <div className="flex items-center">
@@ -91,10 +94,11 @@ const PreviewPrompt: React.FC<PreviewPromptProps> = ({ content, shortcut }) => {
       </div>
 
       {/* 預覽區塊 */}
-      <div className="mt-4 border-2 border-dashed p-4 overflow-y-auto flex-1">
-        {rendered}
-      </div>
-    </main>
+        <div className="mt-4 border-2 border-dashed p-4 overflow-y-auto flex-1">
+          {rendered}
+        </div>
+      </main>
+    </PreviewContext.Provider>
   );
 };
 

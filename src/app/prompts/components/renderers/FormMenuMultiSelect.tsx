@@ -9,6 +9,8 @@ interface FormMenuMultiSelectProps {
   defaultValue: string[];
   name?: string;
   customKey: string;
+  value?: string[]; // controlled 值
+  onChange?: (newSelected: string[]) => void; // 值變更 callback
 }
 
 const FormMenuMultiSelect: React.FC<FormMenuMultiSelectProps> = ({
@@ -16,8 +18,19 @@ const FormMenuMultiSelect: React.FC<FormMenuMultiSelectProps> = ({
   defaultValue,
   name,
   customKey,
+  value,
+  onChange: onChangeProp,
 }) => {
-  const [selected, setSelected] = useState<string[]>(defaultValue);
+  // 使用受控或內部 state
+  const [selectedIntern, setSelectedIntern] = useState<string[]>(defaultValue);
+  const selected = value ?? selectedIntern;
+  const updateSelected = (newSelected: string[]) => {
+    if (onChangeProp) {
+      onChangeProp(newSelected);
+    } else {
+      setSelectedIntern(newSelected);
+    }
+  };
   const [open, setOpen] = useState<boolean>(false);
   const [dropdownStyle, setDropdownStyle] = useState<React.CSSProperties>({});
   const triggerRef = useRef<HTMLButtonElement>(null);
@@ -60,11 +73,10 @@ const FormMenuMultiSelect: React.FC<FormMenuMultiSelectProps> = ({
   }, [open]);
 
   const toggleOption = (opt: string) => {
-    setSelected((prev) =>
-      prev.includes(opt)
-        ? prev.filter((v) => v !== opt)
-        : [...prev, opt]
-    );
+    const newSelected = selected.includes(opt)
+      ? selected.filter((v) => v !== opt)
+      : [...selected, opt];
+    updateSelected(newSelected);
   };
 
   return (

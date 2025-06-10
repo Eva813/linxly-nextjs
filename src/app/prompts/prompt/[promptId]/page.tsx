@@ -408,6 +408,7 @@ const PromptPage = ({ params }: PromptPageProps) => {
                   <Sidebar
                     onInsertTextFieldClick={handleInsertTextFieldClick}
                     onInsertMenuFieldClick={handleInsertMenuFieldClick}
+                    editor={editorRef.current}
                   />
                 )}
               </aside>
@@ -432,6 +433,7 @@ const PromptPage = ({ params }: PromptPageProps) => {
                     <Sidebar
                       onInsertTextFieldClick={handleInsertTextFieldClick}
                       onInsertMenuFieldClick={handleInsertMenuFieldClick}
+                      editor={editorRef.current}
                     />
                   )}
                 </aside>

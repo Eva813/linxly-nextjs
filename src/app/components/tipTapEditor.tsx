@@ -13,6 +13,8 @@ import { ImFontSize } from "react-icons/im";
 import { FormTextNode } from './tipTapCustomNode/FormTextNode'
 import { FormMenuNode } from './tipTapCustomNode/FormMenuNode'
 import { FormMenuClickHandler, FormMenuData } from '@/types/prompt'
+import { FormCalcNode } from './tipTapCustomNode/FormCalcNode';
+
 interface TipTapEditorProps {
   value: string;
   isRequired?: boolean;
@@ -70,6 +72,7 @@ const TipTapEditor = ({
           onFormMenuNodeClick?.(params)
         },
       }),
+      FormCalcNode,
     ],
   });
 

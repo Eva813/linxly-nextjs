@@ -6,8 +6,8 @@ const typeToRenderer: Record<
   string,
   (attrs: Record<string, string>, key: string) => React.ReactNode
 > = {
-  formtext: renderFormText,
-  formmenu: renderFormMenu,
+  formtext: (attrs, key) => renderFormText({ attrs, key }),
+  formmenu: (attrs, key) => renderFormMenu({ attrs, key }),
 };
 
 type PromptAttribute = {

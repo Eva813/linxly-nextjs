@@ -48,7 +48,7 @@ export function renderFormCalc({
     return (
       <span 
         key={key} 
-        className='bg-blue-50 border border-blue-200 px-2 py-1 rounded text-sm inline-block text-blue-800'
+        className='bg-light px-2 py-1 text-sm rounded inline-block text-blue-800'
         title={`Referenced field: ${name}`}
       >
         {displayVal}
@@ -59,7 +59,7 @@ export function renderFormCalc({
   return (
     <span 
       key={key} 
-      className='bg-light border border-gray-300 px-2 py-1 rounded text-sm inline-block text-gray-600'
+      className='bg-ligh px-2 py-1  text-sm inline-block text-gray-600'
       title={`Calculation field: ${name}`}
     >
       {defaultValue || `[${name}]`}

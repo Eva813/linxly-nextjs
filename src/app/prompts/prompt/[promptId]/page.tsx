@@ -22,6 +22,7 @@ import TryItOutPopup from './tryItOutPopup';
 import ShortcutErrorAlert  from "@/app/prompts/components/shortcutErrorAlert";
 import { useLoadingStore } from '@/stores/loading';
 import { useCurrentPrompt } from '@/lib/useCurrentPrompt';
+import { Folder } from '@/types/prompt';
 
 interface PromptDataMapping {
   formtext: IBuiltFormData<typeof formTextSpec>;
@@ -242,21 +243,47 @@ const PromptPage = ({ params }: PromptPageProps) => {
     // setDropdownEditInfo(null);
   };
 
+
+  const isConflictingShortcut = (
+    newShortcut: string,
+    promptId: string,
+    folders: Folder[]
+  ): { conflict: boolean; shortcut?: string } => {
+    const allOtherShortcuts = folders
+      .flatMap(folder => folder.prompts)
+      .filter(p => p.id !== promptId);
+
+    for (const prompt of allOtherShortcuts) {
+      if (newShortcut === prompt.shortcut) {
+        return { conflict: true, shortcut: prompt.shortcut };
+      }
+
+      if (
+        newShortcut.length > 0 &&
+        prompt.shortcut.length > 0 &&
+        (prompt.shortcut.startsWith(newShortcut) || newShortcut.startsWith(prompt.shortcut))
+      ) {
+        return { conflict: true, shortcut: prompt.shortcut };
+      }
+    }
+
+    return { conflict: false };
+  };
+
   const handleShortcutChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newShortcut = e.target.value;
+    const newShortcut = e.target.value.trim();
     setShortcut(newShortcut);
-    const conflictingPrompt = folders
-      .flatMap((folder) => folder.prompts)
-      .filter((s) => s.id !== promptId)
-      .find(
-        (s) =>
-          shortcut === s.shortcut ||
-          (shortcut.length > 1 &&
-            (shortcut.startsWith(s.shortcut) || s.shortcut.startsWith(shortcut)))
-      );
-    if (conflictingPrompt) {
+
+    if (!newShortcut) {
+      setShortcutError(null);
+      return;
+    }
+
+    const { conflict, shortcut } = isConflictingShortcut(newShortcut, promptId, folders);
+
+    if (conflict && shortcut) {
       setShortcutError({
-        conflictingShortcut: conflictingPrompt.shortcut,
+        conflictingShortcut: shortcut,
         message: "Please choose a unique shortcut."
       });
     } else {

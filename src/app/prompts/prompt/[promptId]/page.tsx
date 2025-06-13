@@ -23,6 +23,7 @@ import ShortcutErrorAlert  from "@/app/prompts/components/shortcutErrorAlert";
 import { useLoadingStore } from '@/stores/loading';
 import { useCurrentPrompt } from '@/lib/useCurrentPrompt';
 import { Folder } from '@/types/prompt';
+import { deepEqual } from '@/lib/utils/deepEqual';
 
 interface PromptDataMapping {
   formtext: IBuiltFormData<typeof formTextSpec>;
@@ -61,6 +62,14 @@ const PromptPage = ({ params }: PromptPageProps) => {
   const [shortcutError, setShortcutError] = useState<ShortcutError | null>(null);
   const [isPopupVisible, setIsPopupVisible] = useState(false);
   const tryItOutButtonRef = useRef<HTMLButtonElement>(null);
+  
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  // 儲存初始值用於比較
+  const [initialValues, setInitialValues] = useState({
+    name: "",
+    shortcut: "",
+    content: ""
+  });
 
   const { setLoading } = useLoadingStore();
 
@@ -115,8 +124,29 @@ const PromptPage = ({ params }: PromptPageProps) => {
       setName(currentPrompt.name);
       setShortcut(currentPrompt.shortcut);
       setContent(currentPrompt.content);
+      
+      setInitialValues({
+        name: currentPrompt.name,
+        shortcut: currentPrompt.shortcut,
+        content: currentPrompt.content
+      });
+      
+      setHasUnsavedChanges(false);
     }
   }, [currentPrompt]);
+
+  // 檢查是否有未儲存的變更
+  useEffect(() => {
+    const currentValues = {
+      name,
+      shortcut,
+      content
+    };
+    
+    const hasChanges = !deepEqual(currentValues, initialValues);
+    
+    setHasUnsavedChanges(hasChanges);
+  }, [name, shortcut, content, initialValues]);
 
 
 
@@ -137,6 +167,14 @@ const PromptPage = ({ params }: PromptPageProps) => {
           updatePrompt(promptId, updatedPrompt),
           new Promise(resolve => setTimeout(resolve, 300)),
         ]);
+        
+        // 儲存成功後更新初始值
+        setInitialValues({
+          name,
+          shortcut,
+          content
+        });
+        setHasUnsavedChanges(false);
       } catch (error) {
         console.error("儲存時發生錯誤:", error);
       } finally {
@@ -358,7 +396,9 @@ const PromptPage = ({ params }: PromptPageProps) => {
           .run();
       });
     }
-    setContent(editor.getHTML());
+    // 更新內容並觸發變更檢測
+    const newContent = editor.getHTML();
+    setContent(newContent);
   };
 
   return (
@@ -423,7 +463,13 @@ const PromptPage = ({ params }: PromptPageProps) => {
               onFormMenuNodeClick={handleFormMenuNodeClick}
               onEditorClick={handleEditorClick}
             />
-            <Button className="w-20" onClick={handleSave}>Save</Button>
+            <Button 
+              className="w-20" 
+              onClick={handleSave}
+              disabled={!hasUnsavedChanges}
+            >
+              Save
+            </Button>
           </section>
 
             {/* 桌面版側邊欄 */}

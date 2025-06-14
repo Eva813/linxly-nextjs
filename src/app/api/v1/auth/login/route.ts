@@ -1,8 +1,7 @@
 import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { sign } from "jsonwebtoken";
-import { connectToDatabase } from "@/lib/mongodb";
-
+import { adminDb } from "@/lib/firebaseAdmin";
 
 export async function POST(req: Request) {
   // 1) 解析並驗證必要欄位
@@ -22,26 +21,40 @@ export async function POST(req: Request) {
   }
 
   try {
-    const { db } = await connectToDatabase();
-    // 4) 查找使用者
-    const user = await db.collection("users").findOne({ email });
-    if (!user) {
+    // 3) 查找使用者
+    const userSnapshot = await adminDb
+      .collection("users")
+      .where("email", "==", email)
+      .limit(1)
+      .get();
+
+    if (userSnapshot.empty) {
       return NextResponse.json(
         { message: "user not found" },
         { status: 404 }
       );
     }
-    // 5) 取得 credentials provider
-    const authProvider = await db
+
+    const user = userSnapshot.docs[0].data();
+
+    // 4) 取得 credentials provider
+    const authProviderSnapshot = await adminDb
       .collection("authProviders")
-      .findOne({ userId: user._id, type: "credentials" });
-    if (!authProvider || !authProvider.passwordHash) {
+      .where("userId", "==", user.id)
+      .where("type", "==", "credentials")
+      .limit(1)
+      .get();
+
+    if (authProviderSnapshot.empty) {
       return NextResponse.json(
         { message: "invalid credentials" },
         { status: 401 }
       );
     }
-    // 6) 比對密碼
+
+    const authProvider = authProviderSnapshot.docs[0].data();
+
+    // 5) 比對密碼
     const valid = await bcrypt.compare(password, authProvider.passwordHash);
     if (!valid) {
       return NextResponse.json(
@@ -49,15 +62,17 @@ export async function POST(req: Request) {
         { status: 401 }
       );
     }
-    // 7) 簽發 JWT
+
+    // 6) 簽發 JWT
     const jwtToken = sign(
-      { sub: user._id.toString(), email: user.email },
+      { sub: user.id, email: user.email },
       process.env.NEXTAUTH_SECRET as string,
       { expiresIn: "7d" }
     );
+
     console.log("登入參數：", { email, password });
     return NextResponse.json(
-      { id: user._id.toString(), email: user.email, token: jwtToken },
+      { id: user.id, email: user.email, token: jwtToken },
       { status: 200 }
     );
   } catch (err: unknown) {

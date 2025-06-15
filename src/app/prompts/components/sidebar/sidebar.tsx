@@ -123,8 +123,8 @@ const Sidebar = () => {
   };
 
   return (
-    <div className="p-4 border-r border-gray-300 h-full overflow-y-auto">
-      <div className="grid grid-cols-2 gap-x-4 mb-4">
+    <div className="p-4 border-r border-gray-300 h-full flex flex-col">
+      <div className="grid grid-cols-2 gap-x-4 mb-4 sticky top-0 bg-white dark:bg-gray-900 z-10">
         <Button
           className="h-8 dark:text-third"
           onClick={handleAddFolder}
@@ -141,7 +141,7 @@ const Sidebar = () => {
           Add Prompt
         </Button>
       </div>
-      <div className="flex-1">
+      <div className="flex-1 overflow-y-auto">
         {error && (
           <div className="mb-4 p-2 bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200 rounded text-sm">
             {error}

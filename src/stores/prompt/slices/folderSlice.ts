@@ -27,28 +27,19 @@ export const createFolderSlice: StateCreator<FolderSlice> = (set, get) => ({
   folders: [],
   isLoading: false,
   error: null,
-  // 從 API 取得資料夾，如果沒有資料則使用預設
+  // 從 API 取得資料夾，如果沒有資料則建立預設資料夾
   fetchFolders: async () => {
     try {
       set({ isLoading: true, error: null });
       const folders = await getFolders();
-      
-      // 檢查是否有資料，如果沒有則使用預設資料
-      if (folders.length === 0) {
-        // set({ folders: DEFAULT_FOLDERS, isLoading: false });
-        
-        // 順序可能要考慮：先設定狀態，再非同步建立到 DB
-        // 若要同步到 DB，可以在這裡遍歷 DEFAULT_FOLDERS 並依序建立到 DB
-          for (const folder of DEFAULT_FOLDERS) {
-            await createFolder({
-              name: folder.name,
-              description: folder.description,
-            });
-          }
 
-          // 再次從資料庫取得資料夾
-          const updatedFolders = await getFolders();
-          set({ folders: updatedFolders, isLoading: false });
+      if (folders.length === 0) {
+        const defaultFolder = DEFAULT_FOLDERS[0];
+        const newFolder = await createFolder({
+          name: defaultFolder.name,
+          description: defaultFolder.description,
+        });
+        set({ folders: [newFolder], isLoading: false });
       } else {
         set({ folders, isLoading: false });
       }
@@ -56,10 +47,19 @@ export const createFolderSlice: StateCreator<FolderSlice> = (set, get) => ({
       const err = error as { status?: number };
       const msg = error instanceof Error ? error.message : 'unknown error';
 
-      console.error('取得資料夾失敗:', msg);
-      if (err.status === 401) throw error;
+      console.error('get folder Error:', {
+        error,
+        message: msg,
+        status: err.status
+      });
+
+      if (err.status === 401) {
+        set({ isLoading: false });
+        throw error;
+      }
+
       set({
-        error: msg,
+        error: `Can not load folders: ${msg}`,
         folders: DEFAULT_FOLDERS,
         isLoading: false,
       });
@@ -86,22 +86,22 @@ export const createFolderSlice: StateCreator<FolderSlice> = (set, get) => ({
   },
   addFolder: async (folder) => {
     try {
-      // 呼叫 API 建立資料夾
       const newFolder = await createFolder({
         name: folder.name,
         description: folder.description
       });
-      
-      // 更新狀態
+
+      // 樂觀更新：先更新 UI，確保使用者體驗
       set((state) => ({
         folders: [...state.folders, newFolder],
       }));
-      
+
       return newFolder;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'unknown error';
-      set({ error: `add folder error: ${errorMessage}` });
-      console.error('add folder error:', error);
+      console.error('新增資料夾失敗:', { error, message: errorMessage });
+
+      set({ error: `無法新增資料夾: ${errorMessage}` });
       throw error;
     }
   },

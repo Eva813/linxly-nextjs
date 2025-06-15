@@ -11,6 +11,7 @@ export interface Folder {
   name: string;
   description: string;
   prompts: Prompt[];
+  createdAt?: string;
 }
 
 export interface MatchedPrompt {
@@ -46,7 +47,6 @@ export interface PromptItemProps {
   pathname: string;
 }
 
-
 export interface FormMenuData {
   pos: number;
   name: string;
@@ -56,8 +56,6 @@ export interface FormMenuData {
 }
 
 export type FormMenuClickHandler = (data: FormMenuData) => void;
-
-
 
 export interface InputInfo {
   pos: number;

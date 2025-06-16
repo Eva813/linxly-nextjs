@@ -2,10 +2,6 @@ import { StateCreator } from 'zustand';
 import { SidebarLoadingSlice } from './loadingSlice';
 import { SidebarActionsSlice } from './actionsSlice';
 
-/**
- * 側邊欄 UI 狀態 Slice
- * 管理選單展開/折疊、活躍項目等 UI 相關狀態
- */
 export interface SidebarUISlice {
   activeFolderMenuId: string | null;
   activePromptMenuId: string | null;

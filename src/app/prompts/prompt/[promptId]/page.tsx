@@ -122,12 +122,12 @@ const PromptPage = ({ params }: PromptPageProps) => {
   useEffect(() => {
     if (currentPrompt) {
       setName(currentPrompt.name);
-      setShortcut(currentPrompt.shortcut);
+      setShortcut(currentPrompt.shortcut || "");
       setContent(currentPrompt.content);
       
       setInitialValues({
         name: currentPrompt.name,
-        shortcut: currentPrompt.shortcut,
+        shortcut: currentPrompt.shortcut || "",
         content: currentPrompt.content
       });
       

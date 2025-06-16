@@ -8,7 +8,7 @@ export interface SidebarActionsSlice {
 
 export const createSidebarActionsSlice: StateCreator<
   SidebarUISlice & SidebarLoadingSlice & SidebarActionsSlice,
-  [],
+  [["zustand/devtools", never]],
   [],
   SidebarActionsSlice
 > = (set) => ({

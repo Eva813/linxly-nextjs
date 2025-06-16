@@ -19,7 +19,7 @@ export interface SidebarLoadingSlice {
 
 export const createSidebarLoadingSlice: StateCreator<
   SidebarLoadingSlice,
-  [],
+  [["zustand/devtools", never]],
   [],
   SidebarLoadingSlice
 > = (set) => ({

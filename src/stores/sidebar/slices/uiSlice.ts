@@ -15,7 +15,7 @@ export interface SidebarUISlice {
 
 export const createSidebarUISlice: StateCreator<
   SidebarUISlice & SidebarLoadingSlice & SidebarActionsSlice,
-  [],
+  [["zustand/devtools", never]],
   [],
   SidebarUISlice
 > = (set, get) => ({

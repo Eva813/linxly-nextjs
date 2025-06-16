@@ -1,7 +1,7 @@
 import { Handle, Position, useUpdateNodeInternals, useStore, useReactFlow } from '@xyflow/react';
 import { useState, useEffect, useRef, useCallback, memo } from 'react';
 import { MdSend } from "react-icons/md";
-import TextContentDialog from './UI/textContentDialog'; // 引入 CustomDialog 組件
+import TextContentDialog from './ui/textContentDialog';
 import ReactMarkdown from 'react-markdown';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { usePromptInsertion } from '@/lib/usePromptInsertion'

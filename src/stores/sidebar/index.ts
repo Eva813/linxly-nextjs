@@ -37,10 +37,13 @@ export const useSidebarStore = create<SidebarStore>()(
           }),
           merge: (persistedState, currentState) => {
             // 合併持久化狀態並將 Array 轉回 Set
-            const persisted = persistedState as Partial<Pick<SidebarStore, 'collapsedFolderIds'>>;
+            const persisted = persistedState as Partial<Pick<SidebarStore, 'collapsedFolderIds'>> | null;
+            if (!persisted || typeof persisted !== 'object') {
+              return currentState;
+            }
+            
             return {
               ...currentState,
-              ...persistedState,
               collapsedFolderIds: new Set(
                 Array.isArray(persisted.collapsedFolderIds) ? persisted.collapsedFolderIds : []
               ),

@@ -1,12 +1,6 @@
 import { useCallback } from 'react';
 import { useRouter, useParams, usePathname } from 'next/navigation';
 
-interface SidebarRouteParams {
-  [key: string]: string | string[] | undefined;
-  folderId?: string;
-  promptId?: string;
-}
-
 /**
  * 側邊欄導航相關的 Hook
  * 
@@ -17,7 +11,7 @@ interface SidebarRouteParams {
 export const useSidebarNavigation = () => {
   const router = useRouter();
   const pathname = usePathname() ?? '';
-  const params = useParams<SidebarRouteParams>() || {};
+  const params = useParams() || {};
 
   const navigateToPath = useCallback((path: string) => {
     router.push(path);
@@ -36,17 +30,17 @@ export const useSidebarNavigation = () => {
   }, [router]);
 
   const isCurrentFolder = useCallback((folderId: string) => {
-    return params.folderId === folderId;
+    return (params.folderId as string) === folderId;
   }, [params.folderId]);
 
   const isCurrentPrompt = useCallback((promptId: string) => {
-    return params.promptId === promptId;
+    return (params.promptId as string) === promptId;
   }, [params.promptId]);
 
   return {
     pathname,
-    currentFolderId: params.folderId || null,
-    currentPromptId: params.promptId || null,
+    currentFolderId: (params.folderId as string) || null,
+    currentPromptId: (params.promptId as string) || null,
     navigateToPath,
     navigateToFolder,
     navigateToPrompt,

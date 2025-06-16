@@ -122,12 +122,12 @@ const PromptPage = ({ params }: PromptPageProps) => {
   useEffect(() => {
     if (currentPrompt) {
       setName(currentPrompt.name);
-      setShortcut(currentPrompt.shortcut);
+      setShortcut(currentPrompt.shortcut || "");
       setContent(currentPrompt.content);
       
       setInitialValues({
         name: currentPrompt.name,
-        shortcut: currentPrompt.shortcut,
+        shortcut: currentPrompt.shortcut || "",
         content: currentPrompt.content
       });
       
@@ -292,16 +292,18 @@ const PromptPage = ({ params }: PromptPageProps) => {
       .filter(p => p.id !== promptId);
 
     for (const prompt of allOtherShortcuts) {
-      if (newShortcut === prompt.shortcut) {
-        return { conflict: true, shortcut: prompt.shortcut };
+      const existingShortcut = prompt.shortcut ?? "";
+      // 完全相符
+      if (newShortcut === existingShortcut) {
+        return { conflict: true, shortcut: existingShortcut };
       }
-
+      // 部分重疊 (prefix)
       if (
         newShortcut.length > 0 &&
-        prompt.shortcut.length > 0 &&
-        (prompt.shortcut.startsWith(newShortcut) || newShortcut.startsWith(prompt.shortcut))
+        existingShortcut.length > 0 &&
+        (existingShortcut.startsWith(newShortcut) || newShortcut.startsWith(existingShortcut))
       ) {
-        return { conflict: true, shortcut: prompt.shortcut };
+        return { conflict: true, shortcut: existingShortcut };
       }
     }
 

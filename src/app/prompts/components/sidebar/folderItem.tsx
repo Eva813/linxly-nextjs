@@ -18,19 +18,23 @@ import {
 } from "lucide-react"
 
 import { SidebarContext } from '@/providers/clientRootProvider';
+import { useSidebarStore } from "@/stores/sidebar";
+import { useSidebarActions } from "@/hooks/sidebar";
+
 const FolderItem: React.FC<FolderItemProps> = ({
   folder,
-  activeFolderMenu,
-  setActiveFolderMenu,
-  collapsedFolders,
-  toggleCollapse,
-  deleteFolder,
-  pathname,
   children,
 }) => {
-  const isActiveFolder = pathname === `/prompts/folder/${folder.id}`;
-  const isCollapsed = collapsedFolders.has(folder.id);
   const { isOpen, toggleSidebar } = useContext(SidebarContext);
+  const { 
+    activeFolderMenuId, 
+    setActiveFolderMenu, 
+    collapsedFolderIds, 
+    toggleFolderCollapse 
+  } = useSidebarStore();
+  const { navigation, handleDeleteFolder } = useSidebarActions();
+  const isActiveFolder = navigation.pathname === `/prompts/folder/${folder.id}`;
+  const isCollapsed = collapsedFolderIds.has(folder.id);
 
   return (
     <li className="mb-2">
@@ -50,7 +54,7 @@ const FolderItem: React.FC<FolderItemProps> = ({
             onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
-              toggleCollapse(folder.id);
+              toggleFolderCollapse(folder.id);
             }}
             className="focus:outline-none p-1 hover:bg-gray-light dark:hover:bg-light rounded"
           >
@@ -76,7 +80,7 @@ const FolderItem: React.FC<FolderItemProps> = ({
                   e.preventDefault();
                   e.stopPropagation();
                   setActiveFolderMenu(
-                    activeFolderMenu === folder.id ? null : folder.id
+                    activeFolderMenuId === folder.id ? null : folder.id
                   );
                 }}
                 className="focus:outline-none hover:bg-gray-200 dark:hover:bg-light p-1 rounded"
@@ -84,11 +88,11 @@ const FolderItem: React.FC<FolderItemProps> = ({
                 <BsThreeDotsVertical className="text-gray-400" />
               </button>
             </DropdownMenuTrigger>
-            {activeFolderMenu === folder.id && (
+            {activeFolderMenuId === folder.id && (
               <DropdownMenuContent>
                 <DropdownMenuItem className="dark:hover:bg-light">
                   <button
-                    onClick={() => deleteFolder(folder.id)}
+                    onClick={() => handleDeleteFolder(folder.id)}
                     className="w-full text-left"
                   >
                     Delete

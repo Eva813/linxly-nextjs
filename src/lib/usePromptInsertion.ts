@@ -20,8 +20,9 @@ export const usePromptInsertion = ({ inputRef, onInsert }: UsePromptInsertionPro
       const map = new Map<string, Prompt>();
       folders.forEach(folder => {
         folder.prompts.forEach(prompt => {
-          // 你可以根據需求過濾或加工，例如只處理以 "/" 開頭的 shortcut
-          map.set(prompt.shortcut, prompt);
+          if (prompt.shortcut) {
+            map.set(prompt.shortcut, prompt);
+          }
         });
       });
       return map;
@@ -35,13 +36,13 @@ export const usePromptInsertion = ({ inputRef, onInsert }: UsePromptInsertionPro
     const textBeforeCursor = target.value.substring(0, cursorPosition);
 
     // 找出符合條件的 prompt (以 shortcut 為依據)
-    let longestMatch: Prompt | null = null;
+    let longestMatch: { prompt: Prompt; shortcut: string } | null = null;
     for (const [shortcut, prompt] of promptMap.entries()) {
       if (textBeforeCursor.endsWith(shortcut)) {
         if (!longestMatch || shortcut.length > longestMatch.shortcut.length) {
           longestMatch = {
-            ...prompt,
-            shortcut, // 保證 shortcut 也被傳遞
+            prompt,
+            shortcut,
           };
         }
       }
@@ -49,12 +50,12 @@ export const usePromptInsertion = ({ inputRef, onInsert }: UsePromptInsertionPro
 
     if (longestMatch) {
       // 檢查內容中是否包含表單欄位
-      const hasFormFields = longestMatch.content.includes('data-type="formtext"');
+      const hasFormFields = longestMatch.prompt.content.includes('data-type="formtext"');
 
       if (hasFormFields) {
         // 若有表單欄位，顯示對話框
         setMatchedPrompt({
-          content: longestMatch.content,
+          content: longestMatch.prompt.content,
           targetElement: target,
           insert: false,
           shortcut: longestMatch.shortcut,
@@ -63,7 +64,7 @@ export const usePromptInsertion = ({ inputRef, onInsert }: UsePromptInsertionPro
       } else {
         // 若沒有表單欄位，直接標記插入
         setMatchedPrompt({
-          content: longestMatch.content,
+          content: longestMatch.prompt.content,
           targetElement: target,
           insert: true,
           shortcut: longestMatch.shortcut,

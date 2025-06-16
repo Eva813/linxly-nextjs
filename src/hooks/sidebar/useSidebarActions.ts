@@ -6,7 +6,7 @@ import { useSidebarNavigation } from './useSidebarNavigation';
 const DEFAULT_FOLDER_DATA = {
   name: 'New Folder',
   description: '',
-  prompts: [],
+  prompts: [] as Prompt[],
 } as const;
 
 const DEFAULT_PROMPT_DATA = {

@@ -3,7 +3,7 @@ export interface Prompt {
   id: string;
   name: string;
   content: string;
-  shortcut: string;
+  shortcut?: string;
 }
 
 export interface Folder {

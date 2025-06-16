@@ -2,6 +2,7 @@ import { useCallback } from 'react';
 import { useSidebarStore } from '@/stores/sidebar';
 import { usePromptStore } from '@/stores/prompt';
 import { useSidebarNavigation } from './useSidebarNavigation';
+import { Prompt } from '@/types/prompt';
 
 const DEFAULT_FOLDER_DATA = {
   name: 'New Folder',

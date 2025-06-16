@@ -3,7 +3,7 @@
 import React from "react";
 import dynamic from "next/dynamic";
 import { usePromptStore } from "@/stores/prompt";
-import { useSidebarStore } from "@/stores/sidebar/sidebarStore";
+import { useSidebarStore } from "@/stores/sidebar";
 import PromptList from "./promptList";
 import LoadingSkeleton from "./components/loadingSkeleton";
 
@@ -14,7 +14,7 @@ const FolderItem = dynamic(() => import("./folderItem"), {
 
 const FolderList: React.FC = () => {
   const { folders } = usePromptStore();
-  const { addingFolder } = useSidebarStore();
+  const { isCreatingFolder } = useSidebarStore();
 
   return (
     <ul className="dark:text-gray-200">
@@ -23,7 +23,7 @@ const FolderList: React.FC = () => {
           <PromptList folder={folder} />
         </FolderItem>
       ))}
-      {addingFolder && <LoadingSkeleton variant="folder" />}
+      {isCreatingFolder && <LoadingSkeleton variant="folder" />}
     </ul>
   );
 };

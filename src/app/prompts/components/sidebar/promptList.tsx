@@ -3,7 +3,7 @@
 import React from "react";
 import dynamic from "next/dynamic";
 import { Folder } from "@/types/prompt";
-import { useSidebarStore } from "@/stores/sidebar/sidebarStore";
+import { useSidebarStore } from "@/stores/sidebar";
 import LoadingSkeleton from "./components/loadingSkeleton";
 
 const PromptItem = dynamic(() => import("./promptItem"), {
@@ -17,24 +17,24 @@ interface PromptListProps {
 
 const PromptList: React.FC<PromptListProps> = ({ folder }) => {
   const { 
-    addingPrompt, 
-    addingPromptFolderId, 
-    addingPromptAfterPromptId 
+    isCreatingPrompt, 
+    targetFolderIdForPrompt, 
+    insertAfterPromptId 
   } = useSidebarStore();
 
   const shouldShowLoadingAfterPrompt = (promptId: string): boolean => {
     return (
-      addingPrompt &&
-      addingPromptFolderId === folder.id &&
-      addingPromptAfterPromptId === promptId
+      isCreatingPrompt &&
+      targetFolderIdForPrompt === folder.id &&
+      insertAfterPromptId === promptId
     );
   };
 
   const shouldShowLoadingAtEnd = (): boolean => {
     return (
-      addingPrompt &&
-      addingPromptFolderId === folder.id &&
-      addingPromptAfterPromptId === null
+      isCreatingPrompt &&
+      targetFolderIdForPrompt === folder.id &&
+      insertAfterPromptId === null
     );
   };
 

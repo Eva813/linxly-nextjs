@@ -11,18 +11,18 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { PromptItemProps } from "@/types/prompt";
-import { useSidebarStore } from "@/stores/sidebar/sidebarStore";
-import { useSidebarActions } from "@/stores/sidebar/useSidebarActions";
+import { useSidebarStore } from "@/stores/sidebar";
+import { useSidebarActions } from "@/hooks/sidebar";
 
 const PromptItem: React.FC<PromptItemProps> = React.memo(({
   prompt,
   folderId,
 }) => {
   const { isOpen, toggleSidebar } = useContext(SidebarContext);
-  const { activePromptMenu, setActivePromptMenu } = useSidebarStore();
-  const { pathname, handleDeletePrompt } = useSidebarActions();
+  const { activePromptMenuId, setActivePromptMenu } = useSidebarStore();
+  const { navigation, handleDeletePrompt } = useSidebarActions();
   
-  const isActivePrompt = pathname === `/prompts/prompt/${prompt.id}`;
+  const isActivePrompt = navigation.pathname === `/prompts/prompt/${prompt.id}`;
 
   return (
     <li className="mb-2">
@@ -51,7 +51,7 @@ const PromptItem: React.FC<PromptItemProps> = React.memo(({
                 e.preventDefault();
                 e.stopPropagation();
                 setActivePromptMenu(
-                  activePromptMenu === prompt.id ? null : prompt.id
+                  activePromptMenuId === prompt.id ? null : prompt.id
                 );
               }}
               className="focus:outline-none hover:bg-light dark:hover:bg-light p-1 rounded"
@@ -59,7 +59,7 @@ const PromptItem: React.FC<PromptItemProps> = React.memo(({
               <BsThreeDotsVertical className="text-gray-400" />
             </button>
           </DropdownMenuTrigger>
-          {activePromptMenu === prompt.id && (
+          {activePromptMenuId === prompt.id && (
             <DropdownMenuContent>
               <DropdownMenuItem className="dark:hover:bg-light">
                 <button

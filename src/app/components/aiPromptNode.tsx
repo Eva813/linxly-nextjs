@@ -1,7 +1,7 @@
 import { Handle, Position, useUpdateNodeInternals, useStore, useReactFlow } from '@xyflow/react';
 import { useState, useEffect, useRef, useCallback, memo } from 'react';
 import { MdSend } from "react-icons/md";
-// import TextContentDialog from '@/app/components/ui/textContentDialog';
+import TextContentDialog from './textContentDialog';
 import ReactMarkdown from 'react-markdown';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { usePromptInsertion } from '@/lib/usePromptInsertion'
@@ -31,7 +31,7 @@ const AIPromptNode = ({ data }: CustomNodeData)  => {
   const [loading, setLoading] = useState(false);
   const updateNodeInternals = useUpdateNodeInternals();
   const [handles, setHandles] = useState<{ id: string; label: string }[]>([]);
-  // const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [edgeCount, setEdgeCount] = useState(0);
   const systemPromptRef = useRef<HTMLTextAreaElement>(null);
   const userPromptRef = useRef<HTMLTextAreaElement>(null);
@@ -400,7 +400,7 @@ const AIPromptNode = ({ data }: CustomNodeData)  => {
         <ReactMarkdown>{result.length > 300 ? result.substring(0, 300) + '...' : result}</ReactMarkdown>
       </div>
       <Handle type="source" position={Position.Right} style={handleStyle} id="source" className="bg-[#555] dark:bg-white" />
-      {/* <TextContentDialog message={result} isOpen={isDialogOpen} onClose={() => setIsDialogOpen(false)} /> */}
+      <TextContentDialog message={result} isOpen={isDialogOpen} onClose={() => setIsDialogOpen(false)} />
     </div>
   );
 }

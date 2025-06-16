@@ -2,6 +2,7 @@ import { useCallback } from 'react';
 import { useRouter, useParams, usePathname } from 'next/navigation';
 
 interface SidebarRouteParams {
+  [key: string]: string | undefined;
   folderId?: string;
   promptId?: string;
 }

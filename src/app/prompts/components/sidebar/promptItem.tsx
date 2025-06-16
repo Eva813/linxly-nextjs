@@ -11,17 +11,18 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { PromptItemProps } from "@/types/prompt";
+import { useSidebarStore } from "@/stores/sidebar/sidebarStore";
+import { useSidebarActions } from "@/stores/sidebar/useSidebarActions";
 
 const PromptItem: React.FC<PromptItemProps> = React.memo(({
   prompt,
   folderId,
-  activePromptMenu,
-  setActivePromptMenu,
-  deleteFile,
-  pathname,
 }) => {
-  const isActivePrompt = pathname === `/prompts/prompt/${prompt.id}`;
   const { isOpen, toggleSidebar } = useContext(SidebarContext);
+  const { activePromptMenu, setActivePromptMenu } = useSidebarStore();
+  const { pathname, handleDeletePrompt } = useSidebarActions();
+  
+  const isActivePrompt = pathname === `/prompts/prompt/${prompt.id}`;
 
   return (
     <li className="mb-2">
@@ -62,7 +63,7 @@ const PromptItem: React.FC<PromptItemProps> = React.memo(({
             <DropdownMenuContent>
               <DropdownMenuItem className="dark:hover:bg-light">
                 <button
-                  onClick={() => deleteFile(folderId, prompt.id)}
+                  onClick={() => handleDeletePrompt(folderId, prompt.id)}
                   className="w-full text-left"
                 >
                   Delete

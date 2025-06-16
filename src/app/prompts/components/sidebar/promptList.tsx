@@ -2,7 +2,8 @@
 
 import React from "react";
 import dynamic from "next/dynamic";
-import { Prompt, Folder } from "@/types/prompt";
+import { Folder } from "@/types/prompt";
+import { useSidebarStore } from "@/stores/sidebar/sidebarStore";
 import LoadingSkeleton from "./components/loadingSkeleton";
 
 const PromptItem = dynamic(() => import("./promptItem"), {
@@ -12,38 +13,28 @@ const PromptItem = dynamic(() => import("./promptItem"), {
 
 interface PromptListProps {
   folder: Folder;
-  activePromptMenu: string | null;
-  setActivePromptMenu: (id: string | null) => void;
-  deletePrompt: (folderId: string, promptId: string) => void;
-  pathname: string;
-  isAddingPrompt: boolean;
-  targetFolderId: string | null;
-  targetPromptId: string | null;
 }
 
-const PromptList: React.FC<PromptListProps> = ({
-  folder,
-  activePromptMenu,
-  setActivePromptMenu,
-  deletePrompt,
-  pathname,
-  isAddingPrompt,
-  targetFolderId,
-  targetPromptId,
-}) => {
+const PromptList: React.FC<PromptListProps> = ({ folder }) => {
+  const { 
+    addingPrompt, 
+    addingPromptFolderId, 
+    addingPromptAfterPromptId 
+  } = useSidebarStore();
+
   const shouldShowLoadingAfterPrompt = (promptId: string): boolean => {
     return (
-      isAddingPrompt &&
-      targetFolderId === folder.id &&
-      targetPromptId === promptId
+      addingPrompt &&
+      addingPromptFolderId === folder.id &&
+      addingPromptAfterPromptId === promptId
     );
   };
 
   const shouldShowLoadingAtEnd = (): boolean => {
     return (
-      isAddingPrompt &&
-      targetFolderId === folder.id &&
-      targetPromptId === null
+      addingPrompt &&
+      addingPromptFolderId === folder.id &&
+      addingPromptAfterPromptId === null
     );
   };
 
@@ -63,10 +54,6 @@ const PromptList: React.FC<PromptListProps> = ({
           <PromptItem
             prompt={prompt}
             folderId={folder.id}
-            activePromptMenu={activePromptMenu}
-            setActivePromptMenu={setActivePromptMenu}
-            deleteFile={deletePrompt}
-            pathname={pathname}
           />
           {shouldShowLoadingAfterPrompt(prompt.id) && (
             <LoadingSkeleton variant="prompt" />

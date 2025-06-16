@@ -18,19 +18,23 @@ import {
 } from "lucide-react"
 
 import { SidebarContext } from '@/providers/clientRootProvider';
+import { useSidebarStore } from "@/stores/sidebar/sidebarStore";
+import { useSidebarActions } from "@/stores/sidebar/useSidebarActions";
+
 const FolderItem: React.FC<FolderItemProps> = ({
   folder,
-  activeFolderMenu,
-  setActiveFolderMenu,
-  collapsedFolders,
-  toggleCollapse,
-  deleteFolder,
-  pathname,
   children,
 }) => {
+  const { isOpen, toggleSidebar } = useContext(SidebarContext);
+  const { 
+    activeFolderMenu, 
+    setActiveFolderMenu, 
+    collapsedFolders, 
+    toggleCollapse 
+  } = useSidebarStore();
+  const { pathname, handleDeleteFolder } = useSidebarActions();
   const isActiveFolder = pathname === `/prompts/folder/${folder.id}`;
   const isCollapsed = collapsedFolders.has(folder.id);
-  const { isOpen, toggleSidebar } = useContext(SidebarContext);
 
   return (
     <li className="mb-2">
@@ -88,7 +92,7 @@ const FolderItem: React.FC<FolderItemProps> = ({
               <DropdownMenuContent>
                 <DropdownMenuItem className="dark:hover:bg-light">
                   <button
-                    onClick={() => deleteFolder(folder.id)}
+                    onClick={() => handleDeleteFolder(folder.id)}
                     className="w-full text-left"
                   >
                     Delete

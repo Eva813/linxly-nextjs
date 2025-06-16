@@ -49,6 +49,9 @@ const Sidebar = () => {
   const [collapsedFolders, setCollapsedFolders] = useState<Set<string>>(new Set());
   const [activePromptMenu, setActivePromptMenu] = useState<string | null>(null);
   const [addingFolder, setAddingFolder] = useState(false);
+  const [addingPrompt, setAddingPrompt] = useState(false);
+  const [addingPromptFolderId, setAddingPromptFolderId] = useState<string | null>(null);
+  const [addingPromptAfterPromptId, setAddingPromptAfterPromptId] = useState<string | null>(null);
 
   const handleAddFolder = async () => {
     setAddingFolder(true);
@@ -69,10 +72,37 @@ const Sidebar = () => {
     }
   };
 
+  const determineTargetFolder = (): string | null => {
+    if (currentFolderId) {
+      return currentFolderId;
+    }
+
+    if (currentPromptId) {
+      const folderContainingPrompt = folders.find(folder =>
+        folder.prompts?.some(prompt => prompt.id === currentPromptId)
+      );
+      if (folderContainingPrompt) {
+        return folderContainingPrompt.id;
+      }
+    }
+
+    return folders.length > 0 ? folders[0].id : null;
+  };
+
 
   const handleAddPrompt = async () => {
     if (!folders || folders.length === 0) return;
-    const targetFolder = currentFolderId ?? folders[0].id;
+
+    const targetFolder = determineTargetFolder();
+    if (!targetFolder) {
+      console.error("No valid folder found to add the prompt.");
+      return;
+    }
+
+    setAddingPrompt(true);
+    setAddingPromptFolderId(targetFolder);
+    setAddingPromptAfterPromptId(currentPromptId || null);
+
     try {
       const defaultPrompt = {
         name: "New prompt",
@@ -83,6 +113,10 @@ const Sidebar = () => {
       router.push(`/prompts/prompt/${newPrompt.id}`);
     } catch (error) {
       console.error("新增 Prompt 失敗:", error);
+    } finally {
+      setAddingPrompt(false);
+      setAddingPromptFolderId(null);
+      setAddingPromptAfterPromptId(null);
     }
   };
 
@@ -136,8 +170,12 @@ const Sidebar = () => {
           }
           Add Folder
         </Button>
-        <Button className="h-8 dark:text-third" onClick={handleAddPrompt}>
-          <FaFileMedical />
+        <Button
+          className="h-8 dark:text-third"
+          onClick={handleAddPrompt}
+          disabled={addingPrompt}
+        >
+          {addingPrompt ? <FaSpinner className="animate-spin" /> : <FaFileMedical />}
           Add Prompt
         </Button>
       </div>
@@ -174,17 +212,32 @@ const Sidebar = () => {
                     </span>
                   ) : (
                     folder.prompts.map((prompt) => (
-                      <PromptItem
-                        key={prompt.id}
-                        prompt={prompt}
-                        folderId={folder.id}
-                        activePromptMenu={activePromptMenu}
-                        setActivePromptMenu={setActivePromptMenu}
-                        deleteFile={handleDeletePrompt}
-                        pathname={pathname}
-                      />
+                      <React.Fragment key={prompt.id}>
+                        <PromptItem
+                          prompt={prompt}
+                          folderId={folder.id}
+                          activePromptMenu={activePromptMenu}
+                          setActivePromptMenu={setActivePromptMenu}
+                          deleteFile={handleDeletePrompt}
+                          pathname={pathname}
+                        />
+                        {addingPrompt &&
+                          addingPromptFolderId === folder.id &&
+                          addingPromptAfterPromptId === prompt.id && (
+                            <li className="px-2 py-1">
+                              <Skeleton className="h-6 w-full rounded-md" />
+                            </li>
+                          )}
+                      </React.Fragment>
                     ))
                   )}
+                  {addingPrompt &&
+                    addingPromptFolderId === folder.id &&
+                    addingPromptAfterPromptId === null && (
+                      <li className="px-2 py-1">
+                        <Skeleton className="h-6 w-full rounded-md" />
+                      </li>
+                    )}
                 </ul>
               </FolderItem>
             ))}

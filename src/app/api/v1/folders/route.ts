@@ -10,7 +10,7 @@ export async function GET(req: Request) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 })
     }
 
-    let query = adminDb
+    const query = adminDb
       .collection('folders')
       .where('userId', '==', userId)
       .orderBy('createdAt', 'asc');

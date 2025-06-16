@@ -296,12 +296,13 @@ const PromptPage = ({ params }: PromptPageProps) => {
         return { conflict: true, shortcut: prompt.shortcut };
       }
 
+      const existingShortcut = prompt.shortcut ?? "";
       if (
         newShortcut.length > 0 &&
-        prompt.shortcut.length > 0 &&
-        (prompt.shortcut.startsWith(newShortcut) || newShortcut.startsWith(prompt.shortcut))
+        existingShortcut.length > 0 &&
+        (existingShortcut.startsWith(newShortcut) || newShortcut.startsWith(existingShortcut))
       ) {
-        return { conflict: true, shortcut: prompt.shortcut };
+        return { conflict: true, shortcut: existingShortcut };
       }
     }
 

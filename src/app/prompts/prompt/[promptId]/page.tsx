@@ -20,10 +20,11 @@ import EditViewButtons, { Mode } from "@/app/prompts/components/editViewButtons"
 import PreviewPrompt from "@/app/prompts/components/previewPrompt";
 import TryItOutPopup from './tryItOutPopup';
 import ShortcutErrorAlert  from "@/app/prompts/components/shortcutErrorAlert";
-import { useLoadingStore } from '@/stores/loading';
 import { useCurrentPrompt } from '@/lib/useCurrentPrompt';
 import { Folder } from '@/types/prompt';
 import { deepEqual } from '@/lib/utils/deepEqual';
+import { useAutoSave } from '@/hooks/useAutoSave';
+import SaveStatusIndicator from '@/components/ui/saveStatusIndicator';
 
 interface PromptDataMapping {
   formtext: IBuiltFormData<typeof formTextSpec>;
@@ -51,6 +52,66 @@ type UpdateHandler<T extends EditInfo> = {
   getNodeType: () => T["type"];
 };
 
+const originalDispatchMap = new WeakMap<EventTarget, (event: Event) => boolean>();
+
+// 防止 Chrome 擴充功能干擾的工具函式
+export const preventExtensionInterference = (
+  element: HTMLInputElement | HTMLTextAreaElement
+): (() => void) | void => {
+  if (!element) return;
+
+  const criticalEventTypes = new Set(['input', 'change', 'keydown', 'keyup', 'paste']);
+  const listenerOptions: AddEventListenerOptions = { capture: true, passive: false };
+
+  const blockExtensionEvents = (e: Event) => {
+    if (!criticalEventTypes.has(e.type)) return;
+
+    if (!e.isTrusted) {
+      e.preventDefault();
+      e.stopPropagation();
+      e.stopImmediatePropagation();
+      return false;
+    }
+
+    if (e.type === 'input') {
+      requestAnimationFrame(() => {
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+      });
+    }
+  };
+
+  for (const type of criticalEventTypes) {
+    element.addEventListener(type, blockExtensionEvents, listenerOptions);
+  }
+
+  // Patch dispatchEvent（僅一次）
+  if (!originalDispatchMap.has(element)) {
+    const originalDispatch = element.dispatchEvent.bind(element);
+    originalDispatchMap.set(element, originalDispatch);
+
+    element.dispatchEvent = function (event: Event): boolean {
+      if (!event.isTrusted && criticalEventTypes.has(event.type)) {
+        return false;
+      }
+      return originalDispatch(event);
+    };
+  }
+
+  // 回傳清理函式
+  return () => {
+    for (const type of criticalEventTypes) {
+      element.removeEventListener(type, blockExtensionEvents, listenerOptions);
+    }
+
+    const originalDispatch = originalDispatchMap.get(element);
+    if (originalDispatch) {
+      element.dispatchEvent = originalDispatch;
+      originalDispatchMap.delete(element);
+    }
+  };
+};
+
 const PromptPage = ({ params }: PromptPageProps) => {
   const { promptId } = params;
   const { folders, updatePrompt } = usePromptStore();
@@ -62,7 +123,10 @@ const PromptPage = ({ params }: PromptPageProps) => {
   const [shortcutError, setShortcutError] = useState<ShortcutError | null>(null);
   const [isPopupVisible, setIsPopupVisible] = useState(false);
   const tryItOutButtonRef = useRef<HTMLButtonElement>(null);
-  
+  const shortcutInputRef = useRef<HTMLInputElement>(null);
+  const nameInputRef = useRef<HTMLInputElement>(null);
+  const cleanupRef = useRef<(() => void) | null>(null);
+  const nameCleanupRef = useRef<(() => void) | null>(null);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   // 儲存初始值用於比較
   const [initialValues, setInitialValues] = useState({
@@ -71,7 +135,39 @@ const PromptPage = ({ params }: PromptPageProps) => {
     content: ""
   });
 
-  const { setLoading } = useLoadingStore();
+  // 自動儲存邏輯
+  const autoSaveHandler = useCallback(async () => {
+    if (!currentPrompt) return;
+
+    const updatedPrompt = {
+      ...currentPrompt,
+      name,
+      shortcut,
+      content,
+    };
+
+    try {
+      await updatePrompt(promptId, updatedPrompt);
+      
+      // 儲存成功後更新初始值
+      setInitialValues({
+        name,
+        shortcut,
+        content
+      });
+      setHasUnsavedChanges(false);
+    } catch (error) {
+      console.error("儲存時發生錯誤:", error);
+      throw error;
+    }
+  }, [currentPrompt, name, shortcut, content, promptId, updatePrompt]);
+
+  const { triggerAutoSave } = useAutoSave({
+    onSave: autoSaveHandler,
+    delay: 1000,
+    enabled: hasUnsavedChanges,
+    promptId
+  });
 
 
   // 透過 ref 持有 editor 實例
@@ -135,7 +231,7 @@ const PromptPage = ({ params }: PromptPageProps) => {
     }
   }, [currentPrompt]);
 
-  // 檢查是否有未儲存的變更
+  // 檢查是否有未儲存的變更並觸發自動儲存
   useEffect(() => {
     const currentValues = {
       name,
@@ -144,45 +240,121 @@ const PromptPage = ({ params }: PromptPageProps) => {
     };
     
     const hasChanges = !deepEqual(currentValues, initialValues);
+    console.log('檢查變更:', { currentValues, initialValues, hasChanges });
     
     setHasUnsavedChanges(hasChanges);
-  }, [name, shortcut, content, initialValues]);
-
-
-
-  const handleSave = async () => {
-    if (currentPrompt) {
-      setLoading(true); // 設定全域載入狀態
-
-      const updatedPrompt = {
-        ...currentPrompt,
-        name,
-        shortcut,
-        content,
-      };
-      console.log("Updating prompt:", updatedPrompt);
-
-      try {
-        await Promise.all([
-          updatePrompt(promptId, updatedPrompt),
-          new Promise(resolve => setTimeout(resolve, 300)),
-        ]);
-        
-        // 儲存成功後更新初始值
-        setInitialValues({
-          name,
-          shortcut,
-          content
-        });
-        setHasUnsavedChanges(false);
-      } catch (error) {
-        console.error("儲存時發生錯誤:", error);
-      } finally {
-        setLoading(false); 
-      }
+    
+    // 如果有變更，觸發自動儲存
+    if (hasChanges) {
+      console.log('觸發自動儲存');
+      triggerAutoSave();
     }
-  };
+  }, [name, shortcut, content, initialValues, triggerAutoSave]);
 
+  // 防護 shortcut input 免受擴充功能干擾
+  const blockDocumentInputHandler = useCallback((e: Event) => {
+    const shortcutInput = shortcutInputRef.current;
+    const target = e.target as HTMLElement;
+
+    if (!shortcutInput || !target) return;
+    if (target === shortcutInput) {
+      console.log('阻止 document 級 input 事件');
+      e.stopImmediatePropagation();
+      e.stopPropagation();
+      e.preventDefault();
+    }
+  }, []);
+
+  // 防護 name input 免受擴充功能干擾
+  const blockNameDocumentInputHandler = useCallback((e: Event) => {
+    const nameInput = nameInputRef.current;
+    const target = e.target as HTMLElement;
+
+    if (!nameInput || !target) return;
+    if (target === nameInput) {
+      console.log('阻止 name document 級 input 事件');
+      e.stopImmediatePropagation();
+      e.stopPropagation();
+      e.preventDefault();
+    }
+  }, []);
+
+  useEffect(() => {
+    const shortcutInput = shortcutInputRef.current;
+    if (!shortcutInput) return;
+
+    if (cleanupRef.current) {
+      cleanupRef.current();
+    }
+
+    // 核心防護邏輯：阻止偽造事件
+    const preventCleanup = preventExtensionInterference(shortcutInput);
+
+    // 統一的事件選項配置
+    const eventOptions = { 
+      capture: true, 
+      passive: false 
+    } as const;
+
+    // 條件式文件層級事件攔截
+    document.addEventListener('input', blockDocumentInputHandler, eventOptions);
+
+    // 建立清除函式
+    const cleanup = () => {
+      if (preventCleanup) preventCleanup();
+      document.removeEventListener('input', blockDocumentInputHandler, eventOptions);
+    };
+
+    cleanupRef.current = cleanup;
+
+    return cleanup;
+  }, [blockDocumentInputHandler]);
+
+  // 防護 name input 免受擴充功能干擾
+  useEffect(() => {
+    const nameInput = nameInputRef.current;
+    if (!nameInput) return;
+
+    if (nameCleanupRef.current) {
+      nameCleanupRef.current();
+    }
+
+    // 核心防護邏輯：阻止偽造事件
+    const preventCleanup = preventExtensionInterference(nameInput);
+
+    // 統一的事件選項配置
+    const eventOptions = { 
+      capture: true, 
+      passive: false 
+    } as const;
+
+    // 條件式文件層級事件攔截
+    document.addEventListener('input', blockNameDocumentInputHandler, eventOptions);
+
+    // 建立清除函式
+    const cleanup = () => {
+      if (preventCleanup) preventCleanup();
+      document.removeEventListener('input', blockNameDocumentInputHandler, eventOptions);
+    };
+
+    nameCleanupRef.current = cleanup;
+
+    return cleanup;
+  }, [blockNameDocumentInputHandler]);
+
+  // 組件卸載時確保清除
+  useEffect(() => {
+    return () => {
+      if (cleanupRef.current) {
+        cleanupRef.current();
+        cleanupRef.current = null;
+      }
+      if (nameCleanupRef.current) {
+        nameCleanupRef.current();
+        nameCleanupRef.current = null;
+      }
+    };
+  }, []);
 
   // 當用戶在編輯器裡點擊自訂 Node
   const handleFormTextNodeClick = ({
@@ -311,15 +483,34 @@ const PromptPage = ({ params }: PromptPageProps) => {
   };
 
   const handleShortcutChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newShortcut = e.target.value.trim();
+    console.log('handleShortcutChange 觸發:', e.target.value);
+    
+    // 確保事件是由用戶觸發的，阻止擴充功能的假事件
+    if (!e.isTrusted) {
+      console.log('阻止非可信事件');
+      e.preventDefault();
+      e.stopPropagation();
+      return;
+    }
+
+    // 確保目標元素是我們的 shortcut input
+    const target = e.target as HTMLInputElement;
+    if (target !== shortcutInputRef.current) {
+      console.log('目標元素不匹配');
+      return;
+    }
+
+    const newShortcut = e.target.value;
+    console.log('設定新 shortcut:', newShortcut);
     setShortcut(newShortcut);
 
-    if (!newShortcut) {
+    const trimmedShortcut = newShortcut.trim();
+    if (!trimmedShortcut) {
       setShortcutError(null);
       return;
     }
 
-    const { conflict, shortcut } = isConflictingShortcut(newShortcut, promptId, folders);
+    const { conflict, shortcut } = isConflictingShortcut(trimmedShortcut, promptId, folders);
 
     if (conflict && shortcut) {
       setShortcutError({
@@ -329,6 +520,29 @@ const PromptPage = ({ params }: PromptPageProps) => {
     } else {
       setShortcutError(null);
     }
+  };
+
+  const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    console.log('handleNameChange 觸發:', e.target.value);
+    
+    // 確保事件是由用戶觸發的，阻止擴充功能的假事件
+    if (!e.isTrusted) {
+      console.log('阻止非可信事件');
+      e.preventDefault();
+      e.stopPropagation();
+      return;
+    }
+
+    // 確保目標元素是我們的 name input
+    const target = e.target as HTMLInputElement;
+    if (target !== nameInputRef.current) {
+      console.log('目標元素不匹配');
+      return;
+    }
+
+    const newName = e.target.value;
+    console.log('設定新 name:', newName);
+    setName(newName);
   };
 
   const updateHandlers: {
@@ -405,17 +619,42 @@ const PromptPage = ({ params }: PromptPageProps) => {
 
   return (
     <div className="flex flex-col h-full">
-      <header className="grid grid-cols-1 lg:grid-cols-[3fr_1fr] mb-4 pt-4 gap-y-4 lg:gap-y-0 justify-items-start sm:justify-items-stretch">
+      <header className="grid grid-cols-1 lg:grid-cols-[3fr_1fr] mb-4 pt-4 sm:pt-6 md:pt-4 gap-y-4 lg:gap-y-0 justify-items-start sm:justify-items-stretch">
+        
         <div className="grid grid-cols-2 gap-x-4 lg:pr-4">
+
           {/** Prompt 名稱與捷徑 **/}
           <div className="relative">
-            <Input className="pl-9 h-12" placeholder="Type prompt name..." value={name} onChange={e => setName(e.target.value)} />
+            <SaveStatusIndicator className="absolute -top-8 left-0 z-10 sm:-top-7 md:-top-6" />
+            <Input 
+              ref={nameInputRef}
+              className="pl-9 h-12" 
+              placeholder="Type prompt name..." 
+              value={name} 
+              onChange={handleNameChange}
+              data-no-extension="true"
+              data-exclude-extension="true"
+              autoComplete="off"
+              autoCorrect="off"
+              spellCheck="false"
+            />
             <FaTag className="absolute left-[10px] top-1/2 h-4 w-4 text-muted-foreground -translate-y-1/2" />
           </div>
           {/** Shortcut **/}
           <div className="relative">
             <div className="relative">
-              <Input className="pl-9 pr-24 h-12" placeholder="Add a shortcut..." value={shortcut} onChange={handleShortcutChange} />
+              <Input 
+                ref={shortcutInputRef}
+                className="pl-9 pr-24 h-12" 
+                placeholder="Add a shortcut..." 
+                value={shortcut} 
+                onChange={handleShortcutChange}
+                data-no-extension="true"
+                data-exclude-extension="true"
+                autoComplete="off"
+                autoCorrect="off"
+                spellCheck="false"
+              />
               <FaKeyboard className="absolute left-[10px] top-1/2 h-4 w-4 text-muted-foreground -translate-y-1/2" />
               <Button
                 ref={tryItOutButtonRef}
@@ -465,13 +704,6 @@ const PromptPage = ({ params }: PromptPageProps) => {
               onFormMenuNodeClick={handleFormMenuNodeClick}
               onEditorClick={handleEditorClick}
             />
-            <Button 
-              className="w-20" 
-              onClick={handleSave}
-              disabled={!hasUnsavedChanges}
-            >
-              Save
-            </Button>
           </section>
 
             {/* 桌面版側邊欄 */}

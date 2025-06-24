@@ -234,12 +234,11 @@ const PromptPage = ({ params }: PromptPageProps) => {
 
   // 檢查是否有未儲存的變更並觸發自動儲存
   useEffect(() => {
-    // 清除先前的檢測計時器
     if (changeDetectionTimeoutRef.current) {
       clearTimeout(changeDetectionTimeoutRef.current);
     }
 
-    // 防抖動：延遲 300ms 後檢查變更
+    // 延遲 300ms 後檢查變更
     changeDetectionTimeoutRef.current = setTimeout(() => {
       const currentValues = {
         name,
@@ -248,19 +247,16 @@ const PromptPage = ({ params }: PromptPageProps) => {
       };
       
       const hasChanges = !deepEqual(currentValues, initialValues);
-      console.log('檢查變更:', { currentValues, initialValues, hasChanges });
       
       // 防止初始載入時觸發
       if (hasChanges && currentPrompt) {
         setHasUnsavedChanges(true);
-        console.log('觸發自動儲存');
         triggerAutoSave();
       } else {
         setHasUnsavedChanges(false);
       }
     }, 300);
 
-    // 清理計時器
     return () => {
       if (changeDetectionTimeoutRef.current) {
         clearTimeout(changeDetectionTimeoutRef.current);

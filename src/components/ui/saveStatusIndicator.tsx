@@ -13,7 +13,7 @@ const SaveStatusIndicator: React.FC<SaveStatusIndicatorProps> = ({ className = '
   const { isSaving, getSaveStateForPrompt } = useSaveStore();
   
   // 獲取當前 prompt 的儲存狀態
-  const { lastSavedAt, hasSaveError } = getSaveStateForPrompt(promptId);
+  const { lastSavedAt, hasSaveError, isActive } = getSaveStateForPrompt(promptId);
 
   // 計算從上次儲存到現在的時間
   const getTimeSinceLastSave = () => {
@@ -27,33 +27,34 @@ const SaveStatusIndicator: React.FC<SaveStatusIndicatorProps> = ({ className = '
   };
 
   const renderContent = () => {
-    // 只有在使用者實際進行儲存動作時才顯示狀態
-    if (isSaving) {
+    // 如果正在編輯或有變更需要儲存，顯示「儲存中...」
+    if (isActive || isSaving) {
       return (
         <div className="flex items-center space-x-2 text-blue-600">
           <FaSpinner className="h-3 w-3 animate-spin" />
-          <span className="text-sm font-medium">Saving...</span>
+          <span className="text-sm font-medium">儲存中...</span>
         </div>
       );
     }
 
+    // 如果有儲存錯誤
     if (hasSaveError) {
       return (
         <div className="flex items-center space-x-2 text-red-600">
           <FaExclamationTriangle className="h-3 w-3" />
-          <span className="text-sm font-medium">Saving failed</span>
+          <span className="text-sm font-medium">儲存失敗</span>
         </div>
       );
     }
 
-    // 只有在有儲存過且沒有正在儲存或錯誤狀態時才顯示成功訊息
-    if (lastSavedAt && !isSaving && !hasSaveError) {
+    // 如果有儲存過且沒有正在儲存或錯誤狀態時才顯示成功訊息
+    if (lastSavedAt && !isSaving && !hasSaveError && !isActive) {
       const timeSince = getTimeSinceLastSave();
       return (
         <div className="flex items-center space-x-2 text-green-600">
           <FaCheck className="h-3 w-3" />
           <span className="text-sm font-medium">
-            All changes saved {timeSince && `• ${timeSince}`}
+            所有變更已儲存 {timeSince && `• ${timeSince}`}
           </span>
         </div>
       );

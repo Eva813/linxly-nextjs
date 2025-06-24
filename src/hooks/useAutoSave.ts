@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useRef } from 'react';
-import debounce, { DebouncedFunction } from '@/lib/utils/debounce';
 import { useSaveStore } from '@/stores/loading';
 
 interface UseAutoSaveOptions {
@@ -9,55 +8,79 @@ interface UseAutoSaveOptions {
   promptId?: string;
 }
 
-export const useAutoSave = ({ onSave, delay = 1000, enabled = true, promptId }: UseAutoSaveOptions) => {
-  const { setSaving, setSaved, setSaveError } = useSaveStore();
-  const savePromiseRef = useRef<Promise<void> | null>(null);
-  const debouncedSaveRef = useRef<DebouncedFunction<() => Promise<void>> | null>(null);
+export const useAutoSave = ({ onSave, delay = 2000, enabled = true, promptId }: UseAutoSaveOptions) => {
+  const { setSaving, setSaved, setSaveError, setActive } = useSaveStore();
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const blurTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const clearTimeouts = useCallback(() => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+    }
+    if (blurTimeoutRef.current) {
+      clearTimeout(blurTimeoutRef.current);
+      blurTimeoutRef.current = null;
+    }
+  }, []);
 
   const performSave = useCallback(async () => {
     if (!enabled || !promptId) return;
 
-    // 如果已經有正在執行的儲存操作，等待它完成
-    if (savePromiseRef.current) {
-      await savePromiseRef.current;
-    }
-
-    setSaving(true, promptId);
-
     try {
-      const savePromise = onSave();
-      savePromiseRef.current = savePromise;
-      await savePromise;
-      setSaved(promptId);
+      setSaving(true, promptId);
+      await onSave();
+      setSaved(promptId); // 這會自動設置 isActive 為 false
     } catch (error) {
       console.error('自動儲存失敗:', error);
       setSaveError(true, promptId);
-    } finally {
-      savePromiseRef.current = null;
+      setActive(false, promptId); // 儲存失敗時也要清除活躍狀態
     }
-  }, [onSave, enabled, promptId, setSaving, setSaved, setSaveError]);
+  }, [onSave, enabled, promptId, setSaving, setSaved, setSaveError, setActive]);
 
-  // 建立 debounced save 函式
-  useEffect(() => {
-    debouncedSaveRef.current = debounce(performSave, delay);
+  // 用戶開始編輯時調用
+  const startActivity = useCallback(() => {
+    if (!enabled || !promptId) return;
     
-    return () => {
-      debouncedSaveRef.current?.cancel();
-    };
-  }, [performSave, delay]);
+    clearTimeouts();
+    setActive(true, promptId); // 設為活躍狀態，顯示「儲存中...」
+  }, [enabled, promptId, setActive, clearTimeouts]);
 
+  // 觸發自動儲存（防抖動）
   const triggerAutoSave = useCallback(() => {
-    if (enabled && debouncedSaveRef.current) {
-      debouncedSaveRef.current();
-    }
-  }, [enabled]);
+    if (!enabled || !promptId) return;
 
-  // 組件卸載時清理
+    clearTimeouts();
+    setActive(true, promptId); // 確保顯示「儲存中...」
+    
+    timeoutRef.current = setTimeout(() => {
+      performSave();
+    }, delay);
+  }, [enabled, promptId, delay, performSave, setActive, clearTimeouts]);
+
+  // 失焦時立即儲存
+  const triggerBlurSave = useCallback(() => {
+    if (!enabled || !promptId) return;
+
+    clearTimeouts();
+    
+    // 短暫延遲後儲存，避免快速 focus/blur 切換
+    blurTimeoutRef.current = setTimeout(() => {
+      performSave();
+    }, 100);
+  }, [enabled, promptId, performSave, clearTimeouts]);
+
+  // 清理函式
   useEffect(() => {
     return () => {
-      debouncedSaveRef.current?.cancel();
+      clearTimeouts();
     };
-  }, []);
+  }, [clearTimeouts]);
 
-  return { triggerAutoSave, performSave };
+  return {
+    triggerAutoSave,
+    triggerBlurSave,
+    startActivity,
+    performSave
+  };
 };

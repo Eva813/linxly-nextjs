@@ -162,9 +162,9 @@ const PromptPage = ({ params }: PromptPageProps) => {
     }
   }, [currentPrompt, name, shortcut, content, promptId, updatePrompt]);
 
-  const { triggerAutoSave } = useAutoSave({
+  const { triggerAutoSave, startActivity } = useAutoSave({
     onSave: autoSaveHandler,
-    delay: 1000,
+    delay: 2000,
     enabled: hasUnsavedChanges,
     promptId
   });
@@ -251,7 +251,7 @@ const PromptPage = ({ params }: PromptPageProps) => {
     }
   }, [name, shortcut, content, initialValues, triggerAutoSave]);
 
-  // 防護 shortcut input 免受擴充功能干擾
+  // 保護 shortcut input 免受擴充功能干擾
   const blockDocumentInputHandler = useCallback((e: Event) => {
     const shortcutInput = shortcutInputRef.current;
     const target = e.target as HTMLElement;
@@ -500,6 +500,9 @@ const PromptPage = ({ params }: PromptPageProps) => {
       return;
     }
 
+    // 標記開始編輯
+    startActivity();
+
     const newShortcut = e.target.value;
     console.log('設定新 shortcut:', newShortcut);
     setShortcut(newShortcut);
@@ -539,6 +542,9 @@ const PromptPage = ({ params }: PromptPageProps) => {
       console.log('目標元素不匹配');
       return;
     }
+
+    // 標記開始編輯
+    startActivity();
 
     const newName = e.target.value;
     console.log('設定新 name:', newName);
@@ -700,6 +706,7 @@ const PromptPage = ({ params }: PromptPageProps) => {
               value={content}
               onChange={setContent}
               onEditorReady={editor => (editorRef.current = editor)}
+              onStartEditing={startActivity}
               onFormTextNodeClick={handleFormTextNodeClick}
               onFormMenuNodeClick={handleFormMenuNodeClick}
               onEditorClick={handleEditorClick}

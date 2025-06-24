@@ -163,7 +163,7 @@ const PromptPage = ({ params }: PromptPageProps) => {
     }
   }, [currentPrompt, name, shortcut, content, promptId, updatePrompt]);
 
-  const { triggerAutoSave, startActivity } = useAutoSave({
+  const { triggerAutoSave } = useAutoSave({
     onSave: autoSaveHandler,
     delay: 2000,
     enabled: hasUnsavedChanges,
@@ -717,7 +717,6 @@ const PromptPage = ({ params }: PromptPageProps) => {
               value={content}
               onChange={setContent}
               onEditorReady={editor => (editorRef.current = editor)}
-              onStartEditing={startActivity}
               onFormTextNodeClick={handleFormTextNodeClick}
               onFormMenuNodeClick={handleFormMenuNodeClick}
               onEditorClick={handleEditorClick}

@@ -18,7 +18,7 @@ interface TipTapEditorProps {
   isRequired?: boolean;
   onChange: (value: string) => void;
   onEditorReady: (editor: Editor) => void;
-  onStartEditing?: () => void; // 新增：開始編輯的回調
+  onStartEditing?: () => void; // 開始編輯的回調
   // 當用戶點擊自訂 Node 時的回呼
   onFormTextNodeClick?: (params: {
     pos: number
@@ -57,7 +57,6 @@ const TipTapEditor = ({
       if (!updatedValue && isRequired) {
         validateContent(updatedValue);
       }
-      // 移除這裡的變更觸發，讓 page.tsx 的 useEffect 處理
     },
     immediatelyRender: false,
     extensions: [

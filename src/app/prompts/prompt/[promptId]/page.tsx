@@ -52,66 +52,6 @@ type UpdateHandler<T extends EditInfo> = {
   getNodeType: () => T["type"];
 };
 
-const originalDispatchMap = new WeakMap<EventTarget, (event: Event) => boolean>();
-
-// 防止 Chrome 擴充功能干擾的工具函式
-export const preventExtensionInterference = (
-  element: HTMLInputElement | HTMLTextAreaElement
-): (() => void) | void => {
-  if (!element) return;
-
-  const criticalEventTypes = new Set(['input', 'change', 'keydown', 'keyup', 'paste']);
-  const listenerOptions: AddEventListenerOptions = { capture: true, passive: false };
-
-  const blockExtensionEvents = (e: Event) => {
-    if (!criticalEventTypes.has(e.type)) return;
-
-    if (!e.isTrusted) {
-      e.preventDefault();
-      e.stopPropagation();
-      e.stopImmediatePropagation();
-      return false;
-    }
-
-    if (e.type === 'input') {
-      requestAnimationFrame(() => {
-        e.stopPropagation();
-        e.stopImmediatePropagation();
-      });
-    }
-  };
-
-  for (const type of criticalEventTypes) {
-    element.addEventListener(type, blockExtensionEvents, listenerOptions);
-  }
-
-  // Patch dispatchEvent（僅一次）
-  if (!originalDispatchMap.has(element)) {
-    const originalDispatch = element.dispatchEvent.bind(element);
-    originalDispatchMap.set(element, originalDispatch);
-
-    element.dispatchEvent = function (event: Event): boolean {
-      if (!event.isTrusted && criticalEventTypes.has(event.type)) {
-        return false;
-      }
-      return originalDispatch(event);
-    };
-  }
-
-  // 回傳清理函式
-  return () => {
-    for (const type of criticalEventTypes) {
-      element.removeEventListener(type, blockExtensionEvents, listenerOptions);
-    }
-
-    const originalDispatch = originalDispatchMap.get(element);
-    if (originalDispatch) {
-      element.dispatchEvent = originalDispatch;
-      originalDispatchMap.delete(element);
-    }
-  };
-};
-
 const PromptPage = ({ params }: PromptPageProps) => {
   const { promptId } = params;
   const { folders, updatePrompt } = usePromptStore();
@@ -125,8 +65,6 @@ const PromptPage = ({ params }: PromptPageProps) => {
   const tryItOutButtonRef = useRef<HTMLButtonElement>(null);
   const shortcutInputRef = useRef<HTMLInputElement>(null);
   const nameInputRef = useRef<HTMLInputElement>(null);
-  const cleanupRef = useRef<(() => void) | null>(null);
-  const nameCleanupRef = useRef<(() => void) | null>(null);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const changeDetectionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   // 儲存初始值用於比較
@@ -264,111 +202,6 @@ const PromptPage = ({ params }: PromptPageProps) => {
     };
   }, [name, shortcut, content, initialValues, triggerAutoSave, currentPrompt]);
 
-  // 保護 shortcut input 免受擴充功能干擾
-  const blockDocumentInputHandler = useCallback((e: Event) => {
-    const shortcutInput = shortcutInputRef.current;
-    const target = e.target as HTMLElement;
-
-    if (!shortcutInput || !target) return;
-    if (target === shortcutInput) {
-      console.log('阻止 document 級 input 事件');
-      e.stopImmediatePropagation();
-      e.stopPropagation();
-      e.preventDefault();
-    }
-  }, []);
-
-  // 防護 name input 免受擴充功能干擾
-  const blockNameDocumentInputHandler = useCallback((e: Event) => {
-    const nameInput = nameInputRef.current;
-    const target = e.target as HTMLElement;
-
-    if (!nameInput || !target) return;
-    if (target === nameInput) {
-      console.log('阻止 name document 級 input 事件');
-      e.stopImmediatePropagation();
-      e.stopPropagation();
-      e.preventDefault();
-    }
-  }, []);
-
-  useEffect(() => {
-    const shortcutInput = shortcutInputRef.current;
-    if (!shortcutInput) return;
-
-    if (cleanupRef.current) {
-      cleanupRef.current();
-    }
-
-    // 核心防護邏輯：阻止偽造事件
-    const preventCleanup = preventExtensionInterference(shortcutInput);
-
-    // 統一的事件選項配置
-    const eventOptions = { 
-      capture: true, 
-      passive: false 
-    } as const;
-
-    // 條件式文件層級事件攔截
-    document.addEventListener('input', blockDocumentInputHandler, eventOptions);
-
-    // 建立清除函式
-    const cleanup = () => {
-      if (preventCleanup) preventCleanup();
-      document.removeEventListener('input', blockDocumentInputHandler, eventOptions);
-    };
-
-    cleanupRef.current = cleanup;
-
-    return cleanup;
-  }, [blockDocumentInputHandler]);
-
-  // 防護 name input 免受擴充功能干擾
-  useEffect(() => {
-    const nameInput = nameInputRef.current;
-    if (!nameInput) return;
-
-    if (nameCleanupRef.current) {
-      nameCleanupRef.current();
-    }
-
-    // 核心防護邏輯：阻止偽造事件
-    const preventCleanup = preventExtensionInterference(nameInput);
-
-    // 統一的事件選項配置
-    const eventOptions = { 
-      capture: true, 
-      passive: false 
-    } as const;
-
-    // 條件式文件層級事件攔截
-    document.addEventListener('input', blockNameDocumentInputHandler, eventOptions);
-
-    // 建立清除函式
-    const cleanup = () => {
-      if (preventCleanup) preventCleanup();
-      document.removeEventListener('input', blockNameDocumentInputHandler, eventOptions);
-    };
-
-    nameCleanupRef.current = cleanup;
-
-    return cleanup;
-  }, [blockNameDocumentInputHandler]);
-
-  // 組件卸載時確保清除
-  useEffect(() => {
-    return () => {
-      if (cleanupRef.current) {
-        cleanupRef.current();
-        cleanupRef.current = null;
-      }
-      if (nameCleanupRef.current) {
-        nameCleanupRef.current();
-        nameCleanupRef.current = null;
-      }
-    };
-  }, []);
-
   // 當用戶在編輯器裡點擊自訂 Node
   const handleFormTextNodeClick = ({
     pos,
@@ -497,14 +330,6 @@ const PromptPage = ({ params }: PromptPageProps) => {
 
   const handleShortcutChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     console.log('handleShortcutChange 觸發:', e.target.value);
-    
-    // 確保事件是由用戶觸發的，阻止擴充功能的假事件
-    if (!e.isTrusted) {
-      console.log('阻止非可信事件');
-      e.preventDefault();
-      e.stopPropagation();
-      return;
-    }
 
     // 確保目標元素是我們的 shortcut input
     const target = e.target as HTMLInputElement;
@@ -537,14 +362,6 @@ const PromptPage = ({ params }: PromptPageProps) => {
 
   const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     console.log('handleNameChange 觸發:', e.target.value);
-    
-    // 確保事件是由用戶觸發的，阻止擴充功能的假事件
-    if (!e.isTrusted) {
-      console.log('阻止非可信事件');
-      e.preventDefault();
-      e.stopPropagation();
-      return;
-    }
 
     // 確保目標元素是我們的 name input
     const target = e.target as HTMLInputElement;

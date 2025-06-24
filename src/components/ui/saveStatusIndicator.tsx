@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams } from 'next/navigation';
 import { useSaveStore } from '@/stores/loading';
-import { FaCheck, FaSpinner, FaExclamationTriangle } from 'react-icons/fa';
+import { FaCheck, FaSpinner, FaExclamationCircle } from 'react-icons/fa';
 
 interface SaveStatusIndicatorProps {
   className?: string;
@@ -11,97 +11,75 @@ const SaveStatusIndicator: React.FC<SaveStatusIndicatorProps> = ({ className = '
   const params = useParams();
   const promptId = (params?.promptId as string) || '';
   const { isSaving, getSaveStateForPrompt } = useSaveStore();
-  const { lastSavedAt, hasSaveError, isActive } = getSaveStateForPrompt(promptId);
+  const { hasSaveError, isActive } = getSaveStateForPrompt(promptId);
 
   // 本地顯示狀態：idle、saving、saved、error
+  // idle:表示「閒置狀態」，也就是目前沒有進行任何儲存操作或活動的狀態
   const [displayState, setDisplayState] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+  const [currentPromptId, setCurrentPromptId] = useState(promptId);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
-  const debounceRef = useRef<NodeJS.Timeout | null>(null);
-  const lastStateRef = useRef<string>('');
 
-  // 監聽儲存狀態，管理顯示時序，增加防抖邏輯
-  useEffect(() => {
-    // 清除先前的防抖計時器
-    if (debounceRef.current) {
-      clearTimeout(debounceRef.current);
+  const clearTimer = () => {
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+      timerRef.current = null;
     }
-
-    // 建立當前狀態字串用於比較
-    const currentStateKey = `${isActive}-${isSaving}-${hasSaveError}-${lastSavedAt?.getTime()}`;
-    
-    // 如果狀態沒有實際變化，不執行更新
-    if (currentStateKey === lastStateRef.current) {
-      return;
-    }
-
-    // 防抖處理：延遲 100ms 執行狀態更新
-    debounceRef.current = setTimeout(() => {
-      lastStateRef.current = currentStateKey;
-      
-      // 清除先前的顯示計時器
-      if (timerRef.current) {
-        clearTimeout(timerRef.current);
-        timerRef.current = null;
-      }
-
-      if (hasSaveError) {
-        setDisplayState('error');
-      } else if (isActive || isSaving) {
-        setDisplayState('saving');
-      } else if (lastSavedAt) {
-        setDisplayState('saved');
-        // 成功訊息顯示 2 秒後隱藏
-        timerRef.current = setTimeout(() => setDisplayState('idle'), 2000);
-      } else {
-        setDisplayState('idle');
-      }
-    }, 100);
-
-    return () => {
-      if (timerRef.current) clearTimeout(timerRef.current);
-      if (debounceRef.current) clearTimeout(debounceRef.current);
-    };
-  }, [isActive, isSaving, hasSaveError, lastSavedAt]);
-
-  // 計算從上次儲存到現在的時間
-  const getTimeSinceLastSave = () => {
-    if (!lastSavedAt) return null;
-    const now = new Date();
-    const diffInSeconds = Math.floor((now.getTime() - lastSavedAt.getTime()) / 1000);
-
-    if (diffInSeconds < 60) return '剛剛';
-    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} 分鐘前`;
-    return `${Math.floor(diffInSeconds / 3600)} 小時前`;
   };
 
-  // 根據本地 displayState 渲染內容
+  // 當 promptId 改變時，重置組件狀態
+  useEffect(() => {
+    if (currentPromptId !== promptId) {
+      clearTimer();
+      setDisplayState('idle');
+      setCurrentPromptId(promptId);
+    }
+  }, [promptId, currentPromptId]);
+
+  // 監聽儲存狀態變化
+  useEffect(() => {
+    if (hasSaveError) {
+      clearTimer();
+      setDisplayState('error');
+    } else if (isActive || isSaving) {
+      clearTimer();
+      setDisplayState('saving');
+    } else if (displayState === 'saving') {
+      // 從 saving 轉為 saved，並設定 1.2 秒後自動隱藏
+      setDisplayState('saved');
+      timerRef.current = setTimeout(() => {
+        setDisplayState('idle');
+      }, 1200);
+    }
+  }, [isActive, isSaving, hasSaveError, displayState]);
+
+  useEffect(() => {
+    return clearTimer;
+  }, []);
+
+
   const renderContent = () => {
     switch (displayState) {
       case 'saving':
         return (
-          <div className="flex items-center space-x-2 text-blue-600">
+          <div className="flex items-center space-x-2 text-primary">
             <FaSpinner className="h-3 w-3 animate-spin" />
-            <span className="text-sm font-medium">儲存中...</span>
+            <span className="text-sm font-medium">Saving...</span>
           </div>
         );
       case 'error':
         return (
-          <div className="flex items-center space-x-2 text-red-600">
-            <FaExclamationTriangle className="h-3 w-3" />
-            <span className="text-sm font-medium">儲存失敗</span>
+          <div className="flex items-center space-x-2 text-rose-600">
+            <FaExclamationCircle className="h-3 w-3" />
+            <span className="text-sm font-medium">Save failed</span>
           </div>
         );
-      case 'saved': {
-        const timeSince = getTimeSinceLastSave();
+      case 'saved':
         return (
-          <div className="flex items-center space-x-2 text-green-600">
+          <div className="flex items-center space-x-2 text-teal-600">
             <FaCheck className="h-3 w-3" />
-            <span className="text-sm font-medium">
-              所有變更已儲存 {timeSince && `• ${timeSince}`}
-            </span>
+            <span className="text-sm font-medium">All changes saved</span>
           </div>
         );
-      }
       default:
         return null;
     }

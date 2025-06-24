@@ -45,7 +45,7 @@ const TipTapEditor = ({
   const editor = useEditor({
     content: value,
     onUpdate: ({ editor }) => {
-      // 標記開始編輯
+      // 只標記開始編輯，不觸發自動儲存
       onStartEditing?.();
       
       const updatedValue = editor.getHTML();
@@ -57,6 +57,7 @@ const TipTapEditor = ({
       if (!updatedValue && isRequired) {
         validateContent(updatedValue);
       }
+      // 移除這裡的變更觸發，讓 page.tsx 的 useEffect 處理
     },
     immediatelyRender: false,
     extensions: [

@@ -128,6 +128,7 @@ const PromptPage = ({ params }: PromptPageProps) => {
   const cleanupRef = useRef<(() => void) | null>(null);
   const nameCleanupRef = useRef<(() => void) | null>(null);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const changeDetectionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   // 儲存初始值用於比較
   const [initialValues, setInitialValues] = useState({
     name: "",
@@ -233,23 +234,39 @@ const PromptPage = ({ params }: PromptPageProps) => {
 
   // 檢查是否有未儲存的變更並觸發自動儲存
   useEffect(() => {
-    const currentValues = {
-      name,
-      shortcut,
-      content
-    };
-    
-    const hasChanges = !deepEqual(currentValues, initialValues);
-    console.log('檢查變更:', { currentValues, initialValues, hasChanges });
-    
-    setHasUnsavedChanges(hasChanges);
-    
-    // 如果有變更，觸發自動儲存
-    if (hasChanges) {
-      console.log('觸發自動儲存');
-      triggerAutoSave();
+    // 清除先前的檢測計時器
+    if (changeDetectionTimeoutRef.current) {
+      clearTimeout(changeDetectionTimeoutRef.current);
     }
-  }, [name, shortcut, content, initialValues, triggerAutoSave]);
+
+    // 防抖動：延遲 300ms 後檢查變更
+    changeDetectionTimeoutRef.current = setTimeout(() => {
+      const currentValues = {
+        name,
+        shortcut,
+        content
+      };
+      
+      const hasChanges = !deepEqual(currentValues, initialValues);
+      console.log('檢查變更:', { currentValues, initialValues, hasChanges });
+      
+      // 防止初始載入時觸發
+      if (hasChanges && currentPrompt) {
+        setHasUnsavedChanges(true);
+        console.log('觸發自動儲存');
+        triggerAutoSave();
+      } else {
+        setHasUnsavedChanges(false);
+      }
+    }, 300);
+
+    // 清理計時器
+    return () => {
+      if (changeDetectionTimeoutRef.current) {
+        clearTimeout(changeDetectionTimeoutRef.current);
+      }
+    };
+  }, [name, shortcut, content, initialValues, triggerAutoSave, currentPrompt]);
 
   // 保護 shortcut input 免受擴充功能干擾
   const blockDocumentInputHandler = useCallback((e: Event) => {
@@ -500,9 +517,6 @@ const PromptPage = ({ params }: PromptPageProps) => {
       return;
     }
 
-    // 標記開始編輯
-    startActivity();
-
     const newShortcut = e.target.value;
     console.log('設定新 shortcut:', newShortcut);
     setShortcut(newShortcut);
@@ -542,9 +556,6 @@ const PromptPage = ({ params }: PromptPageProps) => {
       console.log('目標元素不匹配');
       return;
     }
-
-    // 標記開始編輯
-    startActivity();
 
     const newName = e.target.value;
     console.log('設定新 name:', newName);

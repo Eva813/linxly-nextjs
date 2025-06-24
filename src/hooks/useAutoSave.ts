@@ -12,6 +12,8 @@ export const useAutoSave = ({ onSave, delay = 2000, enabled = true, promptId }: 
   const { setSaving, setSaved, setSaveError, setActive } = useSaveStore();
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const blurTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const isSavingRef = useRef(false); // 追蹤是否正在儲存
+  const lastSavePromiseRef = useRef<Promise<void> | null>(null); // 追蹤上次儲存的 Promise
 
   const clearTimeouts = useCallback(() => {
     if (timeoutRef.current) {
@@ -25,17 +27,38 @@ export const useAutoSave = ({ onSave, delay = 2000, enabled = true, promptId }: 
   }, []);
 
   const performSave = useCallback(async () => {
-    if (!enabled || !promptId) return;
+    if (!enabled || !promptId || isSavingRef.current) return;
 
-    try {
-      setSaving(true, promptId);
-      await onSave();
-      setSaved(promptId); // 這會自動設置 isActive 為 false
-    } catch (error) {
-      console.error('自動儲存失敗:', error);
-      setSaveError(true, promptId);
-      setActive(false, promptId); // 儲存失敗時也要清除活躍狀態
+    // 等待上次儲存完成
+    if (lastSavePromiseRef.current) {
+      try {
+        await lastSavePromiseRef.current;
+      } catch {
+        // 忽略上次儲存的錯誤
+      }
     }
+
+    // 再次檢查是否正在儲存
+    if (isSavingRef.current) return;
+
+    isSavingRef.current = true;
+    const savePromise = (async () => {
+      try {
+        setSaving(true, promptId);
+        await onSave();
+        setSaved(promptId); // 這會自動設置 isActive 為 false
+      } catch (error) {
+        console.error('自動儲存失敗:', error);
+        setSaveError(true, promptId);
+        setActive(false, promptId); // 儲存失敗時也要清除活躍狀態
+      } finally {
+        isSavingRef.current = false;
+        lastSavePromiseRef.current = null;
+      }
+    })();
+
+    lastSavePromiseRef.current = savePromise;
+    return savePromise;
   }, [onSave, enabled, promptId, setSaving, setSaved, setSaveError, setActive]);
 
   // 用戶開始編輯時調用
@@ -43,12 +66,12 @@ export const useAutoSave = ({ onSave, delay = 2000, enabled = true, promptId }: 
     if (!enabled || !promptId) return;
     
     clearTimeouts();
-    setActive(true, promptId); // 設為活躍狀態，顯示「儲存中...」
-  }, [enabled, promptId, setActive, clearTimeouts]);
+    // 移除這裡的 setActive，讓 triggerAutoSave 處理
+  }, [enabled, promptId, clearTimeouts]);
 
   // 觸發自動儲存（防抖動）
   const triggerAutoSave = useCallback(() => {
-    if (!enabled || !promptId) return;
+    if (!enabled || !promptId || isSavingRef.current) return;
 
     clearTimeouts();
     setActive(true, promptId); // 確保顯示「儲存中...」

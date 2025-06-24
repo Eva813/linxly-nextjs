@@ -18,6 +18,7 @@ interface TipTapEditorProps {
   isRequired?: boolean;
   onChange: (value: string) => void;
   onEditorReady: (editor: Editor) => void;
+  onStartEditing?: () => void; // 新增：開始編輯的回調
   // 當用戶點擊自訂 Node 時的回呼
   onFormTextNodeClick?: (params: {
     pos: number
@@ -32,6 +33,7 @@ const TipTapEditor = ({
   isRequired = false,
   onChange,
   onEditorReady,
+  onStartEditing,
   onFormTextNodeClick,
   onFormMenuNodeClick,
   onEditorClick
@@ -43,6 +45,9 @@ const TipTapEditor = ({
   const editor = useEditor({
     content: value,
     onUpdate: ({ editor }) => {
+      // 標記開始編輯
+      onStartEditing?.();
+      
       const updatedValue = editor.getHTML();
       onChange(updatedValue);
       validateContent(updatedValue);

@@ -1,4 +1,3 @@
-// Hook exports
 export { useEditorLogic } from './useEditorLogic';
-export { useUIState } from './useUIState';
+export { useViewAndPanel } from './useViewAndPanel';
 export { usePromptPageLogic } from './usePromptPageLogic';

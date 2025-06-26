@@ -1,7 +1,7 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { Mode } from "@/app/prompts/components/editViewButtons";
 
-export const useUIState = () => {
+export const useViewAndPanel = () => {
   const [mode, setMode] = useState<Mode>("edit");
   const [isMobilePanelOpen, setIsMobilePanelOpen] = useState(false);
   const [isMobilePanelClosing, setIsMobilePanelClosing] = useState(false);

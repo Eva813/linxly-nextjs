@@ -3,7 +3,7 @@ import React from 'react';
 import { PromptHeader, EditorSection } from './components';
 import InsertTextFieldDialog from './InsertTextFieldDialog';
 import InsertDropdownMenuDialog from './InsertDropDownMenuDialog';
-import { usePromptPageLogic, useEditorLogic, useUIState } from './hooks';
+import { usePromptPageLogic, useEditorLogic, useViewAndPanel } from './hooks';
 
 interface PromptPageProps {
   params: {
@@ -26,7 +26,6 @@ const PromptPage = ({ params }: PromptPageProps) => {
     clearShortcutError,
   } = usePromptPageLogic({ promptId });
 
-  // 編輯器邏輯
   const {
     editorRef,
     textInputEditInfo,
@@ -47,14 +46,13 @@ const PromptPage = ({ params }: PromptPageProps) => {
     handleTextInputChange,
   } = useEditorLogic();
 
-  // UI 狀態
   const {
     mode,
     isMobilePanelOpen,
     isMobilePanelClosing,
     setMode,
     toggleMobilePanel,
-  } = useUIState();
+  } = useViewAndPanel();
 
   return (
     <div className="flex flex-col h-full">

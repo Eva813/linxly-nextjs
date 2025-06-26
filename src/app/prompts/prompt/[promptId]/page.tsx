@@ -20,10 +20,11 @@ import EditViewButtons, { Mode } from "@/app/prompts/components/editViewButtons"
 import PreviewPrompt from "@/app/prompts/components/previewPrompt";
 import TryItOutPopup from './tryItOutPopup';
 import ShortcutErrorAlert  from "@/app/prompts/components/shortcutErrorAlert";
-import { useLoadingStore } from '@/stores/loading';
 import { useCurrentPrompt } from '@/lib/useCurrentPrompt';
 import { Folder } from '@/types/prompt';
 import { deepEqual } from '@/lib/utils/deepEqual';
+import { useAutoSave } from '@/hooks/useAutoSave';
+import SaveStatusIndicator from '@/components/ui/saveStatusIndicator';
 
 interface PromptDataMapping {
   formtext: IBuiltFormData<typeof formTextSpec>;
@@ -62,8 +63,10 @@ const PromptPage = ({ params }: PromptPageProps) => {
   const [shortcutError, setShortcutError] = useState<ShortcutError | null>(null);
   const [isPopupVisible, setIsPopupVisible] = useState(false);
   const tryItOutButtonRef = useRef<HTMLButtonElement>(null);
-  
+  const shortcutInputRef = useRef<HTMLInputElement>(null);
+  const nameInputRef = useRef<HTMLInputElement>(null);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const changeDetectionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   // 儲存初始值用於比較
   const [initialValues, setInitialValues] = useState({
     name: "",
@@ -71,7 +74,39 @@ const PromptPage = ({ params }: PromptPageProps) => {
     content: ""
   });
 
-  const { setLoading } = useLoadingStore();
+  // 自動儲存邏輯
+  const autoSaveHandler = useCallback(async () => {
+    if (!currentPrompt) return;
+
+    const updatedPrompt = {
+      ...currentPrompt,
+      name,
+      shortcut,
+      content,
+    };
+
+    try {
+      await updatePrompt(promptId, updatedPrompt);
+      
+      // 儲存成功後更新初始值
+      setInitialValues({
+        name,
+        shortcut,
+        content
+      });
+      setHasUnsavedChanges(false);
+    } catch (error) {
+      console.error("儲存時發生錯誤:", error);
+      throw error;
+    }
+  }, [currentPrompt, name, shortcut, content, promptId, updatePrompt]);
+
+  const { triggerAutoSave } = useAutoSave({
+    onSave: autoSaveHandler,
+    delay: 2000,
+    enabled: hasUnsavedChanges,
+    promptId
+  });
 
 
   // 透過 ref 持有 editor 實例
@@ -135,54 +170,37 @@ const PromptPage = ({ params }: PromptPageProps) => {
     }
   }, [currentPrompt]);
 
-  // 檢查是否有未儲存的變更
+  // 檢查是否有未儲存的變更並觸發自動儲存
   useEffect(() => {
-    const currentValues = {
-      name,
-      shortcut,
-      content
-    };
-    
-    const hasChanges = !deepEqual(currentValues, initialValues);
-    
-    setHasUnsavedChanges(hasChanges);
-  }, [name, shortcut, content, initialValues]);
+    if (changeDetectionTimeoutRef.current) {
+      clearTimeout(changeDetectionTimeoutRef.current);
+    }
 
-
-
-  const handleSave = async () => {
-    if (currentPrompt) {
-      setLoading(true); // 設定全域載入狀態
-
-      const updatedPrompt = {
-        ...currentPrompt,
+    // 延遲 300ms 後檢查變更
+    changeDetectionTimeoutRef.current = setTimeout(() => {
+      const currentValues = {
         name,
         shortcut,
-        content,
+        content
       };
-      console.log("Updating prompt:", updatedPrompt);
-
-      try {
-        await Promise.all([
-          updatePrompt(promptId, updatedPrompt),
-          new Promise(resolve => setTimeout(resolve, 300)),
-        ]);
-        
-        // 儲存成功後更新初始值
-        setInitialValues({
-          name,
-          shortcut,
-          content
-        });
+      
+      const hasChanges = !deepEqual(currentValues, initialValues);
+      
+      // 防止初始載入時觸發
+      if (hasChanges && currentPrompt) {
+        setHasUnsavedChanges(true);
+        triggerAutoSave();
+      } else {
         setHasUnsavedChanges(false);
-      } catch (error) {
-        console.error("儲存時發生錯誤:", error);
-      } finally {
-        setLoading(false); 
       }
-    }
-  };
+    }, 300);
 
+    return () => {
+      if (changeDetectionTimeoutRef.current) {
+        clearTimeout(changeDetectionTimeoutRef.current);
+      }
+    };
+  }, [name, shortcut, content, initialValues, triggerAutoSave, currentPrompt]);
 
   // 當用戶在編輯器裡點擊自訂 Node
   const handleFormTextNodeClick = ({
@@ -311,15 +329,26 @@ const PromptPage = ({ params }: PromptPageProps) => {
   };
 
   const handleShortcutChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newShortcut = e.target.value.trim();
+    console.log('handleShortcutChange 觸發:', e.target.value);
+
+    // 確保目標元素是我們的 shortcut input
+    const target = e.target as HTMLInputElement;
+    if (target !== shortcutInputRef.current) {
+      console.log('目標元素不匹配');
+      return;
+    }
+
+    const newShortcut = e.target.value;
+    console.log('設定新 shortcut:', newShortcut);
     setShortcut(newShortcut);
 
-    if (!newShortcut) {
+    const trimmedShortcut = newShortcut.trim();
+    if (!trimmedShortcut) {
       setShortcutError(null);
       return;
     }
 
-    const { conflict, shortcut } = isConflictingShortcut(newShortcut, promptId, folders);
+    const { conflict, shortcut } = isConflictingShortcut(trimmedShortcut, promptId, folders);
 
     if (conflict && shortcut) {
       setShortcutError({
@@ -329,6 +358,21 @@ const PromptPage = ({ params }: PromptPageProps) => {
     } else {
       setShortcutError(null);
     }
+  };
+
+  const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    console.log('handleNameChange 觸發:', e.target.value);
+
+    // 確保目標元素是我們的 name input
+    const target = e.target as HTMLInputElement;
+    if (target !== nameInputRef.current) {
+      console.log('目標元素不匹配');
+      return;
+    }
+
+    const newName = e.target.value;
+    console.log('設定新 name:', newName);
+    setName(newName);
   };
 
   const updateHandlers: {
@@ -405,17 +449,42 @@ const PromptPage = ({ params }: PromptPageProps) => {
 
   return (
     <div className="flex flex-col h-full">
-      <header className="grid grid-cols-1 lg:grid-cols-[3fr_1fr] mb-4 pt-4 gap-y-4 lg:gap-y-0 justify-items-start sm:justify-items-stretch">
+      <header className="grid grid-cols-1 lg:grid-cols-[3fr_1fr] mb-4 pt-4 sm:pt-6 md:pt-4 gap-y-4 lg:gap-y-0 justify-items-start sm:justify-items-stretch">
+        
         <div className="grid grid-cols-2 gap-x-4 lg:pr-4">
+
           {/** Prompt 名稱與捷徑 **/}
           <div className="relative">
-            <Input className="pl-9 h-12" placeholder="Type prompt name..." value={name} onChange={e => setName(e.target.value)} />
+            <SaveStatusIndicator className="absolute -top-8 left-0 z-10 sm:-top-7 md:-top-6" />
+            <Input 
+              ref={nameInputRef}
+              className="pl-9 h-12" 
+              placeholder="Type prompt name..." 
+              value={name} 
+              onChange={handleNameChange}
+              data-no-extension="true"
+              data-exclude-extension="true"
+              autoComplete="off"
+              autoCorrect="off"
+              spellCheck="false"
+            />
             <FaTag className="absolute left-[10px] top-1/2 h-4 w-4 text-muted-foreground -translate-y-1/2" />
           </div>
           {/** Shortcut **/}
           <div className="relative">
             <div className="relative">
-              <Input className="pl-9 pr-24 h-12" placeholder="Add a shortcut..." value={shortcut} onChange={handleShortcutChange} />
+              <Input 
+                ref={shortcutInputRef}
+                className="pl-9 pr-24 h-12" 
+                placeholder="Add a shortcut..." 
+                value={shortcut} 
+                onChange={handleShortcutChange}
+                data-no-extension="true"
+                data-exclude-extension="true"
+                autoComplete="off"
+                autoCorrect="off"
+                spellCheck="false"
+              />
               <FaKeyboard className="absolute left-[10px] top-1/2 h-4 w-4 text-muted-foreground -translate-y-1/2" />
               <Button
                 ref={tryItOutButtonRef}
@@ -465,13 +534,6 @@ const PromptPage = ({ params }: PromptPageProps) => {
               onFormMenuNodeClick={handleFormMenuNodeClick}
               onEditorClick={handleEditorClick}
             />
-            <Button 
-              className="w-20" 
-              onClick={handleSave}
-              disabled={!hasUnsavedChanges}
-            >
-              Save
-            </Button>
           </section>
 
             {/* 桌面版側邊欄 */}

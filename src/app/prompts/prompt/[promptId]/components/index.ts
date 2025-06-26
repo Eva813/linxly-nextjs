@@ -1,2 +1,2 @@
-export { PromptHeader } from './PromptHeader';
-export { EditorSection } from './EditorSection';
+export { PromptHeader } from './promptHeader';
+export { EditorSection } from './editorSection';

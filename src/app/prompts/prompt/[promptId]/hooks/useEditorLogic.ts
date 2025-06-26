@@ -7,7 +7,6 @@ import { formMenuSpec } from "@/lib/specs/formMenuSpec";
 import { buildFormData } from '@/lib/buildFormData';
 
 export const useEditorLogic = () => {
-  // Editor 實例
   const editorRef = useRef<Editor | null>(null);
   
   // 對話框狀態
@@ -201,10 +200,8 @@ export const useEditorLogic = () => {
   }, [textInputEditInfo, dropdownEditInfo]);
 
   return {
-    // Refs
     editorRef,
     
-    // 狀態
     textInputEditInfo,
     dropdownEditInfo,
     isTextDialogOpen,

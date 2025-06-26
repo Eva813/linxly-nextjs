@@ -8,7 +8,7 @@ interface UseAutoSaveOptions {
   promptId?: string;
 }
 
-export const useAutoSave = ({ onSave, delay = 2000, enabled = true, promptId }: UseAutoSaveOptions) => {
+export const useAutoSave = ({ onSave, enabled = true, promptId }: UseAutoSaveOptions) => {
   const { setSaving, setSaved, setSaveError, setActive } = useSaveStore();
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
@@ -63,17 +63,13 @@ export const useAutoSave = ({ onSave, delay = 2000, enabled = true, promptId }: 
     }
   }, [onSave, enabled, promptId, setSaving, setSaved, setSaveError, setActive, cancelCurrentSave]);
 
-  // 觸發自動儲存（防抖動）
+  // 觸發自動儲存
   const triggerAutoSave = useCallback(() => {
     if (!enabled || !promptId) return;
 
     clearCurrentTimeout();
-    setActive(true, promptId);
-    
-    timeoutRef.current = setTimeout(() => {
-      performSave();
-    }, delay);
-  }, [enabled, promptId, delay, performSave, setActive, clearCurrentTimeout]);
+    performSave();
+  }, [enabled, promptId, performSave, clearCurrentTimeout]);
 
   // 立即儲存（例如失焦時）
   const triggerImmediateSave = useCallback(() => {

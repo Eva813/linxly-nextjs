@@ -147,7 +147,8 @@ export const usePromptPageLogic = ({ promptId }: UsePromptPageLogicProps) => {
 
   const updateContent = useCallback((newContent: string) => {
     updateFormField('content', newContent);
-  }, [updateFormField]);  // 載入初始值
+  }, [updateFormField]);
+  
   useEffect(() => {
     if (currentPrompt) {
       const initialData = {

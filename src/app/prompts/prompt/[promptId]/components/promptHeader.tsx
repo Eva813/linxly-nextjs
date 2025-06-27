@@ -6,6 +6,7 @@ import SaveStatusIndicator from '@/components/ui/saveStatusIndicator';
 import ShortcutErrorAlert from "@/app/prompts/components/shortcutErrorAlert";
 import EditViewButtons, { Mode } from "@/app/prompts/components/editViewButtons";
 import TryItOutPopup from '../tryItOutPopup';
+import SecureShortcutInput from './SecureShortcutInput';
 
 interface ShortcutError {
   conflictingShortcut: string;
@@ -54,6 +55,7 @@ export const PromptHeader = ({
             autoComplete="off"
             autoCorrect="off"
             spellCheck="false"
+            data-blaze-disabled="true"
           />
           <FaTag className="absolute left-[10px] top-1/2 h-4 w-4 text-muted-foreground -translate-y-1/2" />
         </div>
@@ -61,16 +63,11 @@ export const PromptHeader = ({
         {/* 快捷鍵 */}
         <div className="relative">
           <div className="relative">
-            <Input 
-              className="pl-9 pr-24 h-12" 
-              placeholder="Add a shortcut..." 
-              value={shortcut} 
+            <SecureShortcutInput
+              className="pl-9 pr-24 h-12"
+              placeholder="Add a shortcut..."
+              value={shortcut}
               onChange={onShortcutChange}
-              data-no-extension="true"
-              data-exclude-extension="true"
-              autoComplete="off"
-              autoCorrect="off"
-              spellCheck="false"
             />
             <FaKeyboard className="absolute left-[10px] top-1/2 h-4 w-4 text-muted-foreground -translate-y-1/2" />
             <Button

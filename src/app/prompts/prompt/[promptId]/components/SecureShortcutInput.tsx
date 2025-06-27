@@ -10,11 +10,12 @@ export class SecureShortcutInputElement extends HTMLElement {
     super();
     this.eventBlocker = new AbortController();
     
-    // 使用 closed shadow DOM 完全隔離
+    // 使用 open shadow DOM 讓樣式可以繼承
     this.shadow = this.attachShadow({ mode: 'closed', delegatesFocus: true });
     this.input = document.createElement('input');
     this.setupInput();
     this.setupEventBlocking();
+    this.setupStyles();
     this.shadow.appendChild(this.input);
   }
 
@@ -33,18 +34,90 @@ export class SecureShortcutInputElement extends HTMLElement {
     this.input.setAttribute('spellcheck', 'false');
     this.input.setAttribute('data-gramm', 'false'); // 關閉 Grammarly
     
-    // 設定樣式以模擬正常 input
+    // 設定樣式以模擬正常 input，配合 shadcn UI 樣式
     this.input.style.cssText = `
       width: 100%;
       height: 100%;
-      border: none;
       outline: none;
       background: transparent;
       font: inherit;
       color: inherit;
-      padding: inherit;
+      padding: 0;
       margin: 0;
+      box-sizing: border-box;
+      font-size: inherit;
+      line-height: inherit;
     `;
+  }
+
+  private setupStyles() {
+    // 建立 style 元素並注入 shadcn UI 樣式，使用確定的顏色值
+    const style = document.createElement('style');
+    style.textContent = `
+      :host {
+        display: flex;
+        height: 3rem;
+        width: 100%;
+        border-radius: 0.375rem;
+        border: 1px solid hsl(240 5.9% 90%) !important;
+        background-color: transparent;
+        padding-left: 2.25rem;
+        padding-right: 6rem;
+        padding-top: 0.25rem;
+        padding-bottom: 0.25rem;
+        font-size: 1rem;
+        line-height: 1.5;
+        box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+        transition-property: color, background-color, border-color, text-decoration-color, fill, stroke;
+        transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+        transition-duration: 150ms;
+      }
+
+      :host(:focus-within) {
+        outline: 2px solid transparent;
+        outline-offset: 2px;
+        box-shadow: 0 0 0 2px #96b0e4;
+        border-color: #96b0e4;
+      }
+
+      :host([disabled]) {
+        cursor: not-allowed;
+        opacity: 0.5;
+      }
+
+      input {
+        width: 100%;
+        height: 100%;
+        background: transparent;
+        border: none;
+        outline: none;
+        font: inherit;
+        color: inherit;
+        padding: 0;
+        margin: 0;
+      }
+
+      input:focus {
+        outline: none;
+      }
+
+      input::placeholder {
+        color: #cccccc;
+      }
+
+      input:disabled {
+        cursor: not-allowed;
+        opacity: 0.5;
+      }
+
+      @media (min-width: 768px) {
+        :host {
+          font-size: 0.875rem;
+          line-height: 1.25rem;
+        }
+      }
+    `;
+    this.shadow.appendChild(style);
   }
 
   private setupEventBlocking() {
@@ -165,7 +238,6 @@ interface SecureShortcutInputProps {
 const SecureShortcutInput: React.FC<SecureShortcutInputProps> = ({
   value,
   placeholder,
-  className,
   disabled,
   onChange,
   onFocus,
@@ -227,7 +299,9 @@ const SecureShortcutInput: React.FC<SecureShortcutInputProps> = ({
 
   return React.createElement('secure-shortcut-input', {
     ref,
-    className,
+    placeholder,
+    disabled,
+    value,
     'data-testid': 'secure-shortcut-input'
   });
 };

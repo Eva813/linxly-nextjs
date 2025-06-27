@@ -64,7 +64,6 @@ export const PromptHeader = ({
         <div className="relative">
           <div className="relative">
             <SecureShortcutInput
-              className="pl-9 pr-24 h-12"
               placeholder="Add a shortcut..."
               value={shortcut}
               onChange={onShortcutChange}

@@ -20,7 +20,7 @@ const SaveStatusIndicator: React.FC<SaveStatusIndicatorProps> = ({ className = '
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
   const clearTimer = () => {
-    if (timerRef.current) {
+    if (timerRef.current !== null ) {
       clearTimeout(timerRef.current);
       timerRef.current = null;
     }
@@ -28,29 +28,43 @@ const SaveStatusIndicator: React.FC<SaveStatusIndicatorProps> = ({ className = '
 
   // 當 promptId 改變時，重置組件狀態
   useEffect(() => {
-    if (currentPromptId !== promptId) {
-      clearTimer();
-      setDisplayState('idle');
-      setCurrentPromptId(promptId);
-    }
+    if (currentPromptId === promptId) return;
+
+    clearTimer();
+    setDisplayState('idle');
+    setCurrentPromptId(promptId);
   }, [promptId, currentPromptId]);
 
-  // 監聽儲存狀態變化
+  // 根據儲存流程切換狀態
   useEffect(() => {
+    const isDebouncing = isActive && !isSaving;
+    const isTransitionToSaved = !isActive && !isSaving && displayState === 'saving';
+
     if (hasSaveError) {
       clearTimer();
-      setDisplayState('error');
-    } else if (isActive || isSaving) {
-      clearTimer();
-      setDisplayState('saving');
-    } else if (displayState === 'saving') {
-      // 從 saving 轉為 saved，並設定 1.2 秒後自動隱藏
-      setDisplayState('saved');
+      return setDisplayState('error');
+    }
+
+    if (isSaving || isDebouncing) {
+      clearTimer(); // 正在儲存中，避免舊 timer 打斷流程
+      return setDisplayState('saving');
+    }
+
+    if (isTransitionToSaved) {
+      clearTimer(); // 進入 saved 狀態，接 1.2s timer
+      return setDisplayState('saved');
+    }
+  }, [isActive, isSaving, hasSaveError, displayState]);
+
+  // saved 後自動隱藏
+  useEffect(() => {
+    if (displayState === 'saved') {
       timerRef.current = setTimeout(() => {
         setDisplayState('idle');
       }, 1200);
+      return () => clearTimer();
     }
-  }, [isActive, isSaving, hasSaveError, displayState]);
+  }, [displayState]);
 
   useEffect(() => {
     return clearTimer;

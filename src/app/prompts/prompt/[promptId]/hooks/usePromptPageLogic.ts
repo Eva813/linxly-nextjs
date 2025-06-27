@@ -170,6 +170,9 @@ export const usePromptPageLogic = ({ promptId }: UsePromptPageLogicProps) => {
     if (hasChanges && currentPrompt) {
       setActive(true, promptId);
       debouncedSave();
+    } else if (!hasChanges) {
+      // 當沒有變更時，設定為非 active 狀態
+      setActive(false, promptId);
     }
     
     return () => {

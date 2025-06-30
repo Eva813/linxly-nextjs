@@ -1,3 +1,5 @@
+"use client";
+
 import React, { useState, useEffect, useCallback } from 'react';
 import SecureInput from '@/components/ui/secureInput';
 

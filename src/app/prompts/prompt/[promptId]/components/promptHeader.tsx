@@ -1,11 +1,11 @@
 import React, { useRef, useState } from 'react';
-import { Input } from "@/components/ui/input";
 import { Button } from '@/components/ui/button';
 import { FaTag, FaKeyboard } from "react-icons/fa6";
 import SaveStatusIndicator from '@/components/ui/saveStatusIndicator';
 import ShortcutErrorAlert from "@/app/prompts/components/shortcutErrorAlert";
 import EditViewButtons, { Mode } from "@/app/prompts/components/editViewButtons";
 import TryItOutPopup from '../tryItOutPopup';
+import SecureInput from '@/components/ui/secureInput';
 
 interface ShortcutError {
   conflictingShortcut: string;
@@ -44,33 +44,29 @@ export const PromptHeader = ({
         {/* Prompt 名稱 */}
         <div className="relative">
           <SaveStatusIndicator className="absolute -top-8 left-0 z-10 sm:-top-7 md:-top-6" />
-          <Input 
-            className="pl-9 h-12" 
-            placeholder="Type prompt name..." 
-            value={name} 
+          <SecureInput
+            className="h-12"
+            placeholder="Type prompt name..."
+            value={name}
             onChange={onNameChange}
-            data-no-extension="true"
-            data-exclude-extension="true"
-            autoComplete="off"
-            autoCorrect="off"
-            spellCheck="false"
+            variant="default"
+            styleConfig={{
+              paddingLeft: '2.25rem',
+              paddingRight: '0.75rem',
+              height: '3rem'
+            }}
           />
           <FaTag className="absolute left-[10px] top-1/2 h-4 w-4 text-muted-foreground -translate-y-1/2" />
         </div>
-        
+
         {/* 快捷鍵 */}
         <div className="relative">
           <div className="relative">
-            <Input 
-              className="pl-9 pr-24 h-12" 
-              placeholder="Add a shortcut..." 
-              value={shortcut} 
+            <SecureInput
+              placeholder="Add a shortcut..."
+              value={shortcut}
               onChange={onShortcutChange}
-              data-no-extension="true"
-              data-exclude-extension="true"
-              autoComplete="off"
-              autoCorrect="off"
-              spellCheck="false"
+              variant="shortcut"
             />
             <FaKeyboard className="absolute left-[10px] top-1/2 h-4 w-4 text-muted-foreground -translate-y-1/2" />
             <Button
@@ -85,21 +81,21 @@ export const PromptHeader = ({
             </Button>
           </div>
           {shortcutError && (
-            <ShortcutErrorAlert 
-              error={shortcutError} 
-              onClose={onClearShortcutError} 
+            <ShortcutErrorAlert
+              error={shortcutError}
+              onClose={onClearShortcutError}
             />
           )}
           {isPopupVisible && (
-            <TryItOutPopup 
-              tryItOutButtonRef={tryItOutButtonRef} 
-              shortcut={shortcut} 
-              onClose={() => setIsPopupVisible(false)} 
+            <TryItOutPopup
+              tryItOutButtonRef={tryItOutButtonRef}
+              shortcut={shortcut}
+              onClose={() => setIsPopupVisible(false)}
             />
           )}
         </div>
       </div>
-      
+
       <div className="flex items-center justify-between lg:justify-end space-x-2">
         <EditViewButtons mode={mode} onModeChange={onModeChange} />
         <Button

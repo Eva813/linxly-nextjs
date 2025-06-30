@@ -34,22 +34,12 @@ export const createPromptSlice: StateCreator<
   },
   addPromptToFolder: async (folderId, prompt, afterPromptId) => {
     try {
-      
+      // 直接使用 API，讓後端處理所有排序邏輯
       const newPrompt = await createPrompt({ folderId, afterPromptId, ...prompt });
-      
-      set({
-        folders: get().folders.map((folder) => {
-          if (folder.id !== folderId) return folder;
-          const updatedPrompts = [...folder.prompts];
-          if (afterPromptId) {
-            const idx = updatedPrompts.findIndex((p) => p.id === afterPromptId);
-            updatedPrompts.splice(idx + 1, 0, newPrompt);
-          } else {
-            updatedPrompts.push(newPrompt);
-          }
-          return { ...folder, prompts: updatedPrompts };
-        }),
-      });
+
+      // 重新獲取該資料夾的所有 prompts，確保排序正確
+      await get().fetchPromptsForFolder(folderId);
+
       return newPrompt;
     } catch (error) {
       console.error('Failed to add prompt:', error);
@@ -57,29 +47,29 @@ export const createPromptSlice: StateCreator<
     }
   },
   deletePromptFromFolder: async (folderId, promptId) => {
-      try {
-        await apiDeletePrompt(promptId);
-        set({
-          folders: get().folders.map((folder) =>
-            folder.id === folderId
-              ? {
-                  ...folder,
-                  prompts: folder.prompts.filter(
-                    (prompt) => prompt.id !== promptId
-                  ),
-                }
-              : folder
-          ),
-        });
-      } catch (error) {
-        console.error('刪除提示失敗:', error);
-        throw error;
-      }
-    },
+    try {
+      await apiDeletePrompt(promptId);
+      set({
+        folders: get().folders.map((folder) =>
+          folder.id === folderId
+            ? {
+              ...folder,
+              prompts: folder.prompts.filter(
+                (prompt) => prompt.id !== promptId
+              ),
+            }
+            : folder
+        ),
+      });
+    } catch (error) {
+      console.error('刪除提示失敗:', error);
+      throw error;
+    }
+  },
   updatePrompt: async (promptId, updatedPrompt) => {
     try {
       // 忽略 id 欄位，因為 API 不需要
-      const {...promptDataToUpdate } = updatedPrompt;
+      const { ...promptDataToUpdate } = updatedPrompt;
 
       const updated = await apiUpdatePrompt(promptId, promptDataToUpdate);
 
@@ -91,7 +81,7 @@ export const createPromptSlice: StateCreator<
           ),
         })),
       });
-      
+
       return updated;
     } catch (error) {
       console.error('更新提示失敗:', error);

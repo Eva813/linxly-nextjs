@@ -1,12 +1,12 @@
 // app/api/v1/folders/route.ts
 import { NextResponse } from 'next/server';
-import { adminDb } from '@/lib/firebaseAdmin';
+import { adminDb } from '@/server/db/firebase';
 import { FieldValue } from 'firebase-admin/firestore';
 import { 
-  handleLazyMigration, 
+  performLazyMigration, 
   groupPromptsByFolderId, 
   formatPromptsForResponse 
-} from '@/lib/utils/promptMigration';
+} from '@/server/utils/promptUtils';
 
 export async function GET(req: Request) {
   try {
@@ -40,7 +40,11 @@ export async function GET(req: Request) {
       const folderPrompts = promptsMap.get(folderId) || [];
 
       // 處理 Lazy Migration（如果需要）
-      const processedPrompts = await handleLazyMigration(folderPrompts, folderId);
+      const processedPrompts = await performLazyMigration(folderPrompts, {
+        mode: 'batch',
+        folderId,
+        userId
+      });
 
       // 格式化程式碼片段資料
       const formattedPrompts = formatPromptsForResponse(processedPrompts);

@@ -1,12 +1,12 @@
 import { NextResponse } from 'next/server';
-import { adminDb } from '@/lib/firebaseAdmin';
+import { adminDb } from '@/server/db/firebase';
 import { 
   performLazyMigration,
   calculateInsertStrategy,
   executeSeqNoUpdates,
-  getMaxSeqNo,
-  type PromptData 
-} from '@/lib/utils/seqNoManager';
+  getMaxSeqNo
+} from '@/server/utils/promptUtils';
+import type { PromptData } from '@/shared/types/prompt';
 
 export async function GET(req: Request) {
   const userId = req.headers.get('x-user-id');
@@ -60,7 +60,11 @@ export async function GET(req: Request) {
     });
 
     // 使用 performLazyMigration 處理排序和遷移
-    const sortedPrompts = await performLazyMigration(folderId, userId, prompts);
+    const sortedPrompts = await performLazyMigration(prompts, {
+      mode: 'batch',
+      folderId,
+      userId
+    });
 
     const result = sortedPrompts.map(prompt => ({
       id: prompt.id,
@@ -134,12 +138,12 @@ export async function POST(req: Request) {
 
       try {
         // 計算插入策略（只影響必要的 prompts）
-        const { operations, insertSeqNo } = calculateInsertStrategy(existingPrompts, afterPromptId);
+        const { updateOperations, insertSeqNo } = calculateInsertStrategy(existingPrompts, afterPromptId);
 
         // 執行交易：只更新受影響的 prompts + 新增新 prompt
         const result = await adminDb.runTransaction(async (transaction) => {
           // 1. 更新受影響的 prompts 的 seqNo
-          await executeSeqNoUpdates(transaction, operations);
+          await executeSeqNoUpdates(transaction, updateOperations);
 
           // 2. 新增新 prompt
           const promptRef = adminDb.collection('prompts').doc();

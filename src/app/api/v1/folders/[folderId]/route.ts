@@ -1,10 +1,10 @@
 import { NextResponse } from 'next/server';
-import { adminDb } from '@/lib/firebaseAdmin';
+import { adminDb } from '@/server/db/firebase';
 import { 
-  handleLazyMigration, 
-  formatPromptsForResponse,
-  type PromptData 
-} from '@/lib/utils/promptMigration';
+  performLazyMigration, 
+  formatPromptsForResponse
+} from '@/server/utils/promptUtils';
+import type { PromptData } from '@/shared/types/prompt';
 
 export async function GET(
   req: Request,
@@ -52,12 +52,18 @@ export async function GET(
         content: prompt.content,
         shortcut: prompt.shortcut,
         seqNo: prompt.seqNo,
-        createdAt: prompt.createdAt
+        createdAt: prompt.createdAt,
+        folderId: prompt.folderId,
+        userId: prompt.userId
       };
     });
 
     // 使用共用的 Lazy Migration 邏輯
-    const processedPrompts = await handleLazyMigration(prompts, folderId);
+    const processedPrompts = await performLazyMigration(prompts, {
+      mode: 'batch',
+      folderId,
+      userId
+    });
 
     // 格式化回應資料
     const formattedPrompts = formatPromptsForResponse(processedPrompts);
@@ -132,12 +138,18 @@ export async function PUT(
         content: prompt.content,
         shortcut: prompt.shortcut,
         seqNo: prompt.seqNo,
-        createdAt: prompt.createdAt
+        createdAt: prompt.createdAt,
+        folderId: prompt.folderId,
+        userId: prompt.userId
       };
     });
 
     // 使用共用的 Lazy Migration 邏輯
-    const processedPrompts = await handleLazyMigration(prompts, folderId);
+    const processedPrompts = await performLazyMigration(prompts, {
+      mode: 'batch',
+      folderId,
+      userId
+    });
 
     // 格式化回應資料
     const formattedPrompts = formatPromptsForResponse(processedPrompts);

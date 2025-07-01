@@ -2,6 +2,11 @@
 import { NextResponse } from 'next/server';
 import { adminDb } from '@/lib/firebaseAdmin';
 import { FieldValue } from 'firebase-admin/firestore';
+import { 
+  handleLazyMigration, 
+  groupPromptsByFolderId, 
+  formatPromptsForResponse 
+} from '@/lib/utils/promptMigration';
 
 export async function GET(req: Request) {
   try {
@@ -10,93 +15,35 @@ export async function GET(req: Request) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 })
     }
 
-    const query = adminDb
-      .collection('folders')
-      .where('userId', '==', userId)
-      .orderBy('createdAt', 'asc');
+    // 優化：同時獲取所有資料夾和所有 prompts，避免 N+1 查詢問題
+    const [foldersSnapshot, promptsSnapshot] = await Promise.all([
+      adminDb
+        .collection('folders')
+        .where('userId', '==', userId)
+        .orderBy('createdAt', 'asc')
+        .get(),
+      adminDb
+        .collection('prompts')
+        .where('userId', '==', userId)
+        .get()
+    ]);
 
-    const foldersSnapshot = await query.get();
+    // 將 prompts 按 folderId 分組
+    const promptsMap = groupPromptsByFolderId(promptsSnapshot.docs);
 
+    // 處理每個資料夾並組合資料
     const result = await Promise.all(foldersSnapshot.docs.map(async (folderDoc) => {
       const folder = folderDoc.data();
       const folderId = folderDoc.id;
 
-      // 從 prompts 集合獲取該資料夾的 prompts
-      const promptsSnapshot = await adminDb
-        .collection('prompts')
-        .where('folderId', '==', folderId)
-        .where('userId', '==', userId)
-        .get();
+      // 從分組的 Map 中獲取該資料夾的 prompts
+      const folderPrompts = promptsMap.get(folderId) || [];
 
-      const prompts = promptsSnapshot.docs.map(doc => {
-        const prompt = doc.data();
-        return {
-          id: doc.id,
-          name: prompt.name,
-          content: prompt.content,
-          shortcut: prompt.shortcut,
-          seqNo: prompt.seqNo,
-          createdAt: prompt.createdAt
-        };
-      });
-
-      // Lazy Migration: 檢查是否有任一筆缺少 seqNo
-      const hasPromptWithoutSeqNo = prompts.some(prompt =>
-        prompt.seqNo === undefined || prompt.seqNo === null
-      );
-
-      if (hasPromptWithoutSeqNo && prompts.length > 0) {
-        console.log(`資料夾 ${folderId} 偵測到缺少 seqNo，開始進行 Lazy Migration`);
-
-        // 先將有 seqNo 的 prompt 按 seqNo 排序，沒有的按 createdAt 排序
-        const promptsWithSeqNo = prompts.filter(p => p.seqNo !== undefined && p.seqNo !== null);
-        const promptsWithoutSeqNo = prompts.filter(p => p.seqNo === undefined || p.seqNo === null);
-
-        // 有 seqNo 的按 seqNo 排序
-        promptsWithSeqNo.sort((a, b) => (a.seqNo || 0) - (b.seqNo || 0));
-
-        // 沒有 seqNo 的按 createdAt 排序
-        promptsWithoutSeqNo.sort((a, b) => {
-          if (!a.createdAt || !b.createdAt) return 0;
-          return new Date(a.createdAt.seconds * 1000).getTime() - new Date(b.createdAt.seconds * 1000).getTime();
-        });
-
-        // 重新組合：有 seqNo 的在前，沒有的在後
-        const reorderedPrompts = [...promptsWithSeqNo, ...promptsWithoutSeqNo];
-
-        // 使用交易批次更新所有 prompts 的 seqNo
-        await adminDb.runTransaction(async (transaction) => {
-          for (let i = 0; i < reorderedPrompts.length; i++) {
-            const promptRef = adminDb.collection('prompts').doc(reorderedPrompts[i].id);
-            transaction.update(promptRef, {
-              seqNo: i + 1,
-              updatedAt: new Date()
-            });
-            reorderedPrompts[i].seqNo = i + 1;
-          }
-        });
-
-        // 更新 prompts 陣列為重新排序後的結果
-        prompts.length = 0;
-        prompts.push(...reorderedPrompts);
-
-        console.log(`Lazy Migration 完成，已更新資料夾 ${folderId} 下 ${prompts.length} 筆 prompt 的 seqNo`);
-      }
-
-      // 最終按 seqNo 排序回傳
-      prompts.sort((a, b) => {
-        const aSeqNo = a.seqNo || 0;
-        const bSeqNo = b.seqNo || 0;
-        return aSeqNo - bSeqNo;
-      });
+      // 處理 Lazy Migration（如果需要）
+      const processedPrompts = await handleLazyMigration(folderPrompts, folderId);
 
       // 格式化程式碼片段資料
-      const formattedPrompts = prompts.map(prompt => ({
-        id: prompt.id,
-        name: prompt.name,
-        content: prompt.content,
-        shortcut: prompt.shortcut
-      }));
+      const formattedPrompts = formatPromptsForResponse(processedPrompts);
 
       const createdAt = folder.createdAt?.toDate?.() || new Date();
       const updatedAt = folder.updatedAt?.toDate?.() || createdAt;

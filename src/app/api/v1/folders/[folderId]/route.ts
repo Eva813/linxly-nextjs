@@ -1,5 +1,10 @@
 import { NextResponse } from 'next/server';
 import { adminDb } from '@/lib/firebaseAdmin';
+import { 
+  handleLazyMigration, 
+  formatPromptsForResponse,
+  type PromptData 
+} from '@/lib/utils/promptMigration';
 
 export async function GET(
   req: Request,
@@ -38,7 +43,8 @@ export async function GET(
       .where('userId', '==', userId)
       .get();
 
-    const prompts = promptsSnapshot.docs.map(doc => {
+    // 轉換為 PromptData 格式
+    const prompts: PromptData[] = promptsSnapshot.docs.map(doc => {
       const prompt = doc.data();
       return {
         id: doc.id,
@@ -50,63 +56,11 @@ export async function GET(
       };
     });
 
-    // Lazy Migration: 檢查是否有任一筆缺少 seqNo
-    const hasPromptWithoutSeqNo = prompts.some(prompt =>
-      prompt.seqNo === undefined || prompt.seqNo === null
-    );
-
-    if (hasPromptWithoutSeqNo && prompts.length > 0) {
-      console.log(`資料夾 ${folderId} 偵測到缺少 seqNo，開始進行 Lazy Migration`);
-
-      // 先將有 seqNo 的 prompt 按 seqNo 排序，沒有的按 createdAt 排序
-      const promptsWithSeqNo = prompts.filter(p => p.seqNo !== undefined && p.seqNo !== null);
-      const promptsWithoutSeqNo = prompts.filter(p => p.seqNo === undefined || p.seqNo === null);
-
-      // 有 seqNo 的按 seqNo 排序
-      promptsWithSeqNo.sort((a, b) => (a.seqNo || 0) - (b.seqNo || 0));
-
-      // 沒有 seqNo 的按 createdAt 排序
-      promptsWithoutSeqNo.sort((a, b) => {
-        if (!a.createdAt || !b.createdAt) return 0;
-        return new Date(a.createdAt.seconds * 1000).getTime() - new Date(b.createdAt.seconds * 1000).getTime();
-      });
-
-      // 重新組合：有 seqNo 的在前，沒有的在後
-      const reorderedPrompts = [...promptsWithSeqNo, ...promptsWithoutSeqNo];
-
-      // 使用交易批次更新所有 prompts 的 seqNo
-      await adminDb.runTransaction(async (transaction) => {
-        for (let i = 0; i < reorderedPrompts.length; i++) {
-          const promptRef = adminDb.collection('prompts').doc(reorderedPrompts[i].id);
-          transaction.update(promptRef, {
-            seqNo: i + 1,
-            updatedAt: new Date()
-          });
-          reorderedPrompts[i].seqNo = i + 1;
-        }
-      });
-
-      // 更新 prompts 陣列為重新排序後的結果
-      prompts.length = 0;
-      prompts.push(...reorderedPrompts);
-
-      console.log(`Lazy Migration 完成，已更新資料夾 ${folderId} 下 ${prompts.length} 筆 prompt 的 seqNo`);
-    }
-
-    // 最終按 seqNo 排序回傳
-    prompts.sort((a, b) => {
-      const aSeqNo = a.seqNo || 0;
-      const bSeqNo = b.seqNo || 0;
-      return aSeqNo - bSeqNo;
-    });
+    // 使用共用的 Lazy Migration 邏輯
+    const processedPrompts = await handleLazyMigration(prompts, folderId);
 
     // 格式化回應資料
-    const formattedPrompts = prompts.map(prompt => ({
-      id: prompt.id,
-      name: prompt.name,
-      content: prompt.content,
-      shortcut: prompt.shortcut
-    }));
+    const formattedPrompts = formatPromptsForResponse(processedPrompts);
 
     // 格式化回應資料
     const result = {
@@ -169,7 +123,8 @@ export async function PUT(
       .where('userId', '==', userId)
       .get();
 
-    const prompts = promptsSnapshot.docs.map(doc => {
+    // 轉換為 PromptData 格式
+    const prompts: PromptData[] = promptsSnapshot.docs.map(doc => {
       const prompt = doc.data();
       return {
         id: doc.id,
@@ -181,62 +136,11 @@ export async function PUT(
       };
     });
 
-    // Lazy Migration: 檢查是否有任一筆缺少 seqNo
-    const hasPromptWithoutSeqNo = prompts.some(prompt =>
-      prompt.seqNo === undefined || prompt.seqNo === null
-    );
+    // 使用共用的 Lazy Migration 邏輯
+    const processedPrompts = await handleLazyMigration(prompts, folderId);
 
-    if (hasPromptWithoutSeqNo && prompts.length > 0) {
-      console.log(`資料夾 ${folderId} 偵測到缺少 seqNo，開始進行 Lazy Migration`);
-
-      // 先將有 seqNo 的 prompt 按 seqNo 排序，沒有的按 createdAt 排序
-      const promptsWithSeqNo = prompts.filter(p => p.seqNo !== undefined && p.seqNo !== null);
-      const promptsWithoutSeqNo = prompts.filter(p => p.seqNo === undefined || p.seqNo === null);
-
-      // 有 seqNo 的按 seqNo 排序
-      promptsWithSeqNo.sort((a, b) => (a.seqNo || 0) - (b.seqNo || 0));
-
-      // 沒有 seqNo 的按 createdAt 排序
-      promptsWithoutSeqNo.sort((a, b) => {
-        if (!a.createdAt || !b.createdAt) return 0;
-        return new Date(a.createdAt.seconds * 1000).getTime() - new Date(b.createdAt.seconds * 1000).getTime();
-      });
-
-      // 重新組合：有 seqNo 的在前，沒有的在後
-      const reorderedPrompts = [...promptsWithSeqNo, ...promptsWithoutSeqNo];
-
-      // 使用交易批次更新所有 prompts 的 seqNo
-      await adminDb.runTransaction(async (transaction) => {
-        for (let i = 0; i < reorderedPrompts.length; i++) {
-          const promptRef = adminDb.collection('prompts').doc(reorderedPrompts[i].id);
-          transaction.update(promptRef, {
-            seqNo: i + 1,
-            updatedAt: new Date()
-          });
-          reorderedPrompts[i].seqNo = i + 1;
-        }
-      });
-
-      // 更新 prompts 陣列為重新排序後的結果
-      prompts.length = 0;
-      prompts.push(...reorderedPrompts);
-
-      console.log(`Lazy Migration 完成，已更新資料夾 ${folderId} 下 ${prompts.length} 筆 prompt 的 seqNo`);
-    }
-
-    // 最終按 seqNo 排序回傳
-    prompts.sort((a, b) => {
-      const aSeqNo = a.seqNo || 0;
-      const bSeqNo = b.seqNo || 0;
-      return aSeqNo - bSeqNo;
-    });
-
-    const formattedPrompts = prompts.map(prompt => ({
-      id: prompt.id,
-      name: prompt.name,
-      content: prompt.content,
-      shortcut: prompt.shortcut
-    }));
+    // 格式化回應資料
+    const formattedPrompts = formatPromptsForResponse(processedPrompts);
 
     const result = {
       id: folderId,

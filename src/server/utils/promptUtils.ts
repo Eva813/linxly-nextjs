@@ -7,9 +7,6 @@ import { adminDb } from '../db/firebase';
 import type { Transaction } from '../db/firebase';
 import type { PromptData, PromptApiResponse } from '@/shared/types/prompt';
 
-// Re-export types for convenience
-export type { PromptData, PromptApiResponse } from '@/shared/types/prompt';
-
 // Update 操作類型
 export interface UpdateOperation {
   type: 'batch' | 'transaction';
@@ -83,7 +80,9 @@ export async function performLazyMigration(
     return sortPromptsBySeqNo(prompts);
   }
 
-  console.log(`資料夾 ${folderId} 偵測到缺少 seqNo，開始進行 Lazy Migration (${mode} 模式)`);
+  if (process.env.NODE_ENV === 'development') {
+    console.log(`資料夾 ${folderId} 偵測到缺少 seqNo，開始進行 Lazy Migration (${mode} 模式)`);
+  }
 
   const normalizedPrompts = normalizePromptSequence(prompts);
   
@@ -122,10 +121,14 @@ export async function performLazyMigration(
       }
     }
 
-    console.log(`Lazy Migration 完成，已更新資料夾 ${folderId} 下 ${normalizedPrompts.length} 筆 prompt 的 seqNo`);
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`Lazy Migration 完成，已更新資料夾 ${folderId} 下 ${normalizedPrompts.length} 筆 prompt 的 seqNo`);
+    }
     return normalizedPrompts;
   } catch (error) {
-    console.error(`Lazy Migration 失敗，資料夾 ${folderId}:`, error);
+    if (process.env.NODE_ENV === 'development') {
+      console.error(`Lazy Migration 失敗，資料夾 ${folderId}:`, error);
+    }
     return sortPromptsBySeqNo(prompts);
   }
 }

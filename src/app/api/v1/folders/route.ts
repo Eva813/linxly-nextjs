@@ -1,4 +1,3 @@
-// app/api/v1/folders/route.ts
 import { NextResponse } from 'next/server';
 import { adminDb } from '@/server/db/firebase';
 import { FieldValue } from 'firebase-admin/firestore';

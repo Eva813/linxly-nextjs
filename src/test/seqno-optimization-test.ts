@@ -6,8 +6,8 @@
 import { 
   normalizePromptSequence, 
   calculateInsertStrategy,
-  type PromptData 
 } from '@/server/utils/promptUtils';
+import type { PromptData } from '@/shared/types/prompt';
 
 export function runSeqNoTests() {
   console.log('🧪 開始 SeqNo 管理測試\n');

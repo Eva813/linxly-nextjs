@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { usePromptStore } from "@/stores/prompt";
 import { useCurrentPrompt } from '@/lib/useCurrentPrompt';
 import { useSaveStore } from '@/stores/loading';
@@ -16,12 +16,12 @@ interface UsePromptPageLogicProps {
 
 // 將快捷鍵驗證邏輯提取為函式
 const validateShortcut = (
-  newShortcut: string, 
+  newShortcut: string,
   allPrompts: Array<{ id: string; shortcut?: string }>,
   currentPromptId: string
 ): { isValid: boolean; error?: ShortcutError } => {
   const trimmedShortcut = newShortcut.trim();
-  
+
   if (!trimmedShortcut) {
     return { isValid: true };
   }
@@ -30,7 +30,7 @@ const validateShortcut = (
 
   for (const prompt of otherPrompts) {
     const existingShortcut = prompt.shortcut ?? "";
-    
+
     if (trimmedShortcut === existingShortcut) {
       return {
         isValid: false,
@@ -40,11 +40,11 @@ const validateShortcut = (
         }
       };
     }
-    
+
     if (
       trimmedShortcut.length > 0 &&
       existingShortcut.length > 0 &&
-      (existingShortcut.startsWith(trimmedShortcut) || 
+      (existingShortcut.startsWith(trimmedShortcut) ||
         trimmedShortcut.startsWith(existingShortcut))
     ) {
       return {
@@ -71,10 +71,10 @@ export const usePromptPageLogic = ({ promptId }: UsePromptPageLogicProps) => {
     shortcut: "",
     content: ""
   });
-  
+
   const [shortcutError, setShortcutError] = useState<ShortcutError | null>(null);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
-  
+
   // 儲存初始值用於比較
   const [initialValues, setInitialValues] = useState({
     name: "",
@@ -82,43 +82,72 @@ export const usePromptPageLogic = ({ promptId }: UsePromptPageLogicProps) => {
     content: ""
   });
 
+  // 使用 ref 來避免不必要的重新建立
+  const formDataRef = useRef(formData);
+  const currentPromptRef = useRef(currentPrompt);
+
+  // 更新 ref
+  useEffect(() => {
+    formDataRef.current = formData;
+    currentPromptRef.current = currentPrompt;
+  });
+
   // 取得所有提示詞用於驗證
   const allPrompts = folders.flatMap(folder => folder.prompts);
 
-  // 直接的儲存函式，帶有完整的狀態管理
+  // 穩定的儲存函式，使用 ref 來取得最新值
   const savePrompt = useCallback(async () => {
-    if (!currentPrompt) return;
+    const currentFormData = formDataRef.current;
+    const currentPromptData = currentPromptRef.current;
+
+    if (!currentPromptData) return;
 
     const updatedPrompt = {
-      ...currentPrompt,
-      ...formData,
+      ...currentPromptData,
+      ...currentFormData,
     };
 
     try {
       setSaving(true, promptId);
       await updatePrompt(promptId, updatedPrompt);
-      
+
       setSaved(promptId);
-      setInitialValues(formData);
+      setInitialValues(currentFormData);
       setHasUnsavedChanges(false);
     } catch (error) {
       setSaveError(true, promptId);
       console.error("儲存時發生錯誤:", error);
     }
-  }, [currentPrompt, formData, promptId, updatePrompt, setSaving, setSaved, setSaveError]);
+  }, [promptId, updatePrompt, setSaving, setSaved, setSaveError]);
 
-  // 建立 debounced 的儲存函式
+  // 建立穩定的 debounced 儲存函式
   const debouncedSave = useMemo(
-    () => debounce(async () => {
-      await savePrompt();
-    }, 1000),
+    () => debounce(savePrompt, 1000),
     [savePrompt]
   );
 
   // 統一的表單更新函式
   const updateFormField = useCallback((field: keyof typeof formData, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-    
+    setFormData(prev => {
+      const newData = { ...prev, [field]: value };
+
+      // 立即檢查是否有變更，避免在 useEffect 中進行
+      const hasChanges = !deepEqual(newData, initialValues);
+      setHasUnsavedChanges(hasChanges);
+
+      if (hasChanges && currentPrompt) {
+        setActive(true, promptId);
+        // 使用 setTimeout 避免阻塞 UI 更新
+        setTimeout(() => {
+          debouncedSave();
+        }, 0);
+      } else if (!hasChanges) {
+        setActive(false, promptId);
+      }
+
+      return newData;
+    });
+
     // 特殊處理快捷鍵驗證
     if (field === 'shortcut') {
       const trimmedValue = value.trim();
@@ -134,7 +163,7 @@ export const usePromptPageLogic = ({ promptId }: UsePromptPageLogicProps) => {
         setShortcutError(validation.error || null);
       }
     }
-  }, [allPrompts, promptId]);
+  }, [allPrompts, promptId, initialValues, currentPrompt, setActive, debouncedSave]);
 
   // 表單處理器
   const handleNameChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
@@ -148,7 +177,7 @@ export const usePromptPageLogic = ({ promptId }: UsePromptPageLogicProps) => {
   const updateContent = useCallback((newContent: string) => {
     updateFormField('content', newContent);
   }, [updateFormField]);
-  
+
   useEffect(() => {
     if (currentPrompt) {
       const initialData = {
@@ -156,30 +185,19 @@ export const usePromptPageLogic = ({ promptId }: UsePromptPageLogicProps) => {
         shortcut: currentPrompt.shortcut || "",
         content: currentPrompt.content
       };
-      
+
       setFormData(initialData);
       setInitialValues(initialData);
       setHasUnsavedChanges(false);
     }
   }, [currentPrompt]);
 
-  // 檢查變更並觸發 debounce 自動儲存
+  // 清理函式
   useEffect(() => {
-    const hasChanges = !deepEqual(formData, initialValues);
-    setHasUnsavedChanges(hasChanges);
-    
-    if (hasChanges && currentPrompt) {
-      setActive(true, promptId);
-      debouncedSave();
-    } else if (!hasChanges) {
-      // 當沒有變更時，設定為非 active 狀態
-      setActive(false, promptId);
-    }
-    
     return () => {
       debouncedSave.cancel();
     };
-  }, [formData, initialValues, currentPrompt, debouncedSave, setActive, promptId]);
+  }, [debouncedSave]);
 
   // 清除快捷鍵錯誤
   const clearShortcutError = useCallback(() => {
@@ -194,7 +212,7 @@ export const usePromptPageLogic = ({ promptId }: UsePromptPageLogicProps) => {
     shortcutError,
     hasUnsavedChanges,
     currentPrompt,
-    
+
     handleNameChange,
     handleShortcutChange,
     updateContent,

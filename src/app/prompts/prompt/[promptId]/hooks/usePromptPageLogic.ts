@@ -131,13 +131,14 @@ export const usePromptPageLogic = ({ promptId }: UsePromptPageLogicProps) => {
     setFormData(prev => {
       const newData = { ...prev, [field]: value };
 
-      // 立即檢查是否有變更，避免在 useEffect 中進行
+      // 立即檢查是否有變更
       const hasChanges = !deepEqual(newData, initialValues);
       setHasUnsavedChanges(hasChanges);
 
       if (hasChanges && currentPrompt) {
         setActive(true, promptId);
-        // 使用 setTimeout 避免阻塞 UI 更新
+        // 把 debounce 儲存的呼叫丟到「事件循環的下一輪」
+        // 這麼做可以避免阻塞 UI 更新流程，讓畫面能先更新（例如讓按鈕變灰色、出現 loading），再去做儲存的事情
         setTimeout(() => {
           debouncedSave();
         }, 0);
@@ -192,7 +193,6 @@ export const usePromptPageLogic = ({ promptId }: UsePromptPageLogicProps) => {
     }
   }, [currentPrompt]);
 
-  // 清理函式
   useEffect(() => {
     return () => {
       debouncedSave.cancel();

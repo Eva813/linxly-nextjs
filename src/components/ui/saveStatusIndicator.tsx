@@ -5,18 +5,33 @@ import { FaCheck, FaSpinner, FaExclamationCircle } from 'react-icons/fa';
 
 interface SaveStatusIndicatorProps {
   className?: string;
+  type?: 'prompt' | 'folder'; // 新增 type 屬性
+  id?: string; // 新增 id 屬性，優先於 params
 }
 
-const SaveStatusIndicator: React.FC<SaveStatusIndicatorProps> = ({ className = '' }) => {
+const SaveStatusIndicator: React.FC<SaveStatusIndicatorProps> = ({ 
+  className = '', 
+  type = 'prompt',
+  id 
+}) => {
   const params = useParams();
-  const promptId = (params?.promptId as string) || '';
-  const { isSaving, getSaveStateForPrompt } = useSaveStore();
-  const { hasSaveError, isActive } = getSaveStateForPrompt(promptId);
+  
+  // 根據 type 決定使用的 ID
+  const entityId = id || (type === 'prompt' 
+    ? (params?.promptId as string) || '' 
+    : (params?.folderId as string) || ''
+  );
+  
+  const { isSaving, getSaveStateForPrompt, getSaveStateForFolder } = useSaveStore();
+  
+  // 根據 type 選擇對應的 getSaveState 函式
+  const getSaveState = type === 'prompt' ? getSaveStateForPrompt : getSaveStateForFolder;
+  const { hasSaveError, isActive } = getSaveState(entityId);
 
   // 本地顯示狀態：idle、saving、saved、error
   // idle:表示「閒置狀態」，也就是目前沒有進行任何儲存操作或活動的狀態
   const [displayState, setDisplayState] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
-  const [currentPromptId, setCurrentPromptId] = useState(promptId);
+  const [currentEntityId, setCurrentEntityId] = useState(entityId);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
   const clearTimer = () => {
@@ -26,14 +41,14 @@ const SaveStatusIndicator: React.FC<SaveStatusIndicatorProps> = ({ className = '
     }
   };
 
-  // 當 promptId 改變時，重置組件狀態
+  // 當 entityId 改變時，重置組件狀態
   useEffect(() => {
-    if (currentPromptId === promptId) return;
+    if (currentEntityId === entityId) return;
 
     clearTimer();
     setDisplayState('idle');
-    setCurrentPromptId(promptId);
-  }, [promptId, currentPromptId]);
+    setCurrentEntityId(entityId);
+  }, [entityId, currentEntityId]);
 
   // 根據儲存流程切換狀態
   useEffect(() => {
@@ -51,7 +66,7 @@ const SaveStatusIndicator: React.FC<SaveStatusIndicatorProps> = ({ className = '
     }
 
     if (isTransitionToSaved) {
-      clearTimer(); // 進入 saved 狀態，接 1.2s timer
+      clearTimer();
       return setDisplayState('saved');
     }
   }, [isActive, isSaving, hasSaveError, displayState]);

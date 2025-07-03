@@ -27,6 +27,7 @@ interface EditorSectionProps {
   onInsertMenuFieldClick: () => void;
   onTextInputChange: (updates: { [key: string]: string | string[] | boolean | null }) => void;
   onMobilePanelToggle: () => void;
+  isExternalUpdate?: () => boolean;
 }
 
 export const EditorSection = ({
@@ -47,6 +48,7 @@ export const EditorSection = ({
   onInsertMenuFieldClick,
   onTextInputChange,
   onMobilePanelToggle,
+  isExternalUpdate,
 }: EditorSectionProps) => {
   if (mode === "preview") {
     return (
@@ -69,6 +71,7 @@ export const EditorSection = ({
           onFormTextNodeClick={onFormTextNodeClick}
           onFormMenuNodeClick={onFormMenuNodeClick}
           onEditorClick={onEditorClick}
+          isExternalUpdate={isExternalUpdate}
         />
       </section>
 

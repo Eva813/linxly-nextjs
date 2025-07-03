@@ -66,7 +66,7 @@ const SaveStatusIndicator: React.FC<SaveStatusIndicatorProps> = ({
     }
 
     if (isTransitionToSaved) {
-      clearTimer(); // 進入 saved 狀態，接 1.2s timer
+      clearTimer();
       return setDisplayState('saved');
     }
   }, [isActive, isSaving, hasSaveError, displayState]);

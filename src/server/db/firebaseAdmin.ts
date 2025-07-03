@@ -1,3 +1,8 @@
+/**
+ * Firebase Admin SDK 初始化
+ * 用於伺服端的 Firebase 管理員權限操作
+ */
+
 import { initializeApp, getApps, cert } from "firebase-admin/app";
 import { getFirestore } from "firebase-admin/firestore";
 
@@ -5,9 +10,11 @@ import { getFirestore } from "firebase-admin/firestore";
 const projectId = process.env.FIREBASE_PROJECT_ID;
 const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
 const privateKeyEnv = process.env.FIREBASE_PRIVATE_KEY;
+
 if (!projectId || !clientEmail || !privateKeyEnv) {
   throw new Error("Missing Firebase admin credentials in environment variables.");
 }
+
 const serviceAccount = {
   type: "service_account",
   projectId,

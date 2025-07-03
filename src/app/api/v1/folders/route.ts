@@ -1,7 +1,11 @@
-// app/api/v1/folders/route.ts
 import { NextResponse } from 'next/server';
-import { adminDb } from '@/lib/firebaseAdmin';
+import { adminDb } from '@/server/db/firebase';
 import { FieldValue } from 'firebase-admin/firestore';
+import { 
+  performLazyMigration, 
+  groupPromptsByFolderId, 
+  formatPromptsForResponse 
+} from '@/server/utils/promptUtils';
 
 export async function GET(req: Request) {
   try {
@@ -10,34 +14,39 @@ export async function GET(req: Request) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 })
     }
 
-    const query = adminDb
-      .collection('folders')
-      .where('userId', '==', userId)
-      .orderBy('createdAt', 'asc');
+    // 優化：同時獲取所有資料夾和所有 prompts，避免 N+1 查詢問題
+    const [foldersSnapshot, promptsSnapshot] = await Promise.all([
+      adminDb
+        .collection('folders')
+        .where('userId', '==', userId)
+        .orderBy('createdAt', 'asc')
+        .get(),
+      adminDb
+        .collection('prompts')
+        .where('userId', '==', userId)
+        .get()
+    ]);
 
-    const foldersSnapshot = await query.get();
+    // 將 prompts 按 folderId 分組
+    const promptsMap = groupPromptsByFolderId(promptsSnapshot.docs);
 
+    // 處理每個資料夾並組合資料
     const result = await Promise.all(foldersSnapshot.docs.map(async (folderDoc) => {
       const folder = folderDoc.data();
       const folderId = folderDoc.id;
 
-      // 從 prompts 集合獲取該資料夾的 prompts
-      const promptsSnapshot = await adminDb
-        .collection('prompts')
-        .where('folderId', '==', folderId)
-        .where('userId', '==', userId)
-        .get();
+      // 從分組的 Map 中獲取該資料夾的 prompts
+      const folderPrompts = promptsMap.get(folderId) || [];
+
+      // 處理 Lazy Migration（如果需要）
+      const processedPrompts = await performLazyMigration(folderPrompts, {
+        mode: 'batch',
+        folderId,
+        userId
+      });
 
       // 格式化程式碼片段資料
-      const formattedPrompts = promptsSnapshot.docs.map(promptDoc => {
-        const prompt = promptDoc.data();
-        return {
-          id: promptDoc.id,
-          name: prompt.name,
-          content: prompt.content,
-          shortcut: prompt.shortcut
-        };
-      });
+      const formattedPrompts = formatPromptsForResponse(processedPrompts);
 
       const createdAt = folder.createdAt?.toDate?.() || new Date();
       const updatedAt = folder.updatedAt?.toDate?.() || createdAt;

@@ -4,7 +4,7 @@ export const runtime = 'nodejs';
 import NextAuth from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import GoogleProvider from "next-auth/providers/google";
-import { adminDb } from "@/lib/firebaseAdmin";
+import { adminDb } from "@/server/db/firebase";
 import bcrypt from "bcryptjs";
 
 const handler = NextAuth({

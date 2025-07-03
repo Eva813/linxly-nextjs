@@ -1,7 +1,6 @@
 import request from './client';
 import { Prompt } from '@/types/prompt';
 
-
 // 取得特定資料夾的prompt片段
 export function getPrompts(folderId: string): Promise<Prompt[]> {
   return request<Prompt[]>(`/prompts?folderId=${folderId}`);
@@ -22,7 +21,7 @@ export function createPrompt(
 
 // 更新prompt片段
 export function updatePrompt(
-  promptId: string, 
+  promptId: string,
   data: Partial<Omit<Prompt, 'id'>>
 ): Promise<Prompt> {
   return request<Prompt>(`/prompts/${promptId}`, {

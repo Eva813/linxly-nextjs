@@ -4,6 +4,7 @@ export interface Prompt {
   name: string;
   content: string;
   shortcut?: string;
+  seqNo?: number; // 新增排序欄位，可選是因為要支援 Lazy Migration
 }
 
 export interface Folder {

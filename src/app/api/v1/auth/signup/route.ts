@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
-import { adminDb } from "@/lib/firebaseAdmin";
+import { adminDb } from "@/server/db/firebase";
 
 
 // interface AuthProvider {

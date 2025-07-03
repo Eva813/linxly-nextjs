@@ -5,7 +5,7 @@ import StarterKit from '@tiptap/starter-kit';
 import TextStyle from '@tiptap/extension-text-style';
 import TextAlign from '@tiptap/extension-text-align';
 import { FontSize } from './fontSizeExtension';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Button } from "@/components/ui/button"
 import { FaBold, FaItalic, FaList, FaListOl, FaAlignCenter, FaAlignLeft, FaAlignRight } from "react-icons/fa6";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover"
@@ -41,13 +41,19 @@ const TipTapEditor = ({
   const [hasError, setHasError] = useState(false);
   const [currentFontSize, setCurrentFontSize] = useState('');
   const fontSizes = ['12', '14', '16', '18', '20', '24'];
+  
+  // 使用 ref 來追蹤編輯器是否正在進行程式化更新
+  const isUpdatingRef = useRef(false);
 
   const editor = useEditor({
     content: value,
     onUpdate: ({ editor }) => {
-      // 只標記開始編輯，不觸發自動儲存
-      onStartEditing?.();
+      // 避免在程式化更新時觸發 onChange
+      if (isUpdatingRef.current) {
+        return;
+      }
       
+      onStartEditing?.();
       const updatedValue = editor.getHTML();
       onChange(updatedValue);
       validateContent(updatedValue);
@@ -94,7 +100,25 @@ const TipTapEditor = ({
 
   useEffect(() => {
     if (editor && value !== editor.getHTML()) {
+      isUpdatingRef.current = true;
+      
+      // 保存游標位置
+      const { from } = editor.state.selection;
+      
+      // 更新內容
       editor.commands.setContent(value || '', false);
+      
+      // 恢復游標位置
+      setTimeout(() => {
+        try {
+          const docSize = editor.state.doc.content.size;
+          const newPosition = Math.min(from, docSize);
+          editor.commands.setTextSelection(newPosition);
+        } catch (error) {
+          console.warn('無法恢復游標位置:', error);
+        }
+        isUpdatingRef.current = false;
+      }, 0);
     }
   }, [value, editor]);
   // 當 editor 實例創建完成時，通過 onEditorReady 傳遞給父組件

@@ -82,6 +82,9 @@ export const usePromptPageLogic = ({ promptId }: UsePromptPageLogicProps) => {
     content: ""
   });
 
+  // 追蹤是否正在進行外部更新（例如從 API 載入資料）
+  const isExternalUpdateRef = useRef(false);
+  
   // 使用 ref 來避免不必要的重新建立
   const formDataRef = useRef(formData);
   const currentPromptRef = useRef(currentPrompt);
@@ -122,29 +125,36 @@ export const usePromptPageLogic = ({ promptId }: UsePromptPageLogicProps) => {
 
   // 建立穩定的 debounced 儲存函式
   const debouncedSave = useMemo(
-    () => debounce(savePrompt, 1000),
+    () => debounce(savePrompt, 800),
     [savePrompt]
   );
 
   // 統一的表單更新函式
   const updateFormField = useCallback((field: keyof typeof formData, value: string) => {
+    // 如果是外部更新，直接設定不觸發儲存
+    if (isExternalUpdateRef.current) {
+      setFormData(prev => ({ ...prev, [field]: value }));
+      return;
+    }
+
+    // 立即更新表單資料
     setFormData(prev => {
       const newData = { ...prev, [field]: value };
-
+      
       // 立即檢查是否有變更
       const hasChanges = !deepEqual(newData, initialValues);
       setHasUnsavedChanges(hasChanges);
 
-      if (hasChanges && currentPrompt) {
-        setActive(true, promptId);
-        // 把 debounce 儲存的呼叫丟到「事件循環的下一輪」
-        // 這麼做可以避免阻塞 UI 更新流程，讓畫面能先更新（例如讓按鈕變灰色、出現 loading），再去做儲存的事情
-        setTimeout(() => {
+      // 延遲狀態更新到下一個事件循環，避免在渲染期間更新其他元件
+      setTimeout(() => {
+        if (hasChanges && currentPrompt) {
+          setActive(true, promptId);
+          // 觸發 debounced 儲存
           debouncedSave();
-        }, 0);
-      } else if (!hasChanges) {
-        setActive(false, promptId);
-      }
+        } else if (!hasChanges) {
+          setActive(false, promptId);
+        }
+      }, 0);
 
       return newData;
     });
@@ -179,6 +189,7 @@ export const usePromptPageLogic = ({ promptId }: UsePromptPageLogicProps) => {
     updateFormField('content', newContent);
   }, [updateFormField]);
 
+  // 初始化資料
   useEffect(() => {
     if (currentPrompt) {
       const initialData = {
@@ -187,9 +198,17 @@ export const usePromptPageLogic = ({ promptId }: UsePromptPageLogicProps) => {
         content: currentPrompt.content
       };
 
+      // 標記為外部更新
+      isExternalUpdateRef.current = true;
+      
       setFormData(initialData);
       setInitialValues(initialData);
       setHasUnsavedChanges(false);
+      
+      // 在下一個事件循環中重置標記
+      setTimeout(() => {
+        isExternalUpdateRef.current = false;
+      }, 0);
     }
   }, [currentPrompt]);
 
@@ -213,9 +232,13 @@ export const usePromptPageLogic = ({ promptId }: UsePromptPageLogicProps) => {
     hasUnsavedChanges,
     currentPrompt,
 
+    // 表單更新函式
     handleNameChange,
     handleShortcutChange,
     updateContent,
     clearShortcutError,
+    
+    // 檢查是否為外部更新
+    isExternalUpdate: () => isExternalUpdateRef.current,
   };
 };

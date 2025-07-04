@@ -1,4 +1,4 @@
-import { getSession } from "next-auth/react";
+
 const BASE_URL = '/api/v1';
 
 interface APIError {
@@ -11,18 +11,12 @@ async function request<T>(
   path: string,
   options: RequestInit = {}
 ): Promise<T> {
-  // const token = localStorage.getItem('token');
-  const session = await getSession();
-  const token = session?.user?.token;
-  const userId = session?.user?.id; // 取得使用者 ID
   
-  // 確保 options.headers 存在，並使用正確的合併方式
+  // 確保 options.headers 存在
   const requestOptions: RequestInit = {
     ...options,
     headers: {
       'Content-Type': 'application/json',
-      ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
-      ...(userId    ? { 'x-user-id': userId } : {}),
       ...(options.headers || {})
     }
   };

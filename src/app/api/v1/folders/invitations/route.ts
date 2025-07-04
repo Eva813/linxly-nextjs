@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
-import { connectToDatabase } from '@/lib/mongodb';
-import { ObjectId } from 'mongodb';
+import { adminDb } from '@/lib/firebaseAdmin';
 
 // 取得待接受分享邀請列表
 export async function GET(req: Request) {
@@ -10,28 +9,37 @@ export async function GET(req: Request) {
   }
 
   try {
-    const { db } = await connectToDatabase();
     // 取得使用者 email
-    const user = await db.collection('users').findOne({ _id: new ObjectId(userId) });
-    if (!user || !user.email) {
+    const userDoc = await adminDb.collection('users').doc(userId).get();
+    if (!userDoc.exists) {
       return NextResponse.json({ message: 'User not found' }, { status: 404 });
     }
-    const email = user.email;
+    
+    const userData = userDoc.data();
+    const email = userData?.email;
+    
+    if (!email) {
+      return NextResponse.json({ message: 'User email not found' }, { status: 404 });
+    }
+
     // 查詢所有對此 user email 有 pending 分享的 folder
-    const folders = await db
+    const foldersSnapshot = await adminDb
       .collection('folders')
-      .find({ 'shares.email': email, 'shares.status': 'pending' })
-      .toArray();
+      .where('shares', 'array-contains', { email, status: 'pending' })
+      .get();
 
     // 取出 owner email
     const results = await Promise.all(
-      folders.map(async (f) => {
+      foldersSnapshot.docs.map(async (doc) => {
+        const folderData = doc.data();
         // 取得資料夾擁有者的 email，folder 中的 userId 是擁有者的 id
-        const owner = await db.collection('users').findOne({ _id: new ObjectId(f.userId) });
+        const ownerDoc = await adminDb.collection('users').doc(folderData.userId).get();
+        const ownerData = ownerDoc.data();
+        
         return {
-          folderId: f._id.toString(),
-          folderName: f.name,
-          ownerEmail: owner?.email || ''
+          folderId: doc.id,
+          folderName: folderData.name,
+          ownerEmail: ownerData?.email || ''
         };
       })
     );

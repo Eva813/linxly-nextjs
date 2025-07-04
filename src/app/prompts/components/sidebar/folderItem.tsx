@@ -1,9 +1,8 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import Link from "next/link";
 import { BsThreeDotsVertical } from "react-icons/bs";
-import { FaCaretDown, FaCaretRight } from "react-icons/fa";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -14,66 +13,85 @@ import ShareFolderDialog from "./shareFolderDialog";
 import { getFolderShares } from "@/api/folders";
 import { useSession } from "next-auth/react";
 import { FolderItemProps } from "@/types/prompt";
-import { FaFolder } from "react-icons/fa";
+import {
+  ChevronDown,
+  ChevronRight,
+  Folder,
+  FolderOpen,
+} from "lucide-react"
+
+import { SidebarContext } from '@/providers/clientRootProvider';
+import { useSidebarStore } from "@/stores/sidebar";
+import { useSidebarActions } from "@/hooks/sidebar";
 
 const FolderItem: React.FC<FolderItemProps> = ({
   folder,
-  activeFolderMenu,
-  setActiveFolderMenu,
-  collapsedFolders,
-  toggleCollapse,
-  deleteFolder,
-  pathname,
   children,
 }) => {
   const [isShareDialogOpen, setShareDialogOpen] = React.useState(false);
-  const isActiveFolder = pathname === `/prompts/folder/${folder.id}`;
-  const isCollapsed = collapsedFolders.has(folder.id);
   const [shares, setShares] = useState<{ email: string; permission: string; _id: string }[]>([]);
   const { data: session } = useSession();
   const userPermission = shares.find(s => s.email === session?.user?.email)?.permission;
+
+  const { isOpen, toggleSidebar } = useContext(SidebarContext);
+  const { 
+    activeFolderMenuId, 
+    setActiveFolderMenu, 
+    collapsedFolderIds, 
+    toggleFolderCollapse 
+  } = useSidebarStore();
+  const { navigation, handleDeleteFolder } = useSidebarActions();
+  const isActiveFolder = navigation.pathname === `/prompts/folder/${folder.id}`;
+  const isCollapsed = collapsedFolderIds.has(folder.id);
 
   useEffect(() => {
     if (session?.user?.email && session.user.id) {
       getFolderShares(folder.id)
         .then((list) => {
+          console.log("Shares data:", list);
           setShares(list);
         })
         .catch((err) => console.error("Share folder error", err));
     }
   }, [folder.id, session?.user?.email, session?.user?.id]);
-
+  console.log("User permission:", userPermission);
 
   return (
     <li className="mb-2">
-      {/* 資料夾本身的連結區塊 */}
       <Link
         prefetch
+        href={`/prompts/folder/${folder.id}`}
+        onClick={() => {
+          if (isOpen) toggleSidebar();
+        }}
         className={`px-2 py-1 w-full block rounded font-extrabold hover:bg-light dark:hover:text-third flex items-center justify-between text-lg ${
           isActiveFolder ? "bg-light text-primary dark:text-third" : ""
         }`}
-        href={`/prompts/folder/${folder.id}`}
       >
-        <div className="flex items-center space-x-2">
-          <FaFolder className="text-gray-500" size={20} />
-          <strong className="cursor-pointer">{folder.name}</strong>
-        </div>
         <div className="flex items-center">
-          {/* 折疊/展開按鈕 */}
+          {/* 折疊/展開按鈕 移到資料夾圖示左側 */}
           <button
             onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
-              toggleCollapse(folder.id);
+              toggleFolderCollapse(folder.id);
             }}
-            className="focus:outline-none hover:bg-gray-200 dark:hover:bg-light p-1 rounded mr-1"
+            className="focus:outline-none p-1 hover:bg-gray-light dark:hover:bg-light rounded"
           >
             {isCollapsed ? (
-              <FaCaretRight className="text-gray-400" />
+              <ChevronRight className="w-4 h-4 text-gray-400" />
             ) : (
-              <FaCaretDown className="text-gray-400" />
+              <ChevronDown className="w-4 h-4  text-gray-400" />
             )}
           </button>
+          {isCollapsed ? (
+            <Folder className="text-gray-500 w-4 h-4 mr-2" />
+          ) : (
+            <FolderOpen className="text-gray-500 w-4 h-4 mr-2" />
+          )}
+          <strong className="cursor-pointer">{folder.name}</strong>
+        </div>
+        <div className="flex items-center">
           {/* DropdownMenu */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -82,7 +100,7 @@ const FolderItem: React.FC<FolderItemProps> = ({
                   e.preventDefault();
                   e.stopPropagation();
                   setActiveFolderMenu(
-                    activeFolderMenu === folder.id ? null : folder.id
+                    activeFolderMenuId === folder.id ? null : folder.id
                   );
                 }}
                 className="focus:outline-none hover:bg-gray-200 dark:hover:bg-light p-1 rounded"
@@ -90,7 +108,7 @@ const FolderItem: React.FC<FolderItemProps> = ({
                 <BsThreeDotsVertical className="text-gray-400" />
               </button>
             </DropdownMenuTrigger>
-            {activeFolderMenu === folder.id && (
+            {activeFolderMenuId === folder.id && (
               <DropdownMenuContent>
                 <DropdownMenuItem className="dark:hover:bg-light">
                   <button
@@ -106,7 +124,7 @@ const FolderItem: React.FC<FolderItemProps> = ({
                 <DropdownMenuItem 
                     className="dark:hover:bg-light disabled:opacity-50 disabled:cursor-not-allowed"
                     disabled={userPermission !== "owner"}
-                    onSelect={() => deleteFolder(folder.id)}>
+                    onSelect={() => handleDeleteFolder(folder.id)}>
                   <button>
                     Delete
                   </button>

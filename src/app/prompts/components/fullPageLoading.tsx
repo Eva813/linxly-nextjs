@@ -7,7 +7,7 @@ import EditorSkeleton from "@/app/prompts/components/editorSkeleton";
 import LoadingOverlay from "@/app/components/loadingOverlay";
 import { useRouter } from "next/navigation";
 
-// 提供一個全頁載入的狀態，當資料尚未載入完成時顯示載入動畫
+// 當資料尚未載入完成時顯示載入動畫
 export default function FullPageLoading({ children }: { children: React.ReactNode }) {
   const { fetchFolders } = usePromptStore();
   const [isLoaded, setIsLoaded] = useState(false);
@@ -37,8 +37,8 @@ useEffect(() => {
     return (
       <div className="flex h-[calc(100vh-4rem)] overflow-hidden">
         {/* 側邊欄載入狀態 */}
-        <div className="w-1/4 p-4 border-r border-gray-300 h-full overflow-y-auto">
-          <div className="grid grid-cols-2 gap-x-4 mb-4">
+        <div className="w-1/4 p-4 border-r border-gray-300 h-full overflow-y-auto hidden sm:block">
+          <div className="grid grid-cols-2 gap-x-4 mb-4 ">
             <Skeleton className="h-8 w-full rounded-md" />
             <Skeleton className="h-8 w-full rounded-md" />
           </div>

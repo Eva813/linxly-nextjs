@@ -1,7 +1,10 @@
-'use client'
+ 'use client'
+import { FaBars } from 'react-icons/fa'
 import Link from "next/link"
 import { useRouter } from 'next/navigation'
 import React, { useState, useEffect } from 'react'
+import { useContext } from 'react';
+import { SidebarContext } from '@/providers/clientRootProvider';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { siteConfig } from "@/config/site"
 import { MainNav } from "@/components/main-nav"
@@ -72,6 +75,7 @@ export function SiteHeader() {
   useEffect(() => {
     loadInvitations();
   }, [loadInvitations]);
+  const { toggleSidebar } = useContext(SidebarContext);
 
   const handleLogout = async () => {
     await signOut({ redirect: false })
@@ -79,7 +83,7 @@ export function SiteHeader() {
     // 通知 Chrome 擴充功能使用者已登出
     window.postMessage(
       {
-        type: 'FROM_SITE_HEADER', // 自訂訊息類型
+        type: 'FROM_SITE_HEADER',
         action: 'USER_LOGGED_OUT',
         data: {
           status: 'loggedOut',
@@ -109,6 +113,14 @@ export function SiteHeader() {
       }}
     >
       <div className="container flex h-16 items-center space-x-4 max-w-screen-2xl sm:justify-between sm:space-x-0">
+        {/* 手機: 顯示開啟側欄按鈕 */}
+        <button
+          className="sm:hidden p-2 mr-4"
+          onClick={toggleSidebar}
+          aria-label="open sidebar"
+        >
+          <FaBars className="w-5 h-5" />
+        </button>
         <MainNav items={filteredNav} />
         <div className="flex flex-1 items-center justify-end space-x-4">
           <nav className="flex items-center space-x-1">

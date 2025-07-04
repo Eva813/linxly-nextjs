@@ -28,7 +28,6 @@ export default function InsertTextFieldDialog({ isOpen, onClose, onInsert, defau
 
   const handleInsert = () => {
     onInsert(label, defaultValue)
-    // onClose()
   }
 
   return (

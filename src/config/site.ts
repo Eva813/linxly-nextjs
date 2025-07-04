@@ -1,14 +1,10 @@
 export type SiteConfig = typeof siteConfig
 
 export const siteConfig = {
-  name: "Linxly",
+  name: "PromptBear",
   description:
-    "Beautifully designed components built with Radix UI and Tailwind CSS.",
+    "A tool for quickly creating and managing prompts.",
   mainNav: [
-    {
-      title: "Home",
-      href: "/",
-    },
     {
       title: "Prompts",
       href: "/prompts"

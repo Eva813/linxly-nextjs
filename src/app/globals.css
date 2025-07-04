@@ -3,6 +3,19 @@
 @tailwind utilities;
 @import './styles/editor.css';
 
+/* 防止擴充功能干擾的樣式 */
+/* input[data-no-extension="true"],
+input[data-exclude-extension="true"] {
+  -webkit-user-modify: read-write;
+  user-select: text;
+  pointer-events: auto;
+} */
+
+/* 額外的擴充功能防護 */
+/* input[data-no-extension="true"]::-webkit-credentials-auto-fill-button {
+  display: none !important;
+} */
+
 body {
   font-family: sans-serif;
 }

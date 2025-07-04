@@ -1,7 +1,8 @@
 "use client";
 
-import React from "react";
+import React, { useContext } from "react";
 import Link from "next/link";
+import { SidebarContext } from '@/providers/clientRootProvider';
 import { BsThreeDotsVertical } from "react-icons/bs";
 import {
   DropdownMenu,
@@ -10,16 +11,18 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { PromptItemProps } from "@/types/prompt";
+import { useSidebarStore } from "@/stores/sidebar";
+import { useSidebarActions } from "@/hooks/sidebar";
 
 const PromptItem: React.FC<PromptItemProps> = React.memo(({
   prompt,
   folderId,
-  activePromptMenu,
-  setActivePromptMenu,
-  deleteFile,
-  pathname,
 }) => {
-  const isActivePrompt = pathname === `/prompts/prompt/${prompt.id}`;
+  const { isOpen, toggleSidebar } = useContext(SidebarContext);
+  const { activePromptMenuId, setActivePromptMenu } = useSidebarStore();
+  const { navigation, handleDeletePrompt } = useSidebarActions();
+  
+  const isActivePrompt = navigation.pathname === `/prompts/prompt/${prompt.id}`;
 
   return (
     <li className="mb-2">
@@ -30,11 +33,14 @@ const PromptItem: React.FC<PromptItemProps> = React.memo(({
       >
         <Link
           prefetch
-          className="flex-1 flex justify-between block"
           href={`/prompts/prompt/${prompt.id}`}
+          onClick={() => {
+            if (isOpen) toggleSidebar();
+          }}
+          className="flex-1 flex items-center justify-between block"
         >
-          {prompt.name}
-          <span className="inline-flex items-center px-3 py-1 border-2 border-secondary dark:text-third  dark:border-third text-sm h-6 font-medium rounded-full">
+          <span className="max-w-[120px] truncate">{prompt.name}</span>
+          <span className="inline-block px-3 py-0 border-2 border-secondary dark:text-third dark:border-third text-sm leading-5 rounded-full max-w-[120px] truncate">
             {prompt.shortcut}
           </span>
         </Link>
@@ -45,7 +51,7 @@ const PromptItem: React.FC<PromptItemProps> = React.memo(({
                 e.preventDefault();
                 e.stopPropagation();
                 setActivePromptMenu(
-                  activePromptMenu === prompt.id ? null : prompt.id
+                  activePromptMenuId === prompt.id ? null : prompt.id
                 );
               }}
               className="focus:outline-none hover:bg-light dark:hover:bg-light p-1 rounded"
@@ -53,11 +59,11 @@ const PromptItem: React.FC<PromptItemProps> = React.memo(({
               <BsThreeDotsVertical className="text-gray-400" />
             </button>
           </DropdownMenuTrigger>
-          {activePromptMenu === prompt.id && (
+          {activePromptMenuId === prompt.id && (
             <DropdownMenuContent>
               <DropdownMenuItem className="dark:hover:bg-light">
                 <button
-                  onClick={() => deleteFile(folderId, prompt.id)}
+                  onClick={() => handleDeletePrompt(folderId, prompt.id)}
                   className="w-full text-left"
                 >
                   Delete

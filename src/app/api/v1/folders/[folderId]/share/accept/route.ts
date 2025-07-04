@@ -1,6 +1,16 @@
 import { NextResponse } from 'next/server';
-import { connectToDatabase } from '@/lib/mongodb';
-import { ObjectId } from 'mongodb';
+import { adminDb } from '@/lib/firebaseAdmin';
+
+// 定義分享項目的型別
+interface ShareItem {
+  id: string;
+  email: string;
+  permission: string;
+  status: 'pending' | 'accepted' | 'declined';
+  invitedAt: Date;
+  userId?: string;
+  acceptedAt?: Date;
+}
 
 // 接受資料夾分享
 export async function POST(
@@ -18,36 +28,57 @@ export async function POST(
   }
 
   try {
-    const { db } = await connectToDatabase();
     // 取得使用者 Email
-    const user = await db.collection('users').findOne({ _id: new ObjectId(userId) });
-    if (!user || !user.email) {
+    const userDoc = await adminDb.collection('users').doc(userId).get();
+    if (!userDoc.exists) {
       return NextResponse.json({ message: 'User not found' }, { status: 404 });
     }
+    
+    const userData = userDoc.data();
+    const email = userData?.email;
+    
+    if (!email) {
+      return NextResponse.json({ message: 'User email not found' }, { status: 404 });
+    }
 
-    // 檢查是否存在待接受的分享邀請
-    const filter = {
-      _id: new ObjectId(folderId),
-      'shares.email': user.email,
-      'shares.status': 'pending'
-    };
-    const update = {
-      $set: {
-        'shares.$.status': 'accepted',
-        'shares.$.acceptedAt': new Date(),
-        'shares.$.userId': new ObjectId(userId)
-      }
-    };
-    console.log('userId:', userId, 'folderId:', folderId);
-    const result = await db.collection('folders').updateOne(filter, update);
-    console.log('update result:', result);
+    // 取得資料夾資料
+    const folderDoc = await adminDb.collection('folders').doc(folderId).get();
+    if (!folderDoc.exists) {
+      return NextResponse.json({ message: 'Folder not found' }, { status: 404 });
+    }
 
-    if (result.matchedCount === 0) {
+    const folderData = folderDoc.data();
+    const shares = folderData?.shares || [];
+
+    // 找到對應的分享項目
+    const shareIndex = shares.findIndex((share: ShareItem) => 
+      share.email === email && share.status === 'pending'
+    );
+
+    if (shareIndex === -1) {
       return NextResponse.json(
         { message: 'Invitation not found or already accepted' },
         { status: 404 }
       );
     }
+
+    // 更新分享項目狀態
+    const updatedShare = {
+      ...shares[shareIndex],
+      status: 'accepted' as const,
+      acceptedAt: new Date(),
+      userId: userId
+    };
+
+    // 建立新的 shares 陣列
+    const updatedShares = [...shares];
+    updatedShares[shareIndex] = updatedShare;
+
+    // 更新資料庫
+    await adminDb.collection('folders').doc(folderId).update({
+      shares: updatedShares,
+      updatedAt: new Date()
+    });
 
     return NextResponse.json({ message: 'Share accepted' });
   } catch (error: unknown) {

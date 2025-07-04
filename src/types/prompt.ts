@@ -3,7 +3,7 @@ export interface Prompt {
   id: string;
   name: string;
   content: string;
-  shortcut: string;
+  shortcut?: string;
 }
 
 export interface Folder {
@@ -11,6 +11,7 @@ export interface Folder {
   name: string;
   description: string;
   prompts: Prompt[];
+  createdAt?: string;
 }
 
 export interface MatchedPrompt {
@@ -25,12 +26,6 @@ export interface MatchedPrompt {
  */
 export interface FolderItemProps {
   folder: Folder;
-  activeFolderMenu: string | null;
-  setActiveFolderMenu: (id: string | null) => void;
-  collapsedFolders: Set<string>;
-  toggleCollapse: (folderId: string) => void;
-  deleteFolder: (folderId: string) => void;
-  pathname: string;
   children?: React.ReactNode;
 }
 
@@ -40,12 +35,7 @@ export interface FolderItemProps {
 export interface PromptItemProps {
   prompt: Prompt;
   folderId: string;
-  activePromptMenu: string | null;
-  setActivePromptMenu: (id: string | null) => void;
-  deleteFile: (folderId: string, promptId: string) => void;
-  pathname: string;
 }
-
 
 export interface FormMenuData {
   pos: number;
@@ -56,8 +46,6 @@ export interface FormMenuData {
 }
 
 export type FormMenuClickHandler = (data: FormMenuData) => void;
-
-
 
 export interface InputInfo {
   pos: number;

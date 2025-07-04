@@ -1,7 +1,17 @@
 import { NextResponse } from 'next/server';
-import { connectToDatabase } from '@/lib/mongodb';
-import { ObjectId } from 'mongodb';
+import { adminDb } from '@/lib/firebaseAdmin';
 import { Resend } from "resend";
+import { FieldValue } from 'firebase-admin/firestore';
+
+// 定義分享項目的型別
+interface ShareItem {
+  id: string;
+  email: string;
+  permission: string;
+  status: 'pending' | 'accepted' | 'declined';
+  invitedAt: Date;
+  userId?: string;
+}
 
 const RESEND_API_KEY = process.env.RESEND_API_KEY;
 const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev';
@@ -36,31 +46,37 @@ export async function POST(
     }
 
   try {
-    const { db } = await connectToDatabase();
-    const folder = await db.collection('folders').findOne({
-      _id: new ObjectId(folderId),
-      userId: new ObjectId(userId),
-    });
-    if (!folder) {
+    // 驗證資料夾是否存在且用戶有權限
+    const folderDoc = await adminDb.collection('folders').doc(folderId).get();
+    if (!folderDoc.exists) {
       return NextResponse.json(
-        { message: 'folder not found or unauthorized' },
+        { message: 'folder not found' },
         { status: 404 }
+      );
+    }
+
+    const folderData = folderDoc.data();
+    if (folderData?.userId !== userId) {
+      return NextResponse.json(
+        { message: 'unauthorized' },
+        { status: 403 }
       );
     }
 
     const now = new Date();
     const shareItems = list.map((email) => ({
-      _id: new ObjectId(),
+      id: adminDb.collection('folders').doc().id, // 產生唯一 ID
       email,
       permission,
       status: 'pending',
       invitedAt: now,
     }));
 
-    await db.collection('folders').updateOne(
-      { _id: new ObjectId(folderId) },
-      { $push: { shares: { $each: shareItems } }, $set: { updatedAt: now } }
-    );
+    // 更新資料夾，加入分享項目
+    await adminDb.collection('folders').doc(folderId).update({
+      shares: FieldValue.arrayUnion(...shareItems),
+      updatedAt: now,
+    });
 
     // 發送邀請信
     if (!RESEND_API_KEY) {
@@ -75,8 +91,8 @@ export async function POST(
                 // 測試用，使用寄送到自己的信箱
                 // to: [item.email],
                 to: ["as45986@gmail.com"],
-                subject: `Invitation to share folder ${folder.name}`,
-                html: `<p>You have been invited to collaborate on folder <strong>${folder.name}</strong>.</p><p><a href="${inviteLink}">Click here to accept the invitation</a></p>`,
+                subject: `Invitation to share folder ${folderData.name}`,
+                html: `<p>You have been invited to collaborate on folder <strong>${folderData.name}</strong>.</p><p><a href="${inviteLink}">Click here to accept the invitation</a></p>`,
               });
             }
             catch (error) {
@@ -111,24 +127,33 @@ export async function GET(
   }
 
   try {
-    const { db } = await connectToDatabase();
-    // 驗證擁有權或分享權限
-    // 使資料夾擁有者 或 被接受分享的使用者都能取得 shares 資訊
-    const folder = await db.collection('folders').findOne({
-      _id: new ObjectId(folderId),
-      $or: [
-        { userId: new ObjectId(userId) }, 
-        { 'shares.userId': new ObjectId(userId), 'shares.status': 'accepted' }
-      ]
-    });
-    if (!folder) {
+    // 取得資料夾資料
+    const folderDoc = await adminDb.collection('folders').doc(folderId).get();
+    if (!folderDoc.exists) {
       return NextResponse.json(
-        { message: 'folder not found or unauthorized' },
+        { message: 'folder not found' },
         { status: 404 }
       );
     }
+
+    const folderData = folderDoc.data();
+    
+    // 驗證擁有權或分享權限
+    // 資料夾擁有者 或 被接受分享的使用者都能取得 shares 資訊
+    const isOwner = folderData?.userId === userId;
+    const hasShareAccess = folderData?.shares?.some((share: ShareItem) => 
+      share.userId === userId && share.status === 'accepted'
+    );
+
+    if (!isOwner && !hasShareAccess) {
+      return NextResponse.json(
+        { message: 'unauthorized' },
+        { status: 403 }
+      );
+    }
+
     // 回傳 shares 陣列
-    const shares = folder.shares || [];
+    const shares = folderData?.shares || [];
     return NextResponse.json(shares);
   } catch (err: unknown) {
     console.error(err);
@@ -163,19 +188,32 @@ export async function DELETE(
   }
 
   try {
-    const { db } = await connectToDatabase();
-    // 從 shares 陣列移除對應 _id 的項目
-    const result = await db.collection('folders').updateOne(
-      { _id: new ObjectId(folderId), userId: new ObjectId(userId) },
-      {
-        $pull: { shares: { _id: new ObjectId(shareId) } },
-        $set: { updatedAt: new Date() },
-      }
-    );
+    // 取得資料夾資料
+    const folderDoc = await adminDb.collection('folders').doc(folderId).get();
+    if (!folderDoc.exists) {
+      return NextResponse.json({ message: 'folder not found' }, { status: 404 });
+    }
 
-    if (result.modifiedCount === 0) {
+    const folderData = folderDoc.data();
+    
+    // 驗證是否為資料夾擁有者
+    if (folderData?.userId !== userId) {
+      return NextResponse.json({ message: 'unauthorized' }, { status: 403 });
+    }
+
+    // 找出要刪除的分享項目
+    const shares = folderData?.shares || [];
+    const shareToRemove = shares.find((share: ShareItem) => share.id === shareId);
+    
+    if (!shareToRemove) {
       return NextResponse.json({ message: 'share not found' }, { status: 404 });
     }
+
+    // 從 shares 陣列移除對應項目
+    await adminDb.collection('folders').doc(folderId).update({
+      shares: FieldValue.arrayRemove(shareToRemove),
+      updatedAt: new Date(),
+    });
 
     return NextResponse.json({ message: 'share deleted' });
   } catch (error: unknown) {

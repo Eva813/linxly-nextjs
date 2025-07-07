@@ -11,6 +11,9 @@ const config: Config = {
 	],
 	theme: {
 		extend: {
+			backgroundImage: {
+				'auth-dark': "radial-gradient(circle at center,  rgba(0, 0, 0, 0.8) 0%, rgba(0, 0, 20, 0.9) 50%, rgba(0, 0, 50, 0.8) 100%)",
+			},
 			container: {
 				center: true,
 				padding: {
@@ -118,15 +121,15 @@ const config: Config = {
 					"100%": { transform: "translateX(100%)" },
 				},
 				"progress-sm": {
-            "0%":   { width: "0%",   opacity: "1" },
-            "80%":  { width: "100%", opacity: "1" },
-            "100%": { width: "100%", opacity: "0" },
-					},
-					"progress-md": {
-            "0%":   { width: "0%",   opacity: "1" },
-            "80%":  { width: "100%", opacity: "1" },
-            "100%": { width: "100%", opacity: "0" },
-					},
+					"0%": { width: "0%", opacity: "1" },
+					"80%": { width: "100%", opacity: "1" },
+					"100%": { width: "100%", opacity: "0" },
+				},
+				"progress-md": {
+					"0%": { width: "0%", opacity: "1" },
+					"80%": { width: "100%", opacity: "1" },
+					"100%": { width: "100%", opacity: "0" },
+				},
 			}
 		},
 		variants: {

@@ -60,7 +60,7 @@ export function EmailStep({ email, setEmail, isLoading, onSubmit }: EmailStepPro
         aria-describedby="email-error"
       />
       {error && <ErrorMessage message={error} id="email-error" />}
-      <LoadingButton type="submit" className="w-full" isLoading={isLoading}>
+      <LoadingButton type="submit" className="w-full  dark:text-gray-300" isLoading={isLoading}>
         Continue with email
       </LoadingButton>
     </form>

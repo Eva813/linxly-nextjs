@@ -1,19 +1,18 @@
 import Link from "next/link";
-import Image from "next/image";
+import PuzzleIcon from "@/components/icons/PuzzleIcon";
+import ManWithPuzzleIcon from "@/components/icons/ManWithPuzzleIcon";
 
-
-
-export default function Home () {
+export default function Home() {
 
   return (
-<div className="dark:bg-[radial-gradient(circle_at_center,rgba(0,0,0,0.8)_0%,rgba(0,0,20,0.9)_50%,rgba(0,0,50,0.8)_100%)]">
-      <section className="bg-white min-h-[calc(100vh-4rem-1px)] flex items-center">
+    <div>
+      <section className="bg-white min-h-[calc(100vh-4rem-1px)] flex items-center  dark:text-gray-100 dark:bg-gray-900 dark:bg-auth-dark">
         <div className="container mx-auto px-4 text-center flex flex-col md:flex-row items-center md:items-start">
           <div className="md:w-1/2 flex flex-col justify-center h-full">
             <span className="inline-block bg-gray-100 text-gray-800 text-sm font-medium px-3 py-1 rounded-full mb-4 max-w-max text-center mx-auto">
               Don&apos;t hesitate to try it out
             </span>
-            <h1 className="text-4xl md:text-5xl font-extrabold text-gray-900 mb-4">
+            <h1 className="text-4xl md:text-5xl font-extrabold text-gray-900 mb-4 dark:text-gray-100">
               Amazing <span className="text-mask">Prompt</span> management
             </h1>
             <div className="lines relative w-50 overflow-hidden">
@@ -27,7 +26,7 @@ export default function Home () {
               </button>
             </div>
           </div>
-          
+
           <div className="md:w-1/2 flex justify-center mt-8 md:mt-0 relative">
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -55,11 +54,15 @@ export default function Home () {
             >
               <circle cx="50" cy="50" r="50" fill="#98B1E4" />
             </svg>
-            <Image src="/assets/manWithPuzzle.svg" alt="Man with puzzle"  width={380} height={380} />
-            <Image src="/assets/puzzle.svg" alt="puzzle"  style={{ transform: 'rotate(-15deg)' }}  className="hidden md:block absolute top-[-32px] right-[90px] hover:animate-swing-left"  width={80} height={80} />
-            <Image src="/assets/puzzle.svg" alt="puzzle"  style={{ transform: 'rotate(5deg)' }}  className="hidden md:block absolute top-[-20px] right-[-10px] hover:animate-swing-right"  width={80} height={80} />
+            <ManWithPuzzleIcon width={380} height={380} />
+            <div className="hidden md:block absolute top-[-32px] right-[90px] hover:animate-swing-left" style={{ transform: 'rotate(-15deg)' }}>
+              <PuzzleIcon />
+            </div>
+            <div className="hidden md:block absolute top-[-20px] right-[-10px] hover:animate-swing-right" style={{ transform: 'rotate(5deg)' }}>
+              <PuzzleIcon />
+            </div>
 
-              <svg
+            <svg
               xmlns="http://www.w3.org/2000/svg"
               viewBox="0 0 100 100"
               width="120"
@@ -73,7 +76,7 @@ export default function Home () {
               <circle cx="50" cy="50" r="50" fill="#98B1E4" />
             </svg>
           </div>
-      </div>
+        </div>
       </section>
     </div>
   );

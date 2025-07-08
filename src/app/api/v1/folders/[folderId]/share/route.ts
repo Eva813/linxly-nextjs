@@ -137,11 +137,17 @@ export async function GET(
     }
 
     const folderData = folderDoc.data();
+    if (!folderData) {
+      return NextResponse.json(
+        { message: 'folder data not found' },
+        { status: 404 }
+      );
+    }
     
     // 驗證擁有權或分享權限
     // 資料夾擁有者 或 被接受分享的使用者都能取得 shares 資訊
-    const isOwner = folderData?.userId === userId;
-    const hasShareAccess = folderData?.shares?.some((share: ShareItem) => 
+    const isOwner = folderData.userId === userId;
+    const hasShareAccess = folderData.shares?.some((share: ShareItem) => 
       share.userId === userId && share.status === 'accepted'
     );
 
@@ -152,9 +158,22 @@ export async function GET(
       );
     }
 
-    // 回傳 shares 陣列
-    const shares = folderData?.shares || [];
-    return NextResponse.json(shares);
+    // 取得擁有者資訊
+    const ownerDoc = await adminDb.collection('users').doc(folderData.userId).get();
+    const ownerData = ownerDoc.data();
+    
+    // 建立擁有者項目
+    const ownerShare = {
+      id: 'owner',
+      email: ownerData?.email || 'Unknown',
+      permission: 'owner',
+      status: 'accepted',
+      invitedAt: folderData.createdAt || new Date(),
+    };
+
+    // 回傳 shares 陣列，擁有者在第一位
+    const shares = folderData.shares || [];
+    return NextResponse.json([ownerShare, ...shares]);
   } catch (err: unknown) {
     console.error(err);
     return NextResponse.json(

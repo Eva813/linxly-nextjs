@@ -48,7 +48,7 @@ export function shareFolder(
 
 
 export interface Share {
-  _id: string;
+  id: string;
   email: string;
   permission: string;
 }

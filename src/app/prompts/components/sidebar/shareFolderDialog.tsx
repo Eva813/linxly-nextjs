@@ -21,8 +21,8 @@ interface ShareFolderDialogProps {
   isOpen: boolean;
   onClose: () => void;
   folderId: string;
-  shares: { email: string; permission: string; _id: string }[];
-  setShares: React.Dispatch<React.SetStateAction<{ email: string; permission: string; _id: string }[]>>;
+  shares: { email: string; permission: string; id: string }[];
+  setShares: React.Dispatch<React.SetStateAction<{ email: string; permission: string; id: string }[]>>;
 }
 
 const ShareFolderDialog: React.FC<ShareFolderDialogProps> = ({
@@ -41,13 +41,9 @@ const ShareFolderDialog: React.FC<ShareFolderDialogProps> = ({
     const list = emails.split(",").map((e) => e.trim()).filter((e) => e);
     try {
       await shareFolder(folderId, list, permission);
-      // 重新從後端拉取完整分享清單
+      // 重新從後端拉取完整分享清單（包含擁有者在第一位）
       const fetched = await getFolderShares(folderId);
-      // 系統使用者預設在 shares[0]，作為第一筆 Owner
-      const [ownerShare] = shares;
-      // 將 fetched 中與 owner 相同的項目過濾掉，再將 owner 放最前
-      const others = fetched.filter((s) => s._id !== ownerShare._id);
-      setShares([ownerShare, ...others]);
+      setShares(fetched);
       setEmails("");
     } catch (error: unknown) {
       console.error(error);
@@ -119,7 +115,7 @@ const ShareFolderDialog: React.FC<ShareFolderDialogProps> = ({
                       {idx !== 0 && (
                         <Cross2Icon
                           className="h-4 w-4 cursor-pointer"
-                          onClick={() => handleRemoveShare(s._id, idx)}
+                          onClick={() => handleRemoveShare(s.id, idx)}
                         />
                       )}
                     </td>

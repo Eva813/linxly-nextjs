@@ -28,6 +28,7 @@ export const useSidebarActions = () => {
   const { closeAllMenus, setActiveFolderMenu, setActivePromptMenu, setFolderCreationLoading, setPromptCreationLoading } = useSidebarStore();
   const {
     folders,
+    currentPromptSpaceId,
     addFolder,
     addPromptToFolder,
     deleteFolder,
@@ -60,20 +61,28 @@ export const useSidebarActions = () => {
    * 包含建立資料夾和自動導航
    */
   const handleCreateFolder = useCallback(async () => {
+    if (!currentPromptSpaceId) {
+      console.warn('無當前 Prompt Space，無法新增資料夾');
+      return;
+    }
+
     setFolderCreationLoading(true);
-    
+
     try {
-      const newFolder = await addFolder(DEFAULT_FOLDER_DATA);
-      
+      const newFolder = await addFolder({
+        ...DEFAULT_FOLDER_DATA,
+        promptSpaceId: currentPromptSpaceId,
+      });
+
       navigation.navigateToFolder(newFolder.id);
-      
+
       closeAllMenus();
     } catch (error) {
       console.error('處理新增資料夾失敗:', error);
     } finally {
       setFolderCreationLoading(false);
     }
-  }, [addFolder, navigation, closeAllMenus, setFolderCreationLoading]);
+  }, [addFolder, navigation, closeAllMenus, setFolderCreationLoading, currentPromptSpaceId]);
 
   /**
    * 處理刪除資料夾的完整流程
@@ -82,10 +91,10 @@ export const useSidebarActions = () => {
   const handleDeleteFolder = useCallback(async (folderId: string) => {
     try {
       await deleteFolder(folderId);
-      
+
       // 關閉資料夾選單
       setActiveFolderMenu(null);
-      
+
       // 如果刪除的是當前正在查看的資料夾，需要導航到其他地方
       if (navigation.isCurrentFolder(folderId)) {
         if (folders.length > 0) {
@@ -115,7 +124,7 @@ export const useSidebarActions = () => {
       navigation.currentFolderId || undefined,
       navigation.currentPromptId || undefined
     );
-    
+
     if (!targetFolderId) {
       console.error('無法找到有效的目標資料夾');
       return;
@@ -129,10 +138,10 @@ export const useSidebarActions = () => {
         DEFAULT_PROMPT_DATA,
         navigation.currentPromptId || undefined
       );
-      
+
       // 新增成功後自動導航到新提示
       navigation.navigateToPrompt(newPrompt.id);
-      
+
       // 關閉所有開啟的選單
       closeAllMenus();
     } catch (error) {
@@ -152,10 +161,10 @@ export const useSidebarActions = () => {
   ) => {
     try {
       await deletePromptFromFolder(folderId, promptId);
-      
+
       // 關閉提示選單
       setActivePromptMenu(null);
-      
+
       // 導航回資料夾頁面
       navigation.navigateToFolder(folderId);
     } catch (error) {
@@ -167,7 +176,7 @@ export const useSidebarActions = () => {
    * 獲取當前資料夾資訊
    */
   const getCurrentFolder = useCallback(() => {
-    return navigation.currentFolderId 
+    return navigation.currentFolderId
       ? folders.find(f => f.id === navigation.currentFolderId) || null
       : null;
   }, [navigation.currentFolderId, folders]);
@@ -178,11 +187,11 @@ export const useSidebarActions = () => {
     handleDeleteFolder,
     handleCreatePrompt,
     handleDeletePrompt,
-    
+
     // === 輔助操作 ===
     closeAllMenus,
     getCurrentFolder,
-    
+
     // === 導航資訊 ===
     navigation: {
       pathname: navigation.pathname,
@@ -191,7 +200,7 @@ export const useSidebarActions = () => {
       isCurrentFolder: navigation.isCurrentFolder,
       isCurrentPrompt: navigation.isCurrentPrompt,
     },
-    
+
     // === 資料狀態 ===
     data: {
       folders: folders,

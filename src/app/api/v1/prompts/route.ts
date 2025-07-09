@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { adminDb } from '@/server/db/firebase';
-import { 
+import {
   performLazyMigration,
   calculateInsertStrategy,
   executeSeqNoUpdates,
@@ -55,7 +55,8 @@ export async function GET(req: Request) {
         seqNo: prompt.seqNo,
         createdAt: prompt.createdAt,
         folderId: prompt.folderId,
-        userId: prompt.userId
+        userId: prompt.userId,
+        promptSpaceId: prompt.promptSpaceId || '1' // 為舊資料提供預設值
       };
     });
 
@@ -91,7 +92,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
   try {
-    const { folderId, name, content, shortcut, afterPromptId } = await req.json();
+    const { folderId, name, content, shortcut, afterPromptId, promptSpaceId } = await req.json();
 
     if (!folderId || !name || !shortcut) {
       return NextResponse.json(
@@ -132,7 +133,8 @@ export async function POST(req: Request) {
           seqNo: prompt.seqNo,
           createdAt: prompt.createdAt,
           folderId: prompt.folderId,
-          userId: prompt.userId
+          userId: prompt.userId,
+          promptSpaceId: prompt.promptSpaceId || '1' // 為舊資料提供預設值
         };
       });
 
@@ -154,6 +156,7 @@ export async function POST(req: Request) {
             name,
             content: content || '',
             shortcut,
+            promptSpaceId: promptSpaceId || '1', // 預設為 workspace-default
             seqNo: insertSeqNo,
             createdAt: now,
             updatedAt: now
@@ -193,6 +196,7 @@ export async function POST(req: Request) {
       name,
       content: content || '',
       shortcut,
+      promptSpaceId: promptSpaceId || '1', // 預設為 workspace-default
       seqNo: nextSeqNo,
       createdAt: now,
       updatedAt: now

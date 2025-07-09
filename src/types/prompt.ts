@@ -1,4 +1,10 @@
 import React from "react";
+
+export interface PromptSpace {
+  id: string;
+  name: string;
+}
+
 export interface Prompt {
   id: string;
   name: string;
@@ -12,6 +18,7 @@ export interface Folder {
   name: string;
   description: string;
   prompts: Prompt[];
+  promptSpaceId: string;
   createdAt?: string;
 }
 

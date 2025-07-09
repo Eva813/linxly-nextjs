@@ -4,23 +4,27 @@ import { SidebarContext } from '@/providers/clientRootProvider';
 import Sidebar from '@/app/prompts/components/sidebar/sidebar';
 import LoadingOverlay from "@/app/components/loadingOverlay";
 import FullPageLoading from '@/app/prompts/components/fullPageLoading';
+import { usePromptInitialization } from '@/hooks/usePromptInitialization';
 
 export default function PromptsLayout({ children }: { children: ReactNode }) {
   const { isOpen, toggleSidebar } = useContext(SidebarContext);
 
-    useEffect(() => {
-      const mql = window.matchMedia('(min-width: 640px)');
-      const handler = (e: MediaQueryListEvent) => {
-        if (e.matches && isOpen) toggleSidebar();
-      };
+  // 初始化 Prompt 相關資料
+  usePromptInitialization();
 
-      mql.addEventListener('change', handler);
-      if (mql.matches && isOpen) toggleSidebar();
+  useEffect(() => {
+    const mql = window.matchMedia('(min-width: 640px)');
+    const handler = (e: MediaQueryListEvent) => {
+      if (e.matches && isOpen) toggleSidebar();
+    };
 
-      return () => {
-        mql.removeEventListener('change', handler);
-      };
-    }, [isOpen, toggleSidebar]);
+    mql.addEventListener('change', handler);
+    if (mql.matches && isOpen) toggleSidebar();
+
+    return () => {
+      mql.removeEventListener('change', handler);
+    };
+  }, [isOpen, toggleSidebar]);
 
   return (
     <FullPageLoading>

@@ -7,7 +7,7 @@ export interface FolderSlice {
   folders: Folder[];
   isLoading: boolean;
   error: string | null;
-  fetchFolders: () => Promise<void>;
+  fetchFolders: (promptSpaceId?: string) => Promise<void>;
   setFolders: (folders: Folder[]) => void;
   updateFolder: (id: string, updates: Partial<Folder>) => Promise<Folder>;
   addFolder: (folder: Omit<Folder, "id">) => Promise<Folder>;
@@ -20,6 +20,7 @@ const DEFAULT_FOLDERS: Folder[] = [
     name: 'My Sample Prompts',
     description: 'This is a sample folder',
     prompts: [],
+    promptSpaceId: '1', // 預設指向 workspace-default
   }
 ];
 
@@ -28,19 +29,35 @@ export const createFolderSlice: StateCreator<FolderSlice> = (set, get) => ({
   isLoading: false,
   error: null,
   // 從 API 取得資料夾，如果沒有資料則建立預設資料夾
-  fetchFolders: async () => {
+  fetchFolders: async (promptSpaceId) => {
     try {
+      console.log('fetchFolders 被調用，promptSpaceId:', promptSpaceId);
       set({ isLoading: true, error: null });
-      const folders = await getFolders();
+      const folders = await getFolders(promptSpaceId);
+      console.log('獲得的 folders:', folders);
 
-      if (folders.length === 0) {
+      if (folders.length === 0 && promptSpaceId) {
+        // 如果指定的 promptSpace 沒有資料夾，建立一個預設資料夾
+        console.log('為 promptSpace 建立預設資料夾:', promptSpaceId);
         const defaultFolder = DEFAULT_FOLDERS[0];
         const newFolder = await createFolder({
           name: defaultFolder.name,
           description: defaultFolder.description,
+          promptSpaceId: promptSpaceId,
+        });
+        set({ folders: [newFolder], isLoading: false });
+      } else if (folders.length === 0) {
+        // 如果完全沒有資料夾，建立預設資料夾
+        console.log('建立預設資料夾');
+        const defaultFolder = DEFAULT_FOLDERS[0];
+        const newFolder = await createFolder({
+          name: defaultFolder.name,
+          description: defaultFolder.description,
+          promptSpaceId: promptSpaceId || '1',
         });
         set({ folders: [newFolder], isLoading: false });
       } else {
+        console.log('設定 folders:', folders);
         set({ folders, isLoading: false });
       }
     } catch (error: unknown) {

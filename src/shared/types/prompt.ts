@@ -13,6 +13,7 @@ export interface PromptData {
   createdAt?: Date | { seconds: number; nanoseconds?: number } | null;
   folderId: string;
   userId: string;
+  promptSpaceId: string;
 }
 
 // API 回應格式
@@ -24,11 +25,20 @@ export interface PromptApiResponse {
   seqNo?: number;
 }
 
+// PromptSpace 類型
+export interface PromptSpaceData {
+  id: string;
+  name: string;
+  userId: string;
+  createdAt?: Date | { seconds: number; nanoseconds?: number } | null;
+}
+
 // Folder 類型
 export interface FolderData {
   id: string;
   name: string;
   description?: string;
   userId: string;
+  promptSpaceId: string;
   prompts?: PromptApiResponse[];
 }

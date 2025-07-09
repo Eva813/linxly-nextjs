@@ -1,10 +1,10 @@
 import { NextResponse } from 'next/server';
 import { adminDb } from '@/server/db/firebase';
 import { FieldValue } from 'firebase-admin/firestore';
-import { 
-  performLazyMigration, 
-  groupPromptsByFolderId, 
-  formatPromptsForResponse 
+import {
+  performLazyMigration,
+  groupPromptsByFolderId,
+  formatPromptsForResponse
 } from '@/server/utils/promptUtils';
 
 export async function GET(req: Request) {
@@ -14,13 +14,21 @@ export async function GET(req: Request) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 })
     }
 
+    const url = new URL(req.url);
+    const promptSpaceId = url.searchParams.get('promptSpaceId');
+
     // 優化：同時獲取所有資料夾和所有 prompts，避免 N+1 查詢問題
+    let foldersQuery = adminDb
+      .collection('folders')
+      .where('userId', '==', userId);
+
+    // 如果指定了 promptSpaceId，則過濾資料夾
+    if (promptSpaceId) {
+      foldersQuery = foldersQuery.where('promptSpaceId', '==', promptSpaceId);
+    }
+
     const [foldersSnapshot, promptsSnapshot] = await Promise.all([
-      adminDb
-        .collection('folders')
-        .where('userId', '==', userId)
-        .orderBy('createdAt', 'asc')
-        .get(),
+      foldersQuery.get(),
       adminDb
         .collection('prompts')
         .where('userId', '==', userId)
@@ -55,12 +63,16 @@ export async function GET(req: Request) {
         id: folderId,
         name: folder.name,
         description: folder.description || '',
+        promptSpaceId: folder.promptSpaceId || '1', // 預設為 workspace-default
         prompts: formattedPrompts,
         createdAt: createdAt.toISOString(),
         updatedAt: updatedAt.toISOString(),
         promptCount: formattedPrompts.length
       };
     }));
+
+    // 在記憶體中按 createdAt 排序
+    result.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
 
     return NextResponse.json(result);
 
@@ -95,6 +107,7 @@ export async function POST(req: Request) {
       userId: userId,
       name: body.name,
       description: body.description || '',
+      promptSpaceId: body.promptSpaceId || '1', // 預設為 workspace-default
       createdAt: now,
       updatedAt: now
     };
@@ -106,6 +119,7 @@ export async function POST(req: Request) {
       id: folderRef.id,
       name: body.name,
       description: body.description || '',
+      promptSpaceId: body.promptSpaceId || '1',
       prompts: [] // 新資料夾初始沒有 prompts
     };
 

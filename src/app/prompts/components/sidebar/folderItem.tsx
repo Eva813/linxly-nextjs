@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useContext } from "react";
+
 import Link from "next/link";
 import { BsThreeDotsVertical } from "react-icons/bs";
 import {
@@ -29,7 +30,7 @@ const FolderItem: React.FC<FolderItemProps> = ({
   children,
 }) => {
   const [isShareDialogOpen, setShareDialogOpen] = React.useState(false);
-  const [shares, setShares] = useState<{ email: string; permission: string; _id: string }[]>([]);
+  const [shares, setShares] = useState<{ email: string; permission: string; id: string }[]>([]);
   const { data: session } = useSession();
   const userPermission = shares.find(s => s.email === session?.user?.email)?.permission;
 

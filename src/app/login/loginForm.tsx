@@ -16,16 +16,16 @@ export function LoginContent() {
   const { status } = useSession();
   const router = useRouter();
   const searchParams = useSearchParams();
-  
+
   const {
     step,
-    email, 
+    email,
     setEmail,
-    password, 
+    password,
     setPassword,
     error,
     isLoading,
-    showPassword, 
+    showPassword,
     setShowPassword,
     handleNextStep,
     handleSubmit,
@@ -46,16 +46,16 @@ export function LoginContent() {
         description={step === 1 ? 'Enter your email to continue' : 'Enter your password to login'}
       >
         <ErrorMessage message={error} />
-        
+
         {step === 1 && (
-          <EmailStep 
+          <EmailStep
             email={email}
             setEmail={setEmail}
             isLoading={isLoading}
             onSubmit={handleNextStep}
           />
         )}
-        
+
         {step === 2 && (
           <PasswordStep
             password={password}
@@ -66,14 +66,14 @@ export function LoginContent() {
             onSubmit={handleSubmit}
           />
         )}
-        
-        <SocialLoginButton 
-          provider="google" 
-          onClick={handleGoogleSignIn} 
-          isLoading={isLoading} 
+
+        <SocialLoginButton
+          provider="google"
+          onClick={handleGoogleSignIn}
+          isLoading={isLoading}
         />
-        
-        <p className="text-sm text-center text-gray-600">
+
+        <p className="text-sm text-center text-gray-600 dark:text-gray-400">
           Don&apos;t have an account?{' '}
           <Link href="/sign-up" className="text-blue-600 hover:underline">
             Sign up

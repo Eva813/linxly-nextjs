@@ -21,7 +21,7 @@ export function SocialLoginButton({ provider, onClick, isLoading }: SocialLoginB
       onClick={onClick}
       disabled={isLoading}
     >
-      <Image src={providerLogo[provider]} alt={`${provider} logo`} width={20} height={20} className="w-5 h-5 dark:text-gray-300" />
+      <Image src={providerLogo[provider]} alt={`${provider} logo`} width={20} height={20} className="w-5 h-5" />
       Continue with {provider.charAt(0).toUpperCase() + provider.slice(1)}
     </Button>
   );

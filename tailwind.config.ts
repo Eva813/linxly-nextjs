@@ -12,7 +12,7 @@ const config: Config = {
 	theme: {
 		extend: {
 			backgroundImage: {
-				'auth-dark': "radial-gradient(circle at center,  rgba(0, 0, 0, 0.8) 0%, rgba(0, 0, 20, 0.9) 50%, rgba(0, 0, 50, 0.8) 100%)",
+				'auth-dark-gradient': "radial-gradient(circle at center,  rgba(0, 0, 0, 0.8) 0%, rgba(0, 0, 20, 0.9) 50%, rgba(0, 0, 50, 0.8) 100%)",
 			},
 			container: {
 				center: true,

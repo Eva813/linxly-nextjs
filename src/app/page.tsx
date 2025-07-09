@@ -6,7 +6,7 @@ export default function Home() {
 
   return (
     <div>
-      <section className="bg-white min-h-[calc(100vh-4rem-1px)] flex items-center  dark:text-gray-100 dark:bg-gray-900 dark:bg-auth-dark">
+      <section className="bg-white min-h-[calc(100vh-4rem-1px)] flex items-center  dark:text-gray-100 dark:bg-gray-900 dark:bg-auth-dark-gradient">
         <div className="container mx-auto px-4 text-center flex flex-col md:flex-row items-center md:items-start">
           <div className="md:w-1/2 flex flex-col justify-center h-full">
             <span className="inline-block bg-gray-100 text-gray-800 text-sm font-medium px-3 py-1 rounded-full mb-4 max-w-max text-center mx-auto">
@@ -54,7 +54,7 @@ export default function Home() {
             >
               <circle cx="50" cy="50" r="50" fill="#98B1E4" />
             </svg>
-            <ManWithPuzzleIcon width={380} height={380} />
+            <ManWithPuzzleIcon width={380} height={380} aria-hidden="true" />
             <div className="hidden md:block absolute top-[-32px] right-[90px] hover:animate-swing-left" style={{ transform: 'rotate(-15deg)' }}>
               <PuzzleIcon />
             </div>

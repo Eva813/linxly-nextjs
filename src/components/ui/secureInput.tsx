@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useCallback } from 'react';
+import React, { useRef, useEffect, useCallback, useState } from 'react';
 
 export interface SecureInputStyleConfig {
   paddingLeft?: string;
@@ -239,22 +239,28 @@ export class SecureInputElement extends HTMLElement {
     switch (name) {
       case 'value':
         if (newValue !== null && this.input.value !== newValue) {
+          // 只有當值真的不同時才更新
           this.input.value = newValue;
         }
         break;
       case 'placeholder':
-        if (newValue !== null) {
+        if (newValue !== null && this.input.placeholder !== newValue) {
           this.input.placeholder = newValue;
         }
         break;
       case 'disabled':
-        this.input.disabled = newValue !== null;
+        const shouldBeDisabled = newValue !== null;
+        if (this.input.disabled !== shouldBeDisabled) {
+          this.input.disabled = shouldBeDisabled;
+        }
         break;
       case 'padding-left':
       case 'padding-right':
       case 'input-height':
-        // 重新設定樣式
-        this.setupStyles();
+        // 只有當值真的改變時才重新設定樣式
+        if (oldValue !== newValue) {
+          this.setupStyles();
+        }
         break;
     }
   }
@@ -294,20 +300,34 @@ const SecureInput: React.FC<SecureInputProps> = ({
   onBlur
 }) => {
   const ref = useRef<SecureInputElement>(null);
-  const isUpdatingFromProps = useRef(false);
+  const [internalValue, setInternalValue] = useState(value);
 
   // 根據 variant 選擇樣式配置
   const finalStyleConfig = styleConfig ||
     (variant === 'shortcut' ? SHORTCUT_STYLES : DEFAULT_STYLES);
 
+  // 當外部 value 變化時，更新內部值
+  useEffect(() => {
+    if (value !== internalValue) {
+      setInternalValue(value);
+      const element = ref.current;
+      if (element && element.getValue() !== value) {
+        element.setValue(value);
+      }
+    }
+  }, [value, internalValue]);
+
   // 處理內部值變化
   const handleSecureInputChange = useCallback((e: CustomEvent<{ value: string }>) => {
-    if (isUpdatingFromProps.current) return;
+    const newValue = e.detail.value;
+    
+    // 更新內部狀態
+    setInternalValue(newValue);
 
     // 建立相容的 React ChangeEvent
     const syntheticEvent = {
-      target: { value: e.detail.value },
-      currentTarget: { value: e.detail.value }
+      target: { value: newValue },
+      currentTarget: { value: newValue }
     } as React.ChangeEvent<HTMLInputElement>;
 
     onChange(syntheticEvent);
@@ -318,8 +338,7 @@ const SecureInput: React.FC<SecureInputProps> = ({
     const element = ref.current;
     if (!element) return;
 
-    isUpdatingFromProps.current = true;
-    element.setAttribute('value', value);
+    // 更新屬性（非值相關）
     if (placeholder) element.setAttribute('placeholder', placeholder);
     if (disabled !== undefined) {
       if (disabled) {
@@ -339,9 +358,7 @@ const SecureInput: React.FC<SecureInputProps> = ({
     if (finalStyleConfig.height) {
       element.setAttribute('input-height', finalStyleConfig.height);
     }
-
-    isUpdatingFromProps.current = false;
-  }, [value, placeholder, disabled, finalStyleConfig]);
+  }, [placeholder, disabled, finalStyleConfig]);
 
   // 設定事件監聽器
   useEffect(() => {

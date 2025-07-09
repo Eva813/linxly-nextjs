@@ -75,89 +75,74 @@ export const usePromptPageLogic = ({ promptId }: UsePromptPageLogicProps) => {
   const [shortcutError, setShortcutError] = useState<ShortcutError | null>(null);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
-  // 儲存初始值用於比較
+  // 儲存初始值用於比較 - 這個值只在 currentPrompt 變化時更新
   const [initialValues, setInitialValues] = useState({
     name: "",
     shortcut: "",
     content: ""
   });
 
-  // 追蹤是否正在進行外部更新（例如從 API 載入資料）
-  const isExternalUpdateRef = useRef(false);
-  
-  // 使用 ref 來避免不必要的重新建立
-  const formDataRef = useRef(formData);
-  const currentPromptRef = useRef(currentPrompt);
-
-  // 更新 ref
-  useEffect(() => {
-    formDataRef.current = formData;
-    currentPromptRef.current = currentPrompt;
-  });
+  // 只用一個 ref 來追蹤是否正在進行 API 操作，避免在 API 回應期間重複觸發
+  const isApiOperationRef = useRef(false);
 
   // 取得所有提示詞用於驗證
   const allPrompts = folders.flatMap(folder => folder.prompts);
 
-  // 穩定的儲存函式，使用 ref 來取得最新值
-  const savePrompt = useCallback(async () => {
-    const currentFormData = formDataRef.current;
-    const currentPromptData = currentPromptRef.current;
-
-    if (!currentPromptData) return;
+  // 穩定的儲存函式
+  const savePrompt = useCallback(async (dataToSave: typeof formData) => {
+    if (!currentPrompt || isApiOperationRef.current) return;
 
     const updatedPrompt = {
-      ...currentPromptData,
-      ...currentFormData,
+      ...currentPrompt,
+      ...dataToSave,
     };
 
     try {
+      isApiOperationRef.current = true;
       setSaving(true, promptId);
       await updatePrompt(promptId, updatedPrompt);
 
       setSaved(promptId);
-      setInitialValues(currentFormData);
+      setInitialValues(dataToSave);
       setHasUnsavedChanges(false);
     } catch (error) {
       setSaveError(true, promptId);
       console.error("儲存時發生錯誤:", error);
+    } finally {
+      isApiOperationRef.current = false;
     }
-  }, [promptId, updatePrompt, setSaving, setSaved, setSaveError]);
+  }, [currentPrompt, promptId, updatePrompt, setSaving, setSaved, setSaveError]);
 
   // 建立穩定的 debounced 儲存函式
-  const debouncedSave = useMemo(
-    () => debounce(savePrompt, 800),
-    [savePrompt]
-  );
+  const debouncedSave = useMemo(() => {
+    const saveFunction = (data: { name: string; shortcut: string; content: string }) => {
+      savePrompt(data);
+    };
+    return debounce(saveFunction as (...args: unknown[]) => void, 800);
+  }, [savePrompt]);
 
   // 統一的表單更新函式
   const updateFormField = useCallback((field: keyof typeof formData, value: string) => {
-    // 如果是外部更新，直接設定不觸發儲存
-    if (isExternalUpdateRef.current) {
-      setFormData(prev => ({ ...prev, [field]: value }));
-      return;
-    }
+    let hasChanges = false;
+    let newData: typeof formData;
 
-    // 立即更新表單資料
     setFormData(prev => {
-      const newData = { ...prev, [field]: value };
+      newData = { ...prev, [field]: value };
       
-      // 立即檢查是否有變更
-      const hasChanges = !deepEqual(newData, initialValues);
+      // 檢查是否有變更
+      hasChanges = !deepEqual(newData, initialValues);
       setHasUnsavedChanges(hasChanges);
-
-      // 延遲狀態更新到下一個事件循環，避免在渲染期間更新其他元件
-      setTimeout(() => {
-        if (hasChanges && currentPrompt) {
-          setActive(true, promptId);
-          // 觸發 debounced 儲存
-          debouncedSave();
-        } else if (!hasChanges) {
-          setActive(false, promptId);
-        }
-      }, 0);
 
       return newData;
     });
+
+    // 將狀態更新移到 setFormData 外部，避免在渲染期間調用
+    if (hasChanges && currentPrompt && !isApiOperationRef.current) {
+      setActive(true, promptId);
+      debouncedSave(newData!);
+    } else if (!hasChanges) {
+      setActive(false, promptId);
+    }
 
     // 特殊處理快捷鍵驗證
     if (field === 'shortcut') {
@@ -189,28 +174,33 @@ export const usePromptPageLogic = ({ promptId }: UsePromptPageLogicProps) => {
     updateFormField('content', newContent);
   }, [updateFormField]);
 
-  // 初始化資料
-  useEffect(() => {
-    if (currentPrompt) {
-      const initialData = {
-        name: currentPrompt.name,
-        shortcut: currentPrompt.shortcut || "",
-        content: currentPrompt.content
-      };
-
-      // 標記為外部更新
-      isExternalUpdateRef.current = true;
-      
-      setFormData(initialData);
-      setInitialValues(initialData);
-      setHasUnsavedChanges(false);
-      
-      // 在下一個事件循環中重置標記
-      setTimeout(() => {
-        isExternalUpdateRef.current = false;
-      }, 0);
-    }
+  // 初始化資料 - 使用 useMemo 來穩定初始值計算
+  const currentInitialData = useMemo(() => {
+    if (!currentPrompt) return null;
+    return {
+      name: currentPrompt.name,
+      shortcut: currentPrompt.shortcut || "",
+      content: currentPrompt.content
+    };
   }, [currentPrompt]);
+
+  // 分離的初始化邏輯，避免循環依賴
+  useEffect(() => {
+    if (currentInitialData && !isApiOperationRef.current) {
+      // 使用函式更新來避免依賴 formData
+      setFormData(prevFormData => {
+        const currentDataString = JSON.stringify(prevFormData);
+        const initialDataString = JSON.stringify(currentInitialData);
+        
+        if (currentDataString !== initialDataString) {
+          setInitialValues(currentInitialData);
+          setHasUnsavedChanges(false);
+          return currentInitialData;
+        }
+        return prevFormData;
+      });
+    }
+  }, [currentInitialData, setInitialValues, setHasUnsavedChanges]);
 
   useEffect(() => {
     return () => {
@@ -237,8 +227,5 @@ export const usePromptPageLogic = ({ promptId }: UsePromptPageLogicProps) => {
     handleShortcutChange,
     updateContent,
     clearShortcutError,
-    
-    // 檢查是否為外部更新
-    isExternalUpdate: () => isExternalUpdateRef.current,
   };
 };

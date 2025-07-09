@@ -123,43 +123,36 @@ export const usePromptPageLogic = ({ promptId }: UsePromptPageLogicProps) => {
 
   // 統一的表單更新函式
   const updateFormField = useCallback((field: keyof typeof formData, value: string) => {
-    let hasChanges = false;
-    let newData: typeof formData;
+    const newData = { ...formData, [field]: value };
+    const hasChanges = !deepEqual(newData, initialValues);
 
-    setFormData(prev => {
-      newData = { ...prev, [field]: value };
-      
-      // 檢查是否有變更
-      hasChanges = !deepEqual(newData, initialValues);
-      setHasUnsavedChanges(hasChanges);
+    // 更新狀態
+    setFormData(newData);
+    setHasUnsavedChanges(hasChanges);
 
-      return newData;
-    });
-
-    // 將狀態更新移到 setFormData 外部，避免在渲染期間調用
     if (hasChanges && currentPrompt && !isApiOperationRef.current) {
-      setActive(true, promptId);
-      debouncedSave(newData!);
+        setActive(true, promptId);
+        debouncedSave(newData);
     } else if (!hasChanges) {
-      setActive(false, promptId);
+        setActive(false, promptId);
     }
 
     // 特殊處理快捷鍵驗證
     if (field === 'shortcut') {
-      const trimmedValue = value.trim();
-      if (!trimmedValue) {
-        setShortcutError(null);
-        return;
-      }
+        const trimmedValue = value.trim();
+        if (!trimmedValue) {
+            setShortcutError(null);
+            return;
+        }
 
-      const validation = validateShortcut(trimmedValue, allPrompts, promptId);
-      if (validation.isValid) {
-        setShortcutError(null);
-      } else {
-        setShortcutError(validation.error || null);
-      }
+        const validation = validateShortcut(trimmedValue, allPrompts, promptId);
+        if (validation.isValid) {
+            setShortcutError(null);
+        } else {
+            setShortcutError(validation.error || null);
+        }
     }
-  }, [allPrompts, promptId, initialValues, currentPrompt, setActive, debouncedSave]);
+}, [allPrompts, promptId, initialValues, currentPrompt, setActive, debouncedSave, formData]);
 
   // 表單處理器
   const handleNameChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
@@ -189,10 +182,7 @@ export const usePromptPageLogic = ({ promptId }: UsePromptPageLogicProps) => {
     if (currentInitialData && !isApiOperationRef.current) {
       // 使用函式更新來避免依賴 formData
       setFormData(prevFormData => {
-        const currentDataString = JSON.stringify(prevFormData);
-        const initialDataString = JSON.stringify(currentInitialData);
-        
-        if (currentDataString !== initialDataString) {
+        if (!deepEqual(prevFormData, currentInitialData)) {
           setInitialValues(currentInitialData);
           setHasUnsavedChanges(false);
           return currentInitialData;

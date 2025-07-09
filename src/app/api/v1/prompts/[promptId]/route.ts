@@ -5,7 +5,7 @@ export async function GET(
   req: Request,
   { params }: { params: { promptId: string } }
 ) {
-  
+
   const userId = req.headers.get('x-user-id');
   if (!userId) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
@@ -31,16 +31,17 @@ export async function GET(
     }
     
     const prompt = promptDoc.data()!;
-    
+
     // 格式化回應資料
     const result = {
       id: promptId,
       folderId: prompt.folderId,
       name: prompt.name,
       content: prompt.content,
-      shortcut: prompt.shortcut
+      shortcut: prompt.shortcut,
+      seqNo: prompt.seqNo
     };
-    
+
     return NextResponse.json(result);
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'unknow error';
@@ -99,6 +100,7 @@ export async function PUT(
       .doc(promptId)
       .get();
     
+
     const updated = updatedDoc.data()!;
 
     return NextResponse.json({
@@ -106,7 +108,8 @@ export async function PUT(
       folderId: updated.folderId,
       name: updated.name,
       content: updated.content,
-      shortcut: updated.shortcut
+      shortcut: updated.shortcut,
+      seqNo: updated.seqNo
     });
   } catch (err: unknown) {
     const errorMessage = err instanceof Error ? err.message : 'unknown error';
@@ -122,7 +125,7 @@ export async function DELETE(
   req: Request,
   { params }: { params: { promptId: string } }
 ) {
-  
+
   const userId = req.headers.get('x-user-id');
   if (!userId) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
@@ -136,18 +139,16 @@ export async function DELETE(
       .collection('prompts')
       .doc(promptId)
       .get();
-    
+
     if (!promptDoc.exists || promptDoc.data()?.userId !== userId) {
       // 不存在或不屬於這個 user
       return NextResponse.json({ message: 'prompt not found' }, { status: 404 });
     }
-    
     // 刪除文件
     await adminDb
       .collection('prompts')
       .doc(promptId)
       .delete();
-    
     return new NextResponse(null, { status: 204 });
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'unknow error';

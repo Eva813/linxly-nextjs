@@ -27,6 +27,7 @@ const PromptPage = ({ params }: PromptPageProps) => {
   const [canEdit, setCanEdit] = useState<boolean | null>(null);
 
 
+  
   // 業務邏輯
   const {
     name,
@@ -36,8 +37,7 @@ const PromptPage = ({ params }: PromptPageProps) => {
     handleNameChange,
     handleShortcutChange,
     updateContent,
-    clearShortcutError,
-    isExternalUpdate,
+    clearShortcutError
   } = usePromptPageLogic({ promptId });
 
   const {
@@ -125,7 +125,6 @@ const PromptPage = ({ params }: PromptPageProps) => {
             if (newContent) updateContent(newContent);
           }}
           onMobilePanelToggle={toggleMobilePanel}
-          isExternalUpdate={isExternalUpdate}
           // editable={canEdit}
         />
       </main>

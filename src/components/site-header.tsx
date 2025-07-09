@@ -1,4 +1,4 @@
- 'use client'
+'use client'
 import { FaBars } from 'react-icons/fa'
 import Link from "next/link"
 import { useRouter } from 'next/navigation'
@@ -79,7 +79,7 @@ export function SiteHeader() {
 
   const handleLogout = async () => {
     await signOut({ redirect: false })
-    
+
     // 通知 Chrome 擴充功能使用者已登出
     window.postMessage(
       {
@@ -105,7 +105,7 @@ export function SiteHeader() {
 
   return (
     <header
-      className="sticky top-0 z-50 w-full border-b border-gray-200"
+      className="sticky top-0 z-50 w-full border-b border-gray-200 dark:border-gray-700 dark:bg-gray-800"
       style={{
         background: 'var(--header-bg)',
         backdropFilter: 'blur(5px)',
@@ -174,9 +174,9 @@ export function SiteHeader() {
             </Link>
             <ThemeToggle />
             {status === "loading" ? (
-            // 載入中顯示占位骨架
-            <div className="w-10 h-10 rounded-full bg-gray-200 animate-pulse-strong" />
-          ) : isLoggedIn ? (
+              // 載入中顯示占位骨架
+              <div className="w-10 h-10 rounded-full bg-gray-200 animate-pulse-strong" />
+            ) : isLoggedIn ? (
               <DropdownMenu>
                 <DropdownMenuTrigger className="inline-flex items-center justify-center rounded-full h-8 w-8 overflow-hidden border border-gray-500 focus:outline-none focus:ring-0">
                   <FaUserAlt />
@@ -185,21 +185,21 @@ export function SiteHeader() {
                   <div className="px-4 py-2 text-sm text-gray-700 flex items-center space-x-2">
                     {session.user.image ? (
                       <Image
-                      src={session.user.image}
-                      alt="User Avatar"
-                      width={32}
-                      height={32}
-                      className="rounded-full"
+                        src={session.user.image}
+                        alt="User Avatar"
+                        width={32}
+                        height={32}
+                        className="rounded-full"
                       />
                     ) : (
                       <FaUserAlt className="w-4 h-4" />
                     )}
                     <p className="truncate">{session.user.email ?? "User"}</p>
                   </div>
-                    <DropdownMenuItem onClick={handleLogout} className="text-red-600 hover:bg-gray-100 px-4">
-                      <LuLogOut className="w-4 h-4 mr-2" />
-                      Logout
-                    </DropdownMenuItem>
+                  <DropdownMenuItem onClick={handleLogout} className="text-red-600 hover:bg-gray-100 px-4">
+                    <LuLogOut className="w-4 h-4 mr-2" />
+                    Logout
+                  </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             ) : (

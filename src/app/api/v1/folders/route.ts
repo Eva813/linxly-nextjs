@@ -1,7 +1,11 @@
-// app/api/v1/folders/route.ts
 import { NextResponse } from 'next/server';
-import { adminDb } from '@/lib/firebaseAdmin';
+import { adminDb } from '@/server/db/firebase';
 import { FieldValue } from 'firebase-admin/firestore';
+import { 
+  performLazyMigration, 
+  groupPromptsByFolderId, 
+  formatPromptsForResponse 
+} from '@/server/utils/promptUtils';
 
 export async function GET(req: Request) {
   try {
@@ -39,6 +43,30 @@ export async function GET(req: Request) {
       self.findIndex(f => f.id === folder.id) === index
     );
 
+    // 優化：同時獲取所有相關的 prompts，避免 N+1 查詢問題
+    const folderIds = uniqueFolders.map(folder => folder.id);
+    const allPromptsSnapshot = await adminDb
+      .collection('prompts')
+      .where('folderId', 'in', folderIds.slice(0, 10)) // Firebase 限制 in 查詢最多 10 個值
+      .get();
+
+    // 如果有超過 10 個資料夾，需要分批查詢
+    let allPrompts = allPromptsSnapshot.docs;
+    if (folderIds.length > 10) {
+      const batchSize = 10;
+      for (let i = 10; i < folderIds.length; i += batchSize) {
+        const batch = folderIds.slice(i, i + batchSize);
+        const batchSnapshot = await adminDb
+          .collection('prompts')
+          .where('folderId', 'in', batch)
+          .get();
+        allPrompts = [...allPrompts, ...batchSnapshot.docs];
+      }
+    }
+
+    // 將 prompts 按 folderId 分組
+    const promptsMap = groupPromptsByFolderId(allPrompts);
+
     const result = await Promise.all(uniqueFolders.map(async (folderDoc) => {
       const folder = folderDoc.data();
       const folderId = folderDoc.id;
@@ -48,25 +76,23 @@ export async function GET(req: Request) {
         (share: { userId: string; status: string; }) => share.userId === userId && share.status === 'accepted'
       );
 
-      // 從 prompts 集合獲取該資料夾的 prompts
-      const promptsQuery = adminDb
-        .collection('prompts')
-        .where('folderId', '==', folderId);
+      // 從分組的 Map 中獲取該資料夾的 prompts
+      let folderPrompts = promptsMap.get(folderId) || [];
 
-      // 如果不是分享的資料夾，則額外過濾 userId
-      const promptsSnapshot = isSharedFolder 
-        ? await promptsQuery.get()
-        : await promptsQuery.where('userId', '==', userId).get();
-      // 格式化程式碼片段資料
-      const formattedPrompts = promptsSnapshot.docs.map(promptDoc => {
-        const prompt = promptDoc.data();
-        return {
-          id: promptDoc.id,
-          name: prompt.name,
-          content: prompt.content,
-          shortcut: prompt.shortcut
-        };
+      // 如果不是分享的資料夾，額外過濾 userId
+      if (!isSharedFolder) {
+        folderPrompts = folderPrompts.filter(prompt => prompt.userId === userId);
+      }
+
+      // 處理 Lazy Migration（如果需要）
+      const processedPrompts = await performLazyMigration(folderPrompts, {
+        mode: 'batch',
+        folderId,
+        userId
       });
+
+      // 格式化程式碼片段資料
+      const formattedPrompts = formatPromptsForResponse(processedPrompts);
 
       const createdAt = folder.createdAt?.toDate?.() || new Date();
       const updatedAt = folder.updatedAt?.toDate?.() || createdAt;
@@ -78,7 +104,8 @@ export async function GET(req: Request) {
         prompts: formattedPrompts,
         createdAt: createdAt.toISOString(),
         updatedAt: updatedAt.toISOString(),
-        promptCount: formattedPrompts.length
+        promptCount: formattedPrompts.length,
+        isShared: isSharedFolder
       };
     }));
 

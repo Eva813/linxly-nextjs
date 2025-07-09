@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { sign } from "jsonwebtoken";
-import { adminDb } from "@/lib/firebaseAdmin";
+import { adminDb } from "@/server/db/firebase";
 
 export async function POST(req: Request) {
   // 1) 解析並驗證必要欄位

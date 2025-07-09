@@ -128,6 +128,7 @@ const FolderPage = ({ params }: FolderPageProps) => {
         placeholder="input description"
         disabled={!currentFolder || !formData.name}
       />
+
     </div>
   );
 };

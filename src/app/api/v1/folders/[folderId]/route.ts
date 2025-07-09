@@ -1,11 +1,16 @@
 import { NextResponse } from 'next/server';
-import { adminDb } from '@/lib/firebaseAdmin';
+import { adminDb } from '@/server/db/firebase';
+import { 
+  performLazyMigration, 
+  formatPromptsForResponse
+} from '@/server/utils/promptUtils';
+import type { PromptData } from '@/shared/types/prompt';
 
 export async function GET(
   req: Request,
   { params }: { params: { folderId: string } }
 ) {
-  
+
   const userId = req.headers.get('x-user-id');
   if (!userId) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
@@ -30,25 +35,38 @@ export async function GET(
     }
     
     const folder = folderDoc.data()!;
-    
+
     // 獲取該資料夾的所有 prompt 片段
     const promptsSnapshot = await adminDb
       .collection('prompts')
       .where('folderId', '==', folderId)
       .where('userId', '==', userId)
       .get();
-    
-    // 格式化回應資料
-    const formattedPrompts = promptsSnapshot.docs.map(promptDoc => {
-      const prompt = promptDoc.data();
+
+    // 轉換為 PromptData 格式
+    const prompts: PromptData[] = promptsSnapshot.docs.map(doc => {
+      const prompt = doc.data();
       return {
-        id: promptDoc.id,
+        id: doc.id,
         name: prompt.name,
         content: prompt.content,
-        shortcut: prompt.shortcut
+        shortcut: prompt.shortcut,
+        seqNo: prompt.seqNo,
+        createdAt: prompt.createdAt,
+        folderId: prompt.folderId,
+        userId: prompt.userId
       };
     });
-    
+
+    // 使用共用的 Lazy Migration 邏輯
+    const processedPrompts = await performLazyMigration(prompts, {
+      mode: 'batch',
+      folderId,
+      userId
+    });
+
+    // 格式化回應資料
+    const formattedPrompts = formatPromptsForResponse(processedPrompts);
     // 格式化回應資料
     const result = {
       id: folderId,
@@ -56,7 +74,7 @@ export async function GET(
       description: folder.description || '',
       prompts: formattedPrompts
     };
-    
+
     return NextResponse.json(result);
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'unknow error';
@@ -95,38 +113,52 @@ export async function PUT(
         { status: 404 }
       );
     }
-    
+
     // 更新資料夾資訊
     await adminDb.collection('folders').doc(folderId).update({
       name,
       description: description || '',
       updatedAt: new Date()
     });
-    
+
     // 獲取該資料夾的所有 prompt 片段
     const promptsSnapshot = await adminDb
       .collection('prompts')
       .where('folderId', '==', folderId)
       .where('userId', '==', userId)
       .get();
-    
-    const formattedPrompts = promptsSnapshot.docs.map(promptDoc => {
-      const prompt = promptDoc.data();
+
+    // 轉換為 PromptData 格式
+    const prompts: PromptData[] = promptsSnapshot.docs.map(doc => {
+      const prompt = doc.data();
       return {
-        id: promptDoc.id,
+        id: doc.id,
         name: prompt.name,
         content: prompt.content,
-        shortcut: prompt.shortcut
+        shortcut: prompt.shortcut,
+        seqNo: prompt.seqNo,
+        createdAt: prompt.createdAt,
+        folderId: prompt.folderId,
+        userId: prompt.userId
       };
     });
-    
+
+    // 使用共用的 Lazy Migration 邏輯
+    const processedPrompts = await performLazyMigration(prompts, {
+      mode: 'batch',
+      folderId,
+      userId
+    });
+
+    // 格式化回應資料
+    const formattedPrompts = formatPromptsForResponse(processedPrompts);
     const result = {
       id: folderId,
       name,
       description: description || '',
       prompts: formattedPrompts
     };
-    
+
     return NextResponse.json(result);
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'unknow error';
@@ -154,7 +186,7 @@ export async function DELETE(
       .collection('folders')
       .doc(folderId)
       .get();
-    
+
     if (!folderDoc.exists || folderDoc.data()?.userId !== userId) {
       return NextResponse.json(
         { message: 'folder not found' },
@@ -168,21 +200,21 @@ export async function DELETE(
       .where('folderId', '==', folderId)
       .where('userId', '==', userId)
       .get();
-    
+
     // 使用批次處理刪除所有 prompts
     const batch = adminDb.batch();
-    
+
     // 添加刪除 prompts 的操作到批次處理中
     promptsSnapshot.docs.forEach(doc => {
       batch.delete(doc.ref);
     });
-    
+
     // 添加刪除資料夾的操作到批次處理中
     batch.delete(adminDb.collection('folders').doc(folderId));
-    
+
     // 執行批次處理
     await batch.commit();
-    
+
     return new NextResponse(null, { status: 204 });
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'unknow error';

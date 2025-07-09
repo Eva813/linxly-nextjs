@@ -14,7 +14,7 @@ interface InputFieldProps {
 export function InputField({ id, label, type, placeholder, value, onChange, suffix }: InputFieldProps) {
   return (
     <div className="relative">
-      <label htmlFor={id} className="block text-sm text-gray-700 mb-1">
+      <label htmlFor={id} className="block text-sm text-gray-700 mb-1 dark:text-gray-300">
         {label}
       </label>
       <div className="relative">
@@ -22,7 +22,7 @@ export function InputField({ id, label, type, placeholder, value, onChange, suff
           id={id}
           type={type}
           placeholder={placeholder}
-          className="w-full h-10 px-3 pr-10 border border-gray-300 rounded-md"
+          className="w-full h-10 px-3 pr-10 border border-gray-300 rounded-md dark:bg-gray-600 dark:border-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
           value={value}
           onChange={onChange}
         />

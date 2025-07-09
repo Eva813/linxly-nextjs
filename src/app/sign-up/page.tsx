@@ -34,7 +34,7 @@ export default function SignUp() {
     return emailRegex.test(email);
   }, []);
 
-    const handleNextStep = (e: React.FormEvent) => {
+  const handleNextStep = (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
 
@@ -95,7 +95,7 @@ export default function SignUp() {
       description={step === 1 ? "Enter your name and email to continue" : "Enter your password to complete registration"}
     >
       {step === 1 && (
-        <form className="space-y-4" onSubmit={handleNextStep}  noValidate>
+        <form className="space-y-4" onSubmit={handleNextStep} noValidate>
           <InputField
             id="name"
             label="Name"
@@ -113,9 +113,9 @@ export default function SignUp() {
             onChange={(e) => setEmail(e.target.value)}
             aria-invalid={!!error}
             aria-describedby="email-error"
-          /> 
+          />
           {error && <ErrorMessage message={error} id="email-error" />}
-          <LoadingButton type="submit" className="w-full" isLoading={isLoading}>
+          <LoadingButton type="submit" className="w-full dark:text-gray-300" isLoading={isLoading}>
             Continue with email
           </LoadingButton>
         </form>

@@ -24,7 +24,6 @@ const PromptPage = ({ params }: PromptPageProps) => {
     handleShortcutChange,
     updateContent,
     clearShortcutError,
-    isExternalUpdate,
   } = usePromptPageLogic({ promptId });
 
   const {
@@ -93,7 +92,6 @@ const PromptPage = ({ params }: PromptPageProps) => {
             if (newContent) updateContent(newContent);
           }}
           onMobilePanelToggle={toggleMobilePanel}
-          isExternalUpdate={isExternalUpdate}
         />
       </main>
 

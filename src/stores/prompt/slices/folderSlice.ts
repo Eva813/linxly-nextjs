@@ -7,10 +7,10 @@ export interface FolderSlice {
   folders: Folder[];
   isLoading: boolean;
   error: string | null;
-  fetchFolders: () => Promise<void>;
+  fetchFolders: (promptSpaceId?: string) => Promise<void>;
   setFolders: (folders: Folder[]) => void;
   updateFolder: (id: string, updates: Partial<Folder>) => Promise<Folder>;
-  addFolder: (folder: Omit<Folder, "id">) => Promise<Folder>;
+  addFolder: (folder: Omit<Folder, "id">, promptSpaceId?: string) => Promise<Folder>;
   deleteFolder: (id: string) => Promise<void>;
 }
 // 預設資料夾結構
@@ -28,16 +28,24 @@ export const createFolderSlice: StateCreator<FolderSlice> = (set, get) => ({
   isLoading: false,
   error: null,
   // 從 API 取得資料夾，如果沒有資料則建立預設資料夾
-  fetchFolders: async () => {
+  fetchFolders: async (promptSpaceId?: string) => {
     try {
       set({ isLoading: true, error: null });
-      const folders = await getFolders();
+      
+      if (!promptSpaceId) {
+        console.warn('fetchFolders: promptSpaceId is required');
+        set({ isLoading: false, folders: [] });
+        return;
+      }
+      
+      const folders = await getFolders(promptSpaceId);
 
       if (folders.length === 0) {
         const defaultFolder = DEFAULT_FOLDERS[0];
         const newFolder = await createFolder({
           name: defaultFolder.name,
           description: defaultFolder.description,
+          promptSpaceId: promptSpaceId,
         });
         set({ folders: [newFolder], isLoading: false });
       } else {
@@ -84,11 +92,16 @@ export const createFolderSlice: StateCreator<FolderSlice> = (set, get) => ({
       throw error;
     }
   },
-  addFolder: async (folder) => {
+  addFolder: async (folder, promptSpaceId?: string) => {
     try {
+      if (!promptSpaceId) {
+        throw new Error('promptSpaceId is required');
+      }
+      
       const newFolder = await createFolder({
         name: folder.name,
-        description: folder.description
+        description: folder.description,
+        promptSpaceId: promptSpaceId
       });
 
       // 樂觀更新：先更新 UI，確保使用者體驗

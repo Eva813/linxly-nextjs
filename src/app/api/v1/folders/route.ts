@@ -14,12 +14,19 @@ export async function GET(req: Request) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 })
     }
 
-    // 優化：同時獲取所有資料夾和所有 prompts，避免 N+1 查詢問題
+    // 獲取當前選中的 promptSpaceId
+    const url = new URL(req.url);
+    const promptSpaceId = url.searchParams.get('promptSpaceId');
+
+    if (!promptSpaceId) {
+      return NextResponse.json({ message: 'promptSpaceId required' }, { status: 400 });
+    }
+
+    // 簡化查詢避免需要複合索引
     const [foldersSnapshot, promptsSnapshot] = await Promise.all([
       adminDb
         .collection('folders')
         .where('userId', '==', userId)
-        .orderBy('createdAt', 'asc')
         .get(),
       adminDb
         .collection('prompts')
@@ -27,11 +34,23 @@ export async function GET(req: Request) {
         .get()
     ]);
 
+    // 過濾出指定 promptSpaceId 的資料夾
+    const filteredFolders = foldersSnapshot.docs.filter(doc => {
+      const data = doc.data();
+      return data.promptSpaceId === promptSpaceId;
+    });
+
+    // 過濾出指定 promptSpaceId 的 prompts
+    const filteredPrompts = promptsSnapshot.docs.filter(doc => {
+      const data = doc.data();
+      return data.promptSpaceId === promptSpaceId;
+    });
+
     // 將 prompts 按 folderId 分組
-    const promptsMap = groupPromptsByFolderId(promptsSnapshot.docs);
+    const promptsMap = groupPromptsByFolderId(filteredPrompts);
 
     // 處理每個資料夾並組合資料
-    const result = await Promise.all(foldersSnapshot.docs.map(async (folderDoc) => {
+    const result = await Promise.all(filteredFolders.map(async (folderDoc) => {
       const folder = folderDoc.data();
       const folderId = folderDoc.id;
 
@@ -89,12 +108,20 @@ export async function POST(req: Request) {
       );
     }
 
+    if (!body.promptSpaceId) {
+      return NextResponse.json(
+        { message: 'promptSpaceId required' },
+        { status: 400 }
+      );
+    }
+
     const now = FieldValue.serverTimestamp();
 
     const folderData = {
       userId: userId,
       name: body.name,
       description: body.description || '',
+      promptSpaceId: body.promptSpaceId,
       createdAt: now,
       updatedAt: now
     };

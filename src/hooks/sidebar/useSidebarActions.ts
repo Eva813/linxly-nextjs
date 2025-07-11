@@ -1,6 +1,7 @@
 import { useCallback } from 'react';
 import { useSidebarStore } from '@/stores/sidebar';
 import { usePromptStore } from '@/stores/prompt';
+import { usePromptSpaceStore } from '@/stores/promptSpace';
 import { useSidebarNavigation } from './useSidebarNavigation';
 import { Prompt } from '@/types/prompt';
 
@@ -33,6 +34,7 @@ export const useSidebarActions = () => {
     deleteFolder,
     deletePromptFromFolder,
   } = usePromptStore();
+  const { currentSpaceId } = usePromptSpaceStore();
 
   // 決定新增提示時的目標資料夾
   const determineTargetFolder = useCallback((
@@ -60,10 +62,15 @@ export const useSidebarActions = () => {
    * 包含建立資料夾和自動導航
    */
   const handleCreateFolder = useCallback(async () => {
+    if (!currentSpaceId) {
+      console.error('No current space selected');
+      return;
+    }
+    
     setFolderCreationLoading(true);
     
     try {
-      const newFolder = await addFolder(DEFAULT_FOLDER_DATA);
+      const newFolder = await addFolder(DEFAULT_FOLDER_DATA, currentSpaceId);
       
       navigation.navigateToFolder(newFolder.id);
       
@@ -73,7 +80,7 @@ export const useSidebarActions = () => {
     } finally {
       setFolderCreationLoading(false);
     }
-  }, [addFolder, navigation, closeAllMenus, setFolderCreationLoading]);
+  }, [addFolder, navigation, closeAllMenus, setFolderCreationLoading, currentSpaceId]);
 
   /**
    * 處理刪除資料夾的完整流程

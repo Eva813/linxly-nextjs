@@ -38,14 +38,29 @@ export async function GET(req: Request) {
       );
     }
 
-    // 獲取此資料夾的所有 prompt
+    // 獲取 promptSpaceId 參數
+    const promptSpaceId = searchParams.get('promptSpaceId');
+    if (!promptSpaceId) {
+      return NextResponse.json(
+        { message: 'promptSpaceId required' },
+        { status: 400 }
+      );
+    }
+
+    // 獲取此資料夾的所有 prompt (避免複合索引)
     const promptsSnapshot = await adminDb
       .collection('prompts')
       .where('folderId', '==', folderId)
       .where('userId', '==', userId)
       .get();
 
-    const prompts: PromptData[] = promptsSnapshot.docs.map(doc => {
+    // 過濾指定 promptSpaceId 的 prompts
+    const filteredPromptDocs = promptsSnapshot.docs.filter(doc => {
+      const data = doc.data();
+      return data.promptSpaceId === promptSpaceId;
+    });
+
+    const prompts: PromptData[] = filteredPromptDocs.map(doc => {
       const prompt = doc.data();
       return {
         id: doc.id,
@@ -91,11 +106,18 @@ export async function POST(req: Request) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
   try {
-    const { folderId, name, content, shortcut, afterPromptId } = await req.json();
+    const { folderId, name, content, shortcut, afterPromptId, promptSpaceId } = await req.json();
 
     if (!folderId || !name || !shortcut) {
       return NextResponse.json(
         { message: 'folderId, name and shortcut required' },
+        { status: 400 }
+      );
+    }
+
+    if (!promptSpaceId) {
+      return NextResponse.json(
+        { message: 'promptSpaceId required' },
         { status: 400 }
       );
     }
@@ -115,14 +137,20 @@ export async function POST(req: Request) {
 
     // 如果有指定 afterPromptId，使用最佳化的插入邏輯
     if (afterPromptId) {
-      // 獲取現有的所有 prompts
+      // 獲取現有的所有 prompts (避免複合索引)
       const existingPromptsSnapshot = await adminDb
         .collection('prompts')
         .where('folderId', '==', folderId)
         .where('userId', '==', userId)
         .get();
 
-      const existingPrompts: PromptData[] = existingPromptsSnapshot.docs.map(doc => {
+      // 過濾指定 promptSpaceId 的 prompts
+      const filteredExistingPrompts = existingPromptsSnapshot.docs.filter(doc => {
+        const data = doc.data();
+        return data.promptSpaceId === promptSpaceId;
+      });
+
+      const existingPrompts: PromptData[] = filteredExistingPrompts.map(doc => {
         const prompt = doc.data();
         return {
           id: doc.id,
@@ -154,6 +182,7 @@ export async function POST(req: Request) {
             name,
             content: content || '',
             shortcut,
+            promptSpaceId,
             seqNo: insertSeqNo,
             createdAt: now,
             updatedAt: now
@@ -193,6 +222,7 @@ export async function POST(req: Request) {
       name,
       content: content || '',
       shortcut,
+      promptSpaceId,
       seqNo: nextSeqNo,
       createdAt: now,
       updatedAt: now

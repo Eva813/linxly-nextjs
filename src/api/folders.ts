@@ -2,8 +2,9 @@
 import request from './client';
 import { Folder } from '@/types/prompt';
 
-export function getFolders(): Promise<Folder[]> {
-  return request<Folder[]>('/folders', {
+export function getFolders(promptSpaceId?: string): Promise<Folder[]> {
+  const params = promptSpaceId ? `?promptSpaceId=${promptSpaceId}` : '';
+  return request<Folder[]>(`/folders${params}`, {
     cache: 'no-store',
   });
 }
@@ -15,6 +16,7 @@ export function getFolder(folderId: string): Promise<Folder> {
 export function createFolder(payload: {
   name: string;
   description?: string;
+  promptSpaceId?: string;
 }): Promise<Folder> {
   return request<Folder>('/folders', {
     method: 'POST',

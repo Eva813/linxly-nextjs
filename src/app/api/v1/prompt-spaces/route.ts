@@ -1,11 +1,17 @@
 import { NextResponse } from 'next/server';
 import { adminDb } from '@/server/db/firebase';
-import { FieldValue } from 'firebase-admin/firestore';
+import { FieldValue, Timestamp } from 'firebase-admin/firestore';
 import { 
   PromptSpaceData, 
   PromptSpaceApiResponse, 
   CreatePromptSpaceRequest 
 } from '@/shared/types/promptSpace';
+
+function convertTimestampToDate(timestamp: Date | { seconds: number; nanoseconds?: number } | undefined): Date {
+  if (!timestamp) return new Date();
+  if (timestamp instanceof Date) return timestamp;
+  return new Timestamp(timestamp.seconds, timestamp.nanoseconds || 0).toDate();
+}
 
 export async function GET(req: Request) {
   try {
@@ -22,8 +28,8 @@ export async function GET(req: Request) {
     const spaces: PromptSpaceApiResponse[] = spacesSnapshot.docs
       .map((doc) => {
         const data = doc.data() as PromptSpaceData;
-        const createdAt = data.createdAt?.toDate?.() || new Date();
-        const updatedAt = data.updatedAt?.toDate?.() || createdAt;
+        const createdAt = convertTimestampToDate(data.createdAt);
+        const updatedAt = convertTimestampToDate(data.updatedAt) || createdAt;
 
         return {
           id: doc.id,

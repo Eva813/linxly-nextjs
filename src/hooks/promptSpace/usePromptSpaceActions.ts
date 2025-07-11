@@ -1,9 +1,7 @@
 import { usePromptSpaceStore } from '@/stores/promptSpace';
 import { promptSpaceApi } from '@/lib/api/promptSpace';
-import { useAuthStore } from '@/stores/auth';
 
 export const usePromptSpaceActions = () => {
-  const { user } = useAuthStore();
   const { 
     setSpaces, 
     setCurrentSpace, 
@@ -13,22 +11,26 @@ export const usePromptSpaceActions = () => {
     setCreatingSpace 
   } = usePromptSpaceStore();
 
-  // Mock user for development - replace with actual auth user
-  const mockUser = user || { uid: 'mock-user-id' };
-
   const fetchSpaces = async () => {
-    if (!mockUser?.uid) return;
-
     try {
       setLoading(true);
       setError(null);
       
-      const response = await promptSpaceApi.getAll(mockUser.uid);
-      setSpaces(response.spaces);
+      const response = await promptSpaceApi.getAll();
+      
+      // 轉換 API 回應格式到 store 格式
+      const spaces = response.spaces.map(space => ({
+        id: space.id,
+        name: space.name,
+        userId: space.userId,
+        createdAt: new Date(space.createdAt)
+      }));
+      
+      setSpaces(spaces);
       
       // 如果沒有當前選中的空間，選擇第一個
-      if (response.spaces.length > 0) {
-        setCurrentSpace(response.spaces[0].id);
+      if (spaces.length > 0) {
+        setCurrentSpace(spaces[0].id);
       }
     } catch (error) {
       console.error('Failed to fetch prompt spaces:', error);
@@ -39,13 +41,11 @@ export const usePromptSpaceActions = () => {
   };
 
   const createSpace = async (name: string) => {
-    if (!mockUser?.uid) return;
-
     try {
       setCreatingSpace(true);
       setError(null);
       
-      const newSpace = await promptSpaceApi.create(mockUser.uid, { name });
+      const newSpace = await promptSpaceApi.create({ name });
       addSpace({
         id: newSpace.id,
         name: newSpace.name,

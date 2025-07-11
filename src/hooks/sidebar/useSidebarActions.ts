@@ -131,10 +131,16 @@ export const useSidebarActions = () => {
     setPromptCreationLoading(true, targetFolderId, navigation.currentPromptId || null);
 
     try {
+      if (!currentSpaceId) {
+        console.error('No current space selected');
+        return;
+      }
+      
       const newPrompt = await addPromptToFolder(
         targetFolderId,
         DEFAULT_PROMPT_DATA,
-        navigation.currentPromptId || undefined
+        navigation.currentPromptId || undefined,
+        currentSpaceId
       );
       
       // 新增成功後自動導航到新提示
@@ -147,7 +153,7 @@ export const useSidebarActions = () => {
     } finally {
       setPromptCreationLoading(false);
     }
-  }, [folders, determineTargetFolder, navigation, setPromptCreationLoading, addPromptToFolder, closeAllMenus]);
+  }, [folders, determineTargetFolder, navigation, setPromptCreationLoading, addPromptToFolder, closeAllMenus, currentSpaceId]);
 
   /**
    * 處理刪除提示的完整流程

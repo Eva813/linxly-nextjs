@@ -7,12 +7,11 @@ import {
 const API_BASE_URL = '/api/v1';
 
 export const promptSpaceApi = {
-  async getAll(userId: string): Promise<PromptSpaceListResponse> {
+  async getAll(): Promise<PromptSpaceListResponse> {
     const response = await fetch(`${API_BASE_URL}/prompt-spaces`, {
       method: 'GET',
       headers: {
-        'Content-Type': 'application/json',
-        'x-user-id': userId
+        'Content-Type': 'application/json'
       }
     });
 
@@ -23,12 +22,11 @@ export const promptSpaceApi = {
     return response.json();
   },
 
-  async create(userId: string, data: CreatePromptSpaceRequest): Promise<PromptSpaceApiResponse> {
+  async create(data: CreatePromptSpaceRequest): Promise<PromptSpaceApiResponse> {
     const response = await fetch(`${API_BASE_URL}/prompt-spaces`, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
-        'x-user-id': userId
+        'Content-Type': 'application/json'
       },
       body: JSON.stringify(data)
     });

@@ -4,8 +4,8 @@ import { FolderSlice } from './folderSlice';
 import { getPrompts, createPrompt, deletePrompt as apiDeletePrompt, updatePrompt as apiUpdatePrompt } from '@/api/prompts';
 
 export interface PromptSlice {
-  fetchPromptsForFolder: (folderId: string) => Promise<void>;
-  addPromptToFolder: (folderId: string, prompt: Omit<Prompt, 'id'>, afterPromptId?: string) => Promise<Prompt>;
+  fetchPromptsForFolder: (folderId: string, promptSpaceId?: string) => Promise<void>;
+  addPromptToFolder: (folderId: string, prompt: Omit<Prompt, 'id'>, afterPromptId?: string, promptSpaceId?: string) => Promise<Prompt>;
   deletePromptFromFolder: (folderId: string, promptId: string) => Promise<void>;
   updatePrompt: (promptId: string, updatedPrompt: Partial<Prompt>) => Promise<Prompt>;
 }
@@ -18,9 +18,9 @@ export const createPromptSlice: StateCreator<
   [],
   PromptSlice
 > = (set, get) => ({
-  fetchPromptsForFolder: async (folderId) => {
+  fetchPromptsForFolder: async (folderId, promptSpaceId) => {
     try {
-      const prompts = await getPrompts(folderId);
+      const prompts = await getPrompts(folderId, promptSpaceId);
       set({
         folders: get().folders.map((folder) =>
           folder.id === folderId
@@ -32,13 +32,17 @@ export const createPromptSlice: StateCreator<
       console.error('Failed to fetch prompts:', error);
     }
   },
-  addPromptToFolder: async (folderId, prompt, afterPromptId) => {
+  addPromptToFolder: async (folderId, prompt, afterPromptId, promptSpaceId) => {
     try {
+      if (!promptSpaceId) {
+        throw new Error('promptSpaceId is required');
+      }
+      
       // 直接使用 API，讓後端處理所有排序邏輯
-      const newPrompt = await createPrompt({ folderId, afterPromptId, ...prompt });
+      const newPrompt = await createPrompt({ folderId, afterPromptId, promptSpaceId, ...prompt });
 
       // 重新獲取該資料夾的所有 prompts，確保排序正確
-      await get().fetchPromptsForFolder(folderId);
+      await get().fetchPromptsForFolder(folderId, promptSpaceId);
 
       return newPrompt;
     } catch (error) {

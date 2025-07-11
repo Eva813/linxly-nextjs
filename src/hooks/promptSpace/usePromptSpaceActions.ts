@@ -7,6 +7,7 @@ export const usePromptSpaceActions = () => {
     setSpaces, 
     setCurrentSpace, 
     addSpace, 
+    removeSpace,
     setLoading, 
     setError, 
     setCreatingSpace 
@@ -64,8 +65,26 @@ export const usePromptSpaceActions = () => {
     }
   };
 
+  const deleteSpace = useCallback(async (spaceId: string) => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      await promptSpaceApi.delete(spaceId);
+      removeSpace(spaceId);
+      
+    } catch (error) {
+      console.error('Failed to delete prompt space:', error);
+      setError(error instanceof Error ? error.message : 'Unknown error');
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  }, [setLoading, setError, removeSpace]);
+
   return {
     fetchSpaces,
-    createSpace
+    createSpace,
+    deleteSpace
   };
 };

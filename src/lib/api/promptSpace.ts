@@ -37,5 +37,19 @@ export const promptSpaceApi = {
     }
 
     return response.json();
+  },
+
+  async delete(spaceId: string): Promise<void> {
+    const response = await fetch(`${API_BASE_URL}/prompt-spaces/${spaceId}`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.message || `Failed to delete prompt space: ${response.statusText}`);
+    }
   }
 };

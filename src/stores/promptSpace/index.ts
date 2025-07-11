@@ -20,6 +20,7 @@ interface PromptSpaceActions {
   setSpaces: (spaces: PromptSpace[]) => void;
   setCurrentSpace: (spaceId: string) => void;
   addSpace: (space: PromptSpace) => void;
+  removeSpace: (spaceId: string) => void;
   setLoading: (loading: boolean) => void;
   setError: (error: string | null) => void;
   setCreatingSpace: (creating: boolean) => void;
@@ -45,6 +46,18 @@ export const usePromptSpaceStore = create<PromptSpaceStore>()(
         spaces: [...state.spaces, space],
         currentSpaceId: space.id 
       })),
+      
+      removeSpace: (spaceId) => set((state) => {
+        const newSpaces = state.spaces.filter(space => space.id !== spaceId);
+        const newCurrentSpaceId = state.currentSpaceId === spaceId 
+          ? (newSpaces.length > 0 ? newSpaces[0].id : null)
+          : state.currentSpaceId;
+        
+        return {
+          spaces: newSpaces,
+          currentSpaceId: newCurrentSpaceId
+        };
+      }),
       
       setLoading: (loading) => set({ isLoading: loading }),
       

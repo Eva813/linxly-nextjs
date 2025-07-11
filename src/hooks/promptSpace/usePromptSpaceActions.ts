@@ -1,3 +1,4 @@
+import { useCallback } from 'react';
 import { usePromptSpaceStore } from '@/stores/promptSpace';
 import { promptSpaceApi } from '@/lib/api/promptSpace';
 
@@ -11,7 +12,7 @@ export const usePromptSpaceActions = () => {
     setCreatingSpace 
   } = usePromptSpaceStore();
 
-  const fetchSpaces = async () => {
+  const fetchSpaces = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -38,7 +39,7 @@ export const usePromptSpaceActions = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [setLoading, setError, setSpaces, setCurrentSpace]);
 
   const createSpace = async (name: string) => {
     try {

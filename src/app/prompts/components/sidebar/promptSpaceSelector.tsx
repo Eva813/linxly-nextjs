@@ -33,7 +33,7 @@ const PromptSpaceSelector: React.FC<PromptSpaceSelectorProps> = ({ onCreateSpace
 
   useEffect(() => {
     fetchSpaces();
-  }, []);
+  }, [fetchSpaces]);
 
   // When currentSpaceId changes, fetch folders for that space
   useEffect(() => {
@@ -68,14 +68,14 @@ const PromptSpaceSelector: React.FC<PromptSpaceSelectorProps> = ({ onCreateSpace
               )}
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="start" className="w-56">
-            {spaces.map((space) => (
+          <DropdownMenuContent align="start" className="w-56 p-2 mt-2">
+            {spaces.map((space, index) => (
               <DropdownMenuItem
                 key={space.id}
                 onClick={() => handleSpaceChange(space.id)}
                 className={`cursor-pointer ${
                   currentSpaceId === space.id ? "bg-accent" : ""
-                }`}
+                } ${index > 0 ? "mt-1" : ""}`}
               >
                 {space.name}
               </DropdownMenuItem>

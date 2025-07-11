@@ -6,7 +6,7 @@ import { useSidebarStore } from "@/stores/sidebar";
 import { useSidebarActions } from "@/hooks/sidebar";
 import { Button } from "@/components/ui/button";
 import { FaFolderPlus, FaFileMedical, FaSpinner } from "react-icons/fa";
-import { Skeleton } from "@/components/ui/skeleton";
+import SmartLoadingSkeleton from "./components/smartLoadingSkeleton";
 import FolderList from "./folderList";
 import PromptSpaceSelector from "./promptSpaceSelector";
 import CreateSpaceModal from "./createSpaceModal";
@@ -50,9 +50,12 @@ const Sidebar = () => {
         {isLoading && folders.length === 0 ? (
           <ul>
             {[1, 2, 3].map((i) => (
-              <li key={i} className="px-2 py-2">
-                <Skeleton className="h-8 w-full rounded-md" />
-              </li>
+              <SmartLoadingSkeleton 
+                key={i} 
+                variant="folder" 
+                isLoading={isLoading}
+                delayMs={200}
+              />
             ))}
           </ul>
         ) : (

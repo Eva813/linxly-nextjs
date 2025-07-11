@@ -53,8 +53,8 @@ export const createPromptSlice: StateCreator<
   deletePromptFromFolder: async (folderId, promptId) => {
     try {
       await apiDeletePrompt(promptId);
-      set({
-        folders: get().folders.map((folder) =>
+      set((state) => ({
+        folders: state.folders.map((folder) =>
           folder.id === folderId
             ? {
               ...folder,
@@ -64,7 +64,25 @@ export const createPromptSlice: StateCreator<
             }
             : folder
         ),
-      });
+        // 同步更新快取
+        folderCache: Object.keys(state.folderCache).reduce((acc, spaceId) => {
+          acc[spaceId] = {
+            ...state.folderCache[spaceId],
+            folders: state.folderCache[spaceId].folders.map((folder) =>
+              folder.id === folderId
+                ? {
+                  ...folder,
+                  prompts: folder.prompts.filter(
+                    (prompt) => prompt.id !== promptId
+                  ),
+                }
+                : folder
+            ),
+            lastFetched: Date.now()
+          };
+          return acc;
+        }, {} as Record<string, { folders: any[]; lastFetched: number }>)
+      }));
     } catch (error) {
       console.error('刪除提示失敗:', error);
       throw error;
@@ -77,14 +95,28 @@ export const createPromptSlice: StateCreator<
 
       const updated = await apiUpdatePrompt(promptId, promptDataToUpdate);
 
-      set({
-        folders: get().folders.map((folder) => ({
+      set((state) => ({
+        folders: state.folders.map((folder) => ({
           ...folder,
           prompts: folder.prompts.map((prompt) =>
             prompt.id === promptId ? { ...prompt, ...updated } : prompt
           ),
         })),
-      });
+        // 同步更新快取
+        folderCache: Object.keys(state.folderCache).reduce((acc, spaceId) => {
+          acc[spaceId] = {
+            ...state.folderCache[spaceId],
+            folders: state.folderCache[spaceId].folders.map((folder) => ({
+              ...folder,
+              prompts: folder.prompts.map((prompt) =>
+                prompt.id === promptId ? { ...prompt, ...updated } : prompt
+              ),
+            })),
+            lastFetched: Date.now()
+          };
+          return acc;
+        }, {} as Record<string, { folders: any[]; lastFetched: number }>)
+      }));
 
       return updated;
     } catch (error) {

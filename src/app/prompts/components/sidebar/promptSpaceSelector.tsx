@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import { usePromptSpaceStore } from "@/stores/promptSpace";
 import { usePromptSpaceActions } from "@/hooks/promptSpace";
 import { usePromptStore } from "@/stores/prompt";
+import { useSmartNavigation } from "@/hooks/sidebar";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -28,7 +29,8 @@ const PromptSpaceSelector: React.FC<PromptSpaceSelectorProps> = ({ onCreateSpace
     isLoading 
   } = usePromptSpaceStore();
   const { fetchSpaces, deleteSpace } = usePromptSpaceActions();
-  const { fetchFolders } = usePromptStore();
+  const { fetchFolders, folders } = usePromptStore();
+  const { navigateToFirstFolderIfNeeded, navigation } = useSmartNavigation();
 
   const currentSpace = getCurrentSpace();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -45,6 +47,17 @@ const PromptSpaceSelector: React.FC<PromptSpaceSelectorProps> = ({ onCreateSpace
       fetchFolders(currentSpaceId);
     }
   }, [currentSpaceId, fetchFolders]);
+
+  // 智能導航：只在需要時導航到第一個資料夾
+  useEffect(() => {
+    if (currentSpaceId && folders.length > 0) {
+      navigateToFirstFolderIfNeeded(
+        folders, 
+        currentSpaceId, 
+        navigation.currentFolderId
+      );
+    }
+  }, [folders, currentSpaceId, navigation.currentFolderId, navigateToFirstFolderIfNeeded]);
 
   const handleSpaceChange = (spaceId: string) => {
     setCurrentSpace(spaceId);

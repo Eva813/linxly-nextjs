@@ -37,7 +37,7 @@ useEffect(() => {
     return (
       <div className="flex h-[calc(100vh-4rem)] overflow-hidden">
         {/* 側邊欄載入狀態 */}
-        <div className="w-1/4 p-4 border-r border-gray-300 h-full overflow-y-auto hidden sm:block">
+        <div className="w-80 p-4 border-r border-gray-300 h-full overflow-y-auto hidden sm:block">
           <div className="grid grid-cols-2 gap-x-4 mb-4 ">
             <Skeleton className="h-8 w-full rounded-md" />
             <Skeleton className="h-8 w-full rounded-md" />
@@ -45,7 +45,7 @@ useEffect(() => {
           <div className="flex-1">
             <ul>
               {[1, 2, 3, 4].map((i) => (
-                <div key={i} className="px-2 py-2 mb-2">
+                <div key={i} className="px-2 py-2">
                   <Skeleton className="h-8 w-full rounded-md" />
                 </div>
               ))}

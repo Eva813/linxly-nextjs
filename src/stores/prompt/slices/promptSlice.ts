@@ -1,5 +1,5 @@
 import { StateCreator } from 'zustand';
-import { Prompt } from '@/types/prompt';
+import { Prompt, Folder } from '@/types/prompt';
 import { FolderSlice } from './folderSlice';
 import { getPrompts, createPrompt, deletePrompt as apiDeletePrompt, updatePrompt as apiUpdatePrompt } from '@/api/prompts';
 
@@ -81,7 +81,7 @@ export const createPromptSlice: StateCreator<
             lastFetched: Date.now()
           };
           return acc;
-        }, {} as Record<string, { folders: any[]; lastFetched: number }>)
+        }, {} as Record<string, { folders: Folder[]; lastFetched: number }>)
       }));
     } catch (error) {
       console.error('刪除提示失敗:', error);
@@ -115,7 +115,7 @@ export const createPromptSlice: StateCreator<
             lastFetched: Date.now()
           };
           return acc;
-        }, {} as Record<string, { folders: any[]; lastFetched: number }>)
+        }, {} as Record<string, { folders: Folder[]; lastFetched: number }>)
       }));
 
       return updated;

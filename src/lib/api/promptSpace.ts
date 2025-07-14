@@ -1,7 +1,8 @@
 import { 
   PromptSpaceApiResponse, 
   PromptSpaceListResponse, 
-  CreatePromptSpaceRequest 
+  CreatePromptSpaceRequest,
+  UpdatePromptSpaceRequest 
 } from '@/shared/types/promptSpace';
 
 const API_BASE_URL = '/api/v1';
@@ -34,6 +35,23 @@ export const promptSpaceApi = {
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
       throw new Error(errorData.message || `Failed to create prompt space: ${response.statusText}`);
+    }
+
+    return response.json();
+  },
+
+  async update(spaceId: string, data: UpdatePromptSpaceRequest): Promise<PromptSpaceApiResponse> {
+    const response = await fetch(`${API_BASE_URL}/prompt-spaces/${spaceId}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(data)
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.message || `Failed to update prompt space: ${response.statusText}`);
     }
 
     return response.json();

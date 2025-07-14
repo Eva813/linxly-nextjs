@@ -23,6 +23,10 @@ export interface CreatePromptSpaceRequest {
   name: string;
 }
 
+export interface UpdatePromptSpaceRequest {
+  name: string;
+}
+
 export interface PromptSpaceListResponse {
   spaces: PromptSpaceApiResponse[];
 }

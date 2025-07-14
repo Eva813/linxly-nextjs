@@ -12,9 +12,10 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-import { ChevronDownIcon, PlusIcon, TrashIcon } from "@radix-ui/react-icons";
+import { ChevronDownIcon, PlusIcon, TrashIcon, Pencil1Icon } from "@radix-ui/react-icons";
 import { FaSpinner } from "react-icons/fa";
 import DeleteSpaceDialog from "./deleteSpaceDialog";
+import RenameSpaceDialog from "./renameSpaceDialog";
 
 interface PromptSpaceSelectorProps {
   onCreateSpace: () => void;
@@ -36,6 +37,10 @@ const PromptSpaceSelector: React.FC<PromptSpaceSelectorProps> = ({ onCreateSpace
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [spaceToDelete, setSpaceToDelete] = useState<{id: string, name: string} | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  
+  const [renameDialogOpen, setRenameDialogOpen] = useState(false);
+  const [spaceToRename, setSpaceToRename] = useState<{id: string, name: string} | null>(null);
+  const [isRenaming, setIsRenaming] = useState(false);
 
   useEffect(() => {
     fetchSpaces();
@@ -61,6 +66,18 @@ const PromptSpaceSelector: React.FC<PromptSpaceSelectorProps> = ({ onCreateSpace
 
   const handleSpaceChange = (spaceId: string) => {
     setCurrentSpace(spaceId);
+  };
+
+  const handleRenameClick = (e: React.MouseEvent, space: {id: string, name: string}) => {
+    e.stopPropagation();
+    setSpaceToRename(space);
+    setRenameDialogOpen(true);
+  };
+
+  const handleRenameClose = () => {
+    setRenameDialogOpen(false);
+    setSpaceToRename(null);
+    setIsRenaming(false);
   };
 
   const handleDeleteClick = (e: React.MouseEvent, space: {id: string, name: string}) => {
@@ -122,14 +139,26 @@ const PromptSpaceSelector: React.FC<PromptSpaceSelectorProps> = ({ onCreateSpace
               >
                 <span className="flex-1 truncate">{space.name}</span>
                 {space.name !== 'promptSpace-default' && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-6 w-6 p-0 ml-2 hover:bg-red-100 hover:text-red-600"
-                    onClick={(e) => handleDeleteClick(e, space)}
-                  >
-                    <TrashIcon className="h-3 w-3" />
-                  </Button>
+                  <div className="flex items-center gap-1 ml-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-6 w-6 p-0 hover:bg-blue-100 hover:text-blue-600"
+                      onClick={(e) => handleRenameClick(e, space)}
+                      title="重新命名"
+                    >
+                      <Pencil1Icon className="h-3 w-3" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-6 w-6 p-0 hover:bg-red-100 hover:text-red-600"
+                      onClick={(e) => handleDeleteClick(e, space)}
+                      title="刪除"
+                    >
+                      <TrashIcon className="h-3 w-3" />
+                    </Button>
+                  </div>
                 )}
               </DropdownMenuItem>
             ))}
@@ -146,6 +175,14 @@ const PromptSpaceSelector: React.FC<PromptSpaceSelectorProps> = ({ onCreateSpace
           <PlusIcon className="h-4 w-4" />
         </Button>
       </div>
+      
+      <RenameSpaceDialog
+        isOpen={renameDialogOpen}
+        onClose={handleRenameClose}
+        spaceId={spaceToRename?.id || ""}
+        currentName={spaceToRename?.name || ""}
+        isRenaming={isRenaming}
+      />
       
       <DeleteSpaceDialog
         isOpen={deleteDialogOpen}

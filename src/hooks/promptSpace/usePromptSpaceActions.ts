@@ -7,6 +7,7 @@ export const usePromptSpaceActions = () => {
     setSpaces, 
     setCurrentSpace, 
     addSpace, 
+    updateSpace,
     removeSpace,
     setLoading, 
     setError, 
@@ -65,6 +66,27 @@ export const usePromptSpaceActions = () => {
     }
   };
 
+  const renameSpace = useCallback(async (spaceId: string, newName: string) => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const updatedSpace = await promptSpaceApi.update(spaceId, { name: newName });
+      updateSpace(spaceId, {
+        name: updatedSpace.name,
+        updatedAt: new Date(updatedSpace.updatedAt || updatedSpace.createdAt)
+      });
+      
+      return updatedSpace;
+    } catch (error) {
+      console.error('Failed to rename prompt space:', error);
+      setError(error instanceof Error ? error.message : 'Unknown error');
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  }, [setLoading, setError, updateSpace]);
+
   const deleteSpace = useCallback(async (spaceId: string) => {
     try {
       setLoading(true);
@@ -85,6 +107,7 @@ export const usePromptSpaceActions = () => {
   return {
     fetchSpaces,
     createSpace,
+    renameSpace,
     deleteSpace
   };
 };

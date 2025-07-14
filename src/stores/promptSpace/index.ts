@@ -6,6 +6,7 @@ export interface PromptSpace {
   name: string;
   userId: string;
   createdAt: Date;
+  updatedAt?: Date;
 }
 
 interface PromptSpaceState {
@@ -20,6 +21,7 @@ interface PromptSpaceActions {
   setSpaces: (spaces: PromptSpace[]) => void;
   setCurrentSpace: (spaceId: string) => void;
   addSpace: (space: PromptSpace) => void;
+  updateSpace: (spaceId: string, updates: Partial<PromptSpace>) => void;
   removeSpace: (spaceId: string) => void;
   setLoading: (loading: boolean) => void;
   setError: (error: string | null) => void;
@@ -45,6 +47,12 @@ export const usePromptSpaceStore = create<PromptSpaceStore>()(
       addSpace: (space) => set((state) => ({ 
         spaces: [...state.spaces, space],
         currentSpaceId: space.id 
+      })),
+      
+      updateSpace: (spaceId, updates) => set((state) => ({
+        spaces: state.spaces.map(space => 
+          space.id === spaceId ? { ...space, ...updates } : space
+        )
       })),
       
       removeSpace: (spaceId) => set((state) => {

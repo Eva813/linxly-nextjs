@@ -12,10 +12,11 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-import { ChevronDownIcon, PlusIcon, TrashIcon, Pencil1Icon } from "@radix-ui/react-icons";
+import { ChevronDownIcon, PlusIcon, TrashIcon } from "@radix-ui/react-icons";
+import { Settings } from "lucide-react";
 import { FaSpinner } from "react-icons/fa";
 import DeleteSpaceDialog from "./deleteSpaceDialog";
-import RenameSpaceDialog from "./renameSpaceDialog";
+import SpaceSettingsDialog from "./spaceSettingsDialog";
 
 interface PromptSpaceSelectorProps {
   onCreateSpace: () => void;
@@ -38,9 +39,8 @@ const PromptSpaceSelector: React.FC<PromptSpaceSelectorProps> = ({ onCreateSpace
   const [spaceToDelete, setSpaceToDelete] = useState<{id: string, name: string} | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   
-  const [renameDialogOpen, setRenameDialogOpen] = useState(false);
-  const [spaceToRename, setSpaceToRename] = useState<{id: string, name: string} | null>(null);
-  const [isRenaming, setIsRenaming] = useState(false);
+  const [settingsDialogOpen, setSettingsDialogOpen] = useState(false);
+  const [spaceToEdit, setSpaceToEdit] = useState<{id: string, name: string} | null>(null);
 
   useEffect(() => {
     fetchSpaces();
@@ -68,16 +68,9 @@ const PromptSpaceSelector: React.FC<PromptSpaceSelectorProps> = ({ onCreateSpace
     setCurrentSpace(spaceId);
   };
 
-  const handleRenameClick = (e: React.MouseEvent, space: {id: string, name: string}) => {
-    e.stopPropagation();
-    setSpaceToRename(space);
-    setRenameDialogOpen(true);
-  };
-
-  const handleRenameClose = () => {
-    setRenameDialogOpen(false);
-    setSpaceToRename(null);
-    setIsRenaming(false);
+  const handleSettingsClose = () => {
+    setSettingsDialogOpen(false);
+    setSpaceToEdit(null);
   };
 
   const handleDeleteClick = (e: React.MouseEvent, space: {id: string, name: string}) => {
@@ -121,7 +114,7 @@ const PromptSpaceSelector: React.FC<PromptSpaceSelectorProps> = ({ onCreateSpace
               ) : (
                 <>
                   <span className="truncate">
-                    {currentSpace?.name || "工作空間"}
+                    {currentSpace?.name || "Select a workspace"}
                   </span>
                   <ChevronDownIcon className="h-4 w-4" />
                 </>
@@ -139,26 +132,15 @@ const PromptSpaceSelector: React.FC<PromptSpaceSelectorProps> = ({ onCreateSpace
               >
                 <span className="flex-1 truncate">{space.name}</span>
                 {space.name !== 'promptSpace-default' && (
-                  <div className="flex items-center gap-1 ml-2">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-6 w-6 p-0 hover:bg-blue-100 hover:text-blue-600"
-                      onClick={(e) => handleRenameClick(e, space)}
-                      title="重新命名"
-                    >
-                      <Pencil1Icon className="h-3 w-3" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-6 w-6 p-0 hover:bg-red-100 hover:text-red-600"
-                      onClick={(e) => handleDeleteClick(e, space)}
-                      title="刪除"
-                    >
-                      <TrashIcon className="h-3 w-3" />
-                    </Button>
-                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 w-6 p-0 ml-2 hover:bg-red-100 hover:text-red-600"
+                    onClick={(e) => handleDeleteClick(e, space)}
+                    title="delete"
+                  >
+                    <TrashIcon className="h-3 w-3" />
+                  </Button>
                 )}
               </DropdownMenuItem>
             ))}
@@ -168,20 +150,36 @@ const PromptSpaceSelector: React.FC<PromptSpaceSelectorProps> = ({ onCreateSpace
         <Button
           variant="outline"
           size="sm"
+          onClick={() => {
+            if (currentSpace) {
+              setSpaceToEdit({ id: currentSpace.id, name: currentSpace.name });
+              setSettingsDialogOpen(true);
+            }
+          }}
+          className="h-8 w-8 p-0"
+          disabled={isLoading || !currentSpace}
+          title="Configure Current Workspace"
+        >
+          <Settings className="h-4 w-4" />
+        </Button>
+        
+        <Button
+          variant="outline"
+          size="sm"
           onClick={onCreateSpace}
           className="h-8 w-8 p-0"
           disabled={isLoading}
+          title="Create New Workspace"
         >
           <PlusIcon className="h-4 w-4" />
         </Button>
       </div>
       
-      <RenameSpaceDialog
-        isOpen={renameDialogOpen}
-        onClose={handleRenameClose}
-        spaceId={spaceToRename?.id || ""}
-        currentName={spaceToRename?.name || ""}
-        isRenaming={isRenaming}
+      <SpaceSettingsDialog
+        isOpen={settingsDialogOpen}
+        onClose={handleSettingsClose}
+        spaceId={spaceToEdit?.id || ""}
+        currentName={spaceToEdit?.name || ""}
       />
       
       <DeleteSpaceDialog

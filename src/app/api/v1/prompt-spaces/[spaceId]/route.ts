@@ -36,12 +36,7 @@ export async function PUT(
       return NextResponse.json({ message: 'Unauthorized' }, { status: 403 });
     }
 
-    // Check if this is the default space and prevent renaming
-    if (spaceData?.name === 'promptSpace-default') {
-      return NextResponse.json({ 
-        message: 'Cannot rename default space' 
-      }, { status: 400 });
-    }
+    // Note: Default space can be renamed, but cannot be deleted
 
     // Check for duplicate name
     const existingSpaceQuery = await adminDb

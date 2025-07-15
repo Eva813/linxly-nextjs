@@ -4,7 +4,7 @@ import { promptSpaceApi } from '@/lib/api/promptSpace';
 
 export const usePromptSpaceActions = () => {
   const { 
-    setSpaces, 
+    setAllSpaces,
     setCurrentSpace, 
     addSpace, 
     updateSpace,
@@ -21,19 +21,35 @@ export const usePromptSpaceActions = () => {
       
       const response = await promptSpaceApi.getAll();
       
-      // 轉換 API 回應格式到 store 格式
-      const spaces = response.spaces.map(space => ({
+      // 轉換 owned spaces
+      const ownedSpaces = response.ownedSpaces.map(space => ({
         id: space.id,
         name: space.name,
         userId: space.userId,
-        createdAt: new Date(space.createdAt)
+        createdAt: new Date(space.createdAt),
+        updatedAt: space.updatedAt ? new Date(space.updatedAt) : undefined
       }));
       
-      setSpaces(spaces);
+      // 轉換 shared spaces
+      const sharedSpaces = response.sharedSpaces.map(shared => ({
+        space: {
+          id: shared.space.id,
+          name: shared.space.name,
+          userId: shared.space.userId,
+          createdAt: new Date(shared.space.createdAt),
+          updatedAt: shared.space.updatedAt ? new Date(shared.space.updatedAt) : undefined
+        },
+        permission: shared.permission,
+        sharedBy: shared.sharedBy,
+        sharedAt: shared.sharedAt
+      }));
       
-      // 如果沒有當前選中的空間，選擇第一個
-      if (spaces.length > 0) {
-        setCurrentSpace(spaces[0].id);
+      setAllSpaces(ownedSpaces, sharedSpaces);
+      
+      // 如果沒有當前選中的空間，選擇第一個可用的
+      const allSpaces = [...ownedSpaces, ...sharedSpaces.map(s => s.space)];
+      if (allSpaces.length > 0) {
+        setCurrentSpace(allSpaces[0].id);
       }
     } catch (error) {
       console.error('Failed to fetch prompt spaces:', error);
@@ -41,7 +57,7 @@ export const usePromptSpaceActions = () => {
     } finally {
       setLoading(false);
     }
-  }, [setLoading, setError, setSpaces, setCurrentSpace]);
+  }, [setLoading, setError, setAllSpaces, setCurrentSpace]);
 
   const createSpace = async (name: string) => {
     try {

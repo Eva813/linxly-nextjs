@@ -24,10 +24,12 @@ interface PromptSpaceSelectorProps {
 
 const PromptSpaceSelector: React.FC<PromptSpaceSelectorProps> = ({ onCreateSpace }) => {
   const { 
-    spaces, 
+    ownedSpaces,
+    sharedSpaces,
     currentSpaceId, 
     setCurrentSpace, 
-    getCurrentSpace, 
+    getCurrentSpace,
+    getCurrentSpaceRole,
     isLoading 
   } = usePromptSpaceStore();
   const { fetchSpaces, deleteSpace } = usePromptSpaceActions();
@@ -35,6 +37,7 @@ const PromptSpaceSelector: React.FC<PromptSpaceSelectorProps> = ({ onCreateSpace
   const { navigateToFirstFolderIfNeeded, navigation } = useSmartNavigation();
 
   const currentSpace = getCurrentSpace();
+  const currentSpaceRole = getCurrentSpaceRole();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [spaceToDelete, setSpaceToDelete] = useState<{id: string, name: string} | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -122,28 +125,62 @@ const PromptSpaceSelector: React.FC<PromptSpaceSelectorProps> = ({ onCreateSpace
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start" className="w-56 p-2 mt-2">
-            {spaces.map((space, index) => (
-              <DropdownMenuItem
-                key={space.id}
-                onClick={() => handleSpaceChange(space.id)}
-                className={`cursor-pointer flex items-center justify-between ${
-                  currentSpaceId === space.id ? "bg-accent" : ""
-                } ${index > 0 ? "mt-1" : ""}`}
-              >
-                <span className="flex-1 truncate">{space.name}</span>
-                {space.name !== 'promptSpace-default' && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-6 w-6 p-0 ml-2 hover:bg-red-100 hover:text-red-600"
-                    onClick={(e) => handleDeleteClick(e, space)}
-                    title="delete"
+            {/* Owned Spaces */}
+            {ownedSpaces.length > 0 && (
+              <>
+                <div className="px-2 py-1 text-xs font-medium text-muted-foreground">
+                  My Workspaces
+                </div>
+                {ownedSpaces.map((space, index) => (
+                  <DropdownMenuItem
+                    key={space.id}
+                    onClick={() => handleSpaceChange(space.id)}
+                    className={`cursor-pointer flex items-center justify-between ${
+                      currentSpaceId === space.id ? "bg-accent" : ""
+                    } ${index > 0 ? "mt-1" : ""}`}
                   >
-                    <TrashIcon className="h-3 w-3" />
-                  </Button>
-                )}
-              </DropdownMenuItem>
-            ))}
+                    <span className="flex-1 truncate">{space.name}</span>
+                    {space.name !== 'promptSpace-default' && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 w-6 p-0 ml-2 hover:bg-red-100 hover:text-red-600"
+                        onClick={(e) => handleDeleteClick(e, space)}
+                        title="delete"
+                      >
+                        <TrashIcon className="h-3 w-3" />
+                      </Button>
+                    )}
+                  </DropdownMenuItem>
+                ))}
+              </>
+            )}
+            
+            {/* Shared Spaces */}
+            {sharedSpaces.length > 0 && (
+              <>
+                {ownedSpaces.length > 0 && <div className="border-t my-2" />}
+                <div className="px-2 py-1 text-xs font-medium text-muted-foreground">
+                  Shared with Me
+                </div>
+                {sharedSpaces.map((shared, index) => (
+                  <DropdownMenuItem
+                    key={shared.space.id}
+                    onClick={() => handleSpaceChange(shared.space.id)}
+                    className={`cursor-pointer flex items-center justify-between ${
+                      currentSpaceId === shared.space.id ? "bg-accent" : ""
+                    } ${index > 0 ? "mt-1" : ""}`}
+                  >
+                    <div className="flex-1 flex items-center gap-2">
+                      <span className="flex-1 truncate">{shared.space.name}</span>
+                      <span className="text-xs text-muted-foreground bg-gray-100 px-1 py-0.5 rounded">
+                        {shared.permission}
+                      </span>
+                    </div>
+                  </DropdownMenuItem>
+                ))}
+              </>
+            )}
           </DropdownMenuContent>
         </DropdownMenu>
         
@@ -157,8 +194,8 @@ const PromptSpaceSelector: React.FC<PromptSpaceSelectorProps> = ({ onCreateSpace
             }
           }}
           className="h-8 w-8 p-0"
-          disabled={isLoading || !currentSpace}
-          title="Configure Current Workspace"
+          disabled={isLoading || !currentSpace || currentSpaceRole === 'view'}
+          title={currentSpaceRole === 'view' ? 'View-only access' : 'Configure Current Workspace'}
         >
           <Settings className="h-4 w-4" />
         </Button>

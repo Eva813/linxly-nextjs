@@ -31,7 +31,7 @@ export async function GET(req: Request) {
       .doc(folderId)
       .get();
 
-    if (!folderDoc.exists || folderDoc.data()?.userId !== userId) {
+    if (!folderDoc.exists) {
       return NextResponse.json(
         { message: 'folder not found' },
         { status: 404 }
@@ -47,11 +47,42 @@ export async function GET(req: Request) {
       );
     }
 
-    // 獲取此資料夾的所有 prompt (避免複合索引)
+    const folderData = folderDoc.data();
+    let canAccess = false;
+    let promptOwnerUserId = userId;
+
+    // Check if user is the folder owner
+    if (folderData?.userId === userId) {
+      canAccess = true;
+      promptOwnerUserId = userId;
+    } else {
+      // Check if user has shared access to this space
+      const shareQuery = await adminDb
+        .collection('space_shares')
+        .where('spaceId', '==', promptSpaceId)
+        .where('sharedWithUserId', '==', userId)
+        .where('status', '==', 'active')
+        .limit(1)
+        .get();
+      
+      if (!shareQuery.empty) {
+        canAccess = true;
+        promptOwnerUserId = folderData?.userId || userId;
+      }
+    }
+
+    if (!canAccess) {
+      return NextResponse.json(
+        { message: 'access denied' },
+        { status: 403 }
+      );
+    }
+
+    // 獲取此資料夾的所有 prompt (避免複合索引) - use folder owner's userId
     const promptsSnapshot = await adminDb
       .collection('prompts')
       .where('folderId', '==', folderId)
-      .where('userId', '==', userId)
+      .where('userId', '==', promptOwnerUserId)
       .get();
 
     // 過濾指定 promptSpaceId 的 prompts
@@ -78,7 +109,7 @@ export async function GET(req: Request) {
     const sortedPrompts = await performLazyMigration(prompts, {
       mode: 'batch',
       folderId,
-      userId
+      userId: promptOwnerUserId
     });
 
     const result = sortedPrompts.map(prompt => ({
@@ -128,20 +159,54 @@ export async function POST(req: Request) {
       .doc(folderId)
       .get();
 
-    if (!folderDoc.exists || folderDoc.data()?.userId !== userId) {
+    if (!folderDoc.exists) {
       return NextResponse.json(
         { message: 'folder not found' },
         { status: 404 }
       );
     }
 
+    const folderData = folderDoc.data();
+    let canEdit = false;
+    let promptOwnerUserId = userId;
+
+    // Check if user is the folder owner
+    if (folderData?.userId === userId) {
+      canEdit = true;
+      promptOwnerUserId = userId;
+    } else {
+      // Check if user has shared access with edit permission
+      const shareQuery = await adminDb
+        .collection('space_shares')
+        .where('spaceId', '==', promptSpaceId)
+        .where('sharedWithUserId', '==', userId)
+        .where('status', '==', 'active')
+        .limit(1)
+        .get();
+      
+      if (!shareQuery.empty) {
+        const shareData = shareQuery.docs[0].data();
+        if (shareData.permission === 'edit') {
+          canEdit = true;
+          promptOwnerUserId = folderData?.userId || userId;
+        }
+      }
+    }
+
+    if (!canEdit) {
+      return NextResponse.json(
+        { message: 'insufficient permissions' },
+        { status: 403 }
+      );
+    }
+
     // 如果有指定 afterPromptId，使用最佳化的插入邏輯
     if (afterPromptId) {
-      // 獲取現有的所有 prompts (避免複合索引)
+      // 獲取現有的所有 prompts (避免複合索引) - use folder owner's userId
       const existingPromptsSnapshot = await adminDb
         .collection('prompts')
         .where('folderId', '==', folderId)
-        .where('userId', '==', userId)
+        .where('userId', '==', promptOwnerUserId)
         .get();
 
       // 過濾指定 promptSpaceId 的 prompts
@@ -178,7 +243,7 @@ export async function POST(req: Request) {
           const now = new Date();
           const newPromptData = {
             folderId,
-            userId,
+            userId: promptOwnerUserId, // Use folder owner's userId for consistency
             name,
             content: content || '',
             shortcut,
@@ -212,13 +277,13 @@ export async function POST(req: Request) {
     }
 
     // 沒有指定 afterPromptId 的情況，直接 append 到最後
-    const nextSeqNo = await getMaxSeqNo(folderId, userId) + 1;
+    const nextSeqNo = await getMaxSeqNo(folderId, promptOwnerUserId) + 1;
 
     // 新增 prompt 到 prompts 集合
     const now = new Date();
     const promptData = {
       folderId,
-      userId,
+      userId: promptOwnerUserId, // Use folder owner's userId for consistency
       name,
       content: content || '',
       shortcut,

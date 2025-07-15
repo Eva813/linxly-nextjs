@@ -22,15 +22,44 @@ export async function GET(req: Request) {
       return NextResponse.json({ message: 'promptSpaceId required' }, { status: 400 });
     }
 
-    // 簡化查詢避免需要複合索引
+    // Check if user has access to this space (owner or shared)
+    let spaceOwnerId = userId; // Assume user is owner first
+    
+    // Check if user is the owner of the space
+    const spaceDoc = await adminDb.collection('prompt_spaces').doc(promptSpaceId).get();
+    if (spaceDoc.exists) {
+      const spaceData = spaceDoc.data();
+      if (spaceData?.userId === userId) {
+        // User is the owner, use their userId
+        spaceOwnerId = userId;
+      } else {
+        // User might be a shared user, check if they have access
+        const shareQuery = await adminDb
+          .collection('space_shares')
+          .where('spaceId', '==', promptSpaceId)
+          .where('sharedWithUserId', '==', userId)
+          .where('status', '==', 'active')
+          .limit(1)
+          .get();
+        
+        if (shareQuery.empty) {
+          return NextResponse.json({ message: 'Access denied' }, { status: 403 });
+        }
+        
+        // User has shared access, use space owner's userId to fetch folders
+        spaceOwnerId = spaceData?.userId || userId;
+      }
+    }
+
+    // 簡化查詢避免需要複合索引 - 使用 space owner 的 userId
     const [foldersSnapshot, promptsSnapshot] = await Promise.all([
       adminDb
         .collection('folders')
-        .where('userId', '==', userId)
+        .where('userId', '==', spaceOwnerId)
         .get(),
       adminDb
         .collection('prompts')
-        .where('userId', '==', userId)
+        .where('userId', '==', spaceOwnerId)
         .get()
     ]);
 
@@ -115,10 +144,48 @@ export async function POST(req: Request) {
       );
     }
 
+    // Check if user has edit permission for this space
+    const spaceDoc = await adminDb.collection('prompt_spaces').doc(body.promptSpaceId).get();
+    if (!spaceDoc.exists) {
+      return NextResponse.json({ message: 'Space not found' }, { status: 404 });
+    }
+
+    const spaceData = spaceDoc.data();
+    let canEdit = false;
+    let folderOwnerId = userId;
+
+    if (spaceData?.userId === userId) {
+      // User is the owner
+      canEdit = true;
+      folderOwnerId = userId;
+    } else {
+      // Check if user has shared access with edit permission
+      const shareQuery = await adminDb
+        .collection('space_shares')
+        .where('spaceId', '==', body.promptSpaceId)
+        .where('sharedWithUserId', '==', userId)
+        .where('status', '==', 'active')
+        .limit(1)
+        .get();
+      
+      if (!shareQuery.empty) {
+        const shareData = shareQuery.docs[0].data();
+        if (shareData.permission === 'edit') {
+          canEdit = true;
+          // For shared spaces, use space owner's userId for folders
+          folderOwnerId = spaceData?.userId || userId;
+        }
+      }
+    }
+
+    if (!canEdit) {
+      return NextResponse.json({ message: 'Insufficient permissions' }, { status: 403 });
+    }
+
     const now = FieldValue.serverTimestamp();
 
     const folderData = {
-      userId: userId,
+      userId: folderOwnerId, // Use space owner's userId
       name: body.name,
       description: body.description || '',
       promptSpaceId: body.promptSpaceId,

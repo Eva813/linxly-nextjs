@@ -65,14 +65,22 @@ export const createFolderSlice: StateCreator<FolderSlice> = (set, get) => ({
 
       let finalFolders = folders;
 
+      // Only create default folder if user is the owner of the space
       if (folders.length === 0) {
-        const defaultFolder = DEFAULT_FOLDERS[0];
-        const newFolder = await createFolder({
-          name: defaultFolder.name,
-          description: defaultFolder.description,
-          promptSpaceId: promptSpaceId,
-        });
-        finalFolders = [newFolder];
+        try {
+          const defaultFolder = DEFAULT_FOLDERS[0];
+          const newFolder = await createFolder({
+            name: defaultFolder.name,
+            description: defaultFolder.description,
+            promptSpaceId: promptSpaceId,
+          });
+          finalFolders = [newFolder];
+        } catch (error) {
+          // If folder creation fails (e.g., user doesn't have edit permission for shared space),
+          // just show empty folders instead of creating default
+          console.warn('Cannot create default folder, user might not have edit permissions:', error);
+          finalFolders = [];
+        }
       }
 
       // 更新快取

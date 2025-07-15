@@ -38,8 +38,10 @@ export async function middleware(request: NextRequest) {
     "/api/health",
   ];
 
-  if (publicPaths.includes(pathname) || isPreflight) {
-    return NextResponse.json({}, { headers: CORS_HEADERS });
+  const isPublicPath = publicPaths.includes(pathname) || pathname.startsWith("/api/v1/invites/");
+
+  if (isPublicPath) {
+    return NextResponse.next();
   }
 
   // 處理所有預檢請求 CORS

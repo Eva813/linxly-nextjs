@@ -20,12 +20,13 @@ export async function GET(req: Request) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
 
+    // Get owned spaces
     const spacesSnapshot = await adminDb
       .collection('prompt_spaces')
       .where('userId', '==', userId)
       .get();
 
-    const spaces: PromptSpaceApiResponse[] = spacesSnapshot.docs
+    const ownedSpaces: PromptSpaceApiResponse[] = spacesSnapshot.docs
       .map((doc) => {
         const data = doc.data() as PromptSpaceData;
         const createdAt = convertTimestampToDate(data.createdAt);
@@ -42,7 +43,7 @@ export async function GET(req: Request) {
       .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
 
     // 如果用戶沒有任何 space，自動創建默認 space
-    if (spaces.length === 0) {
+    if (ownedSpaces.length === 0) {
       const defaultSpaceData = {
         userId: userId,
         name: 'promptSpace-default',
@@ -59,13 +60,53 @@ export async function GET(req: Request) {
         updatedAt: new Date().toISOString()
       };
 
-      spaces.push(defaultSpace);
+      ownedSpaces.push(defaultSpace);
 
       // 將所有現有的 folders 和 prompts 關聯到默認 space
       await migrateExistingDataToDefaultSpace(userId, defaultSpaceRef.id);
     }
 
-    return NextResponse.json({ spaces });
+    // Get shared spaces
+    const sharedSpacesSnapshot = await adminDb
+      .collection('space_shares')
+      .where('sharedWithUserId', '==', userId)
+      .where('status', '==', 'active')
+      .get();
+
+    const sharedSpaces = [];
+    for (const shareDoc of sharedSpacesSnapshot.docs) {
+      const shareData = shareDoc.data();
+      
+      // Get space details
+      const spaceDoc = await adminDb.collection('prompt_spaces').doc(shareData.spaceId).get();
+      if (spaceDoc.exists) {
+        const spaceData = spaceDoc.data() as PromptSpaceData;
+        const createdAt = convertTimestampToDate(spaceData.createdAt);
+        const updatedAt = convertTimestampToDate(spaceData.updatedAt) || createdAt;
+
+        // Get owner details
+        const ownerDoc = await adminDb.collection('users').doc(shareData.ownerUserId).get();
+        const ownerData = ownerDoc.data();
+
+        sharedSpaces.push({
+          space: {
+            id: spaceDoc.id,
+            name: spaceData.name,
+            userId: spaceData.userId,
+            createdAt: createdAt.toISOString(),
+            updatedAt: updatedAt.toISOString()
+          },
+          permission: shareData.permission,
+          sharedBy: ownerData?.name || 'Unknown User',
+          sharedAt: shareData.createdAt?.toDate?.()?.toISOString() || shareData.createdAt
+        });
+      }
+    }
+
+    return NextResponse.json({ 
+      ownedSpaces,
+      sharedSpaces 
+    });
 
   } catch (error: unknown) {
     console.error("GET prompt-spaces 錯誤:", error);

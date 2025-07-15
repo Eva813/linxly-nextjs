@@ -7,12 +7,23 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { FaSpinner } from "react-icons/fa";
-import { X, Mail, Plus, Trash2 } from "lucide-react";
+import { X, Mail, Plus, Trash2, Copy, CheckCircle, AlertCircle } from "lucide-react";
+import { 
+  getSpaceShares, 
+  batchCreateShares, 
+  batchUpdateShares,
+  createInviteLink,
+  ShareItem,
+  ShareRecord,
+  isValidEmail 
+} from "@/api/spaceShares";
 
 interface SpaceSettingsDialogProps {
   isOpen: boolean;
@@ -27,49 +38,118 @@ const SpaceSettingsDialog: React.FC<SpaceSettingsDialogProps> = ({
   spaceId, 
   currentName
 }) => {
+  // Rename state
   const [spaceName, setSpaceName] = useState(currentName);
   const [isRenaming, setIsRenaming] = useState(false);
+  
+  // Sharing state
   const [emailInput, setEmailInput] = useState("");
-  const [sharedEmails, setSharedEmails] = useState<string[]>([
-    "user@example.com",
-    "team@company.com"
-  ]);
+  const [selectedPermission, setSelectedPermission] = useState<'view' | 'edit'>('view');
+  const [shareRecords, setShareRecords] = useState<ShareRecord[]>([]);
   const [selectedEmails, setSelectedEmails] = useState<string[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [savingShares, setSavingShares] = useState(false);
+  const [progress, setProgress] = useState({ completed: 0, total: 0 });
+  const [successMessage, setSuccessMessage] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
+  
+  // Invite link state
+  const [inviteLinks, setInviteLinks] = useState<{
+    view?: { link: string; shareId: string; expiresAt: string };
+    edit?: { link: string; shareId: string; expiresAt: string };
+  }>({});
+  const [generatingLink, setGeneratingLink] = useState<'view' | 'edit' | null>(null);
+  
   const { renameSpace } = usePromptSpaceActions();
 
+  // Reset state when dialog opens
   useEffect(() => {
+    const loadShareRecords = async () => {
+      try {
+        setLoading(true);
+        const response = await getSpaceShares(spaceId);
+        setShareRecords(response.shares);
+      } catch (error) {
+        console.error('Failed to load share records:', error);
+        setErrorMessage('Failed to load sharing settings');
+      } finally {
+        setLoading(false);
+      }
+    };
+
     if (isOpen) {
       setSpaceName(currentName);
+      setEmailInput("");
+      setSelectedPermission('view');
+      setSelectedEmails([]);
+      setSuccessMessage("");
+      setErrorMessage("");
+      setInviteLinks({});
+      loadShareRecords();
     }
-  }, [isOpen, currentName]);
+  }, [isOpen, currentName, spaceId]);
 
+
+  // Rename space
   const handleRenameSubmit = async () => {
     if (!spaceName.trim() || spaceName.trim() === currentName) return;
 
     try {
       setIsRenaming(true);
       await renameSpace(spaceId, spaceName.trim());
-      // TODO: 顯示成功提示
+      setSuccessMessage("Space renamed successfully!");
     } catch (error) {
       console.error("Failed to rename space:", error);
-      // TODO: 顯示錯誤提示
+      setErrorMessage("Failed to rename space");
     } finally {
       setIsRenaming(false);
     }
   };
 
+  // Add email to local list
   const handleAddEmail = () => {
-    if (emailInput.trim() && !sharedEmails.includes(emailInput.trim())) {
-      setSharedEmails([...sharedEmails, emailInput.trim()]);
-      setEmailInput("");
+    if (!emailInput.trim()) return;
+    
+    if (!isValidEmail(emailInput.trim())) {
+      setErrorMessage("Please enter a valid email address");
+      return;
     }
+
+    if (shareRecords.some(record => record.email === emailInput.trim())) {
+      setErrorMessage("This email is already shared");
+      return;
+    }
+
+    // Add to local list (will be saved when user clicks save)
+    const newRecord: ShareRecord = {
+      id: Date.now().toString(), // temporary ID
+      email: emailInput.trim(),
+      permission: selectedPermission,
+      status: 'active',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+
+    setShareRecords([...shareRecords, newRecord]);
+    setEmailInput("");
+    setSelectedPermission('view');
+    setErrorMessage("");
   };
 
+  // Update permission for existing share
+  const handlePermissionChange = (email: string, newPermission: 'view' | 'edit') => {
+    setShareRecords(shareRecords.map(record => 
+      record.email === email ? { ...record, permission: newPermission } : record
+    ));
+  };
+
+  // Remove email from local list
   const handleRemoveEmail = (emailToRemove: string) => {
-    setSharedEmails(sharedEmails.filter(email => email !== emailToRemove));
+    setShareRecords(shareRecords.filter(record => record.email !== emailToRemove));
     setSelectedEmails(selectedEmails.filter(email => email !== emailToRemove));
   };
 
+  // Batch selection
   const handleSelectEmail = (email: string, isSelected: boolean) => {
     if (isSelected) {
       setSelectedEmails([...selectedEmails, email]);
@@ -80,105 +160,333 @@ const SpaceSettingsDialog: React.FC<SpaceSettingsDialogProps> = ({
 
   const handleSelectAll = (isSelected: boolean) => {
     if (isSelected) {
-      setSelectedEmails([...sharedEmails]);
+      setSelectedEmails(shareRecords.map(record => record.email));
     } else {
       setSelectedEmails([]);
     }
   };
 
   const handleBatchDelete = () => {
-    setSharedEmails(sharedEmails.filter(email => !selectedEmails.includes(email)));
+    setShareRecords(shareRecords.filter(record => !selectedEmails.includes(record.email)));
     setSelectedEmails([]);
   };
 
-  const isAllSelected = sharedEmails.length > 0 && selectedEmails.length === sharedEmails.length;
+  // Save all sharing changes
+  const handleSaveSharing = async () => {
+    try {
+      setSavingShares(true);
+      setProgress({ completed: 0, total: shareRecords.length });
+      setErrorMessage("");
+
+      // Prepare shares for API
+      const sharesToCreate: ShareItem[] = shareRecords
+        .filter(record => !record.userId) // New shares without userId
+        .map(record => ({ email: record.email, permission: record.permission }));
+
+      const sharesToUpdate: ShareItem[] = shareRecords
+        .filter(record => record.userId) // Existing shares with userId
+        .map(record => ({ email: record.email, permission: record.permission }));
+
+      const results: {
+        success: Array<{email: string; shareId: string; inviteLink: string}>;
+        failed: Array<{email: string; reason: string}>;
+      } = { success: [], failed: [] };
+
+      // Create new shares
+      if (sharesToCreate.length > 0) {
+        const createResults = await batchCreateShares(
+          spaceId, 
+          sharesToCreate,
+          (completed, total) => setProgress({ completed, total })
+        );
+        results.success.push(...(createResults.success || []));
+        results.failed.push(...(createResults.failed || []));
+      }
+
+      // Update existing shares
+      if (sharesToUpdate.length > 0) {
+        const updateResults = await batchUpdateShares(
+          spaceId,
+          sharesToUpdate,
+          (completed, total) => setProgress({ completed, total })
+        );
+        results.failed.push(...(updateResults.failed || []));
+      }
+
+      // Show results
+      if (results.failed.length === 0) {
+        setSuccessMessage(`Successfully shared with ${results.success.length} users!`);
+      } else {
+        setErrorMessage(`${results.failed.length} emails failed. Check console for details.`);
+        console.error('Failed shares:', results.failed);
+      }
+
+      // Reload share records
+      const response = await getSpaceShares(spaceId);
+      setShareRecords(response.shares);
+
+    } catch (error) {
+      console.error('Failed to save sharing settings:', error);
+      setErrorMessage('Failed to save sharing settings');
+    } finally {
+      setSavingShares(false);
+      setProgress({ completed: 0, total: 0 });
+    }
+  };
+
+  // Generate universal invite link
+  const handleGenerateInviteLink = async (permission: 'view' | 'edit') => {
+    try {
+      setGeneratingLink(permission);
+      setErrorMessage("");
+      
+      const response = await createInviteLink(spaceId, permission);
+      const inviteLink = `${window.location.origin}/invite/${response.shareId}`;
+      
+      setInviteLinks(prev => ({
+        ...prev,
+        [permission]: {
+          link: inviteLink,
+          shareId: response.shareId,
+          expiresAt: response.expiresAt
+        }
+      }));
+      
+      // Auto copy to clipboard
+      navigator.clipboard.writeText(inviteLink);
+      setSuccessMessage(`${permission} invite link generated and copied to clipboard!`);
+      
+    } catch (error) {
+      console.error('Failed to generate invite link:', error);
+      setErrorMessage('Failed to generate invite link');
+    } finally {
+      setGeneratingLink(null);
+    }
+  };
+
+  // Copy existing invite link
+  const handleCopyInviteLink = (permission: 'view' | 'edit') => {
+    const linkData = inviteLinks[permission];
+    if (linkData) {
+      navigator.clipboard.writeText(linkData.link);
+      setSuccessMessage(`${permission} invite link copied to clipboard!`);
+    }
+  };
+
+  const isAllSelected = shareRecords.length > 0 && selectedEmails.length === shareRecords.length;
 
   const handleClose = () => {
-    if (!isRenaming) {
+    if (!isRenaming && !savingShares) {
       setSpaceName(currentName);
       setEmailInput("");
       setSelectedEmails([]);
+      setSuccessMessage("");
+      setErrorMessage("");
+      setInviteLinks({});
       onClose();
     }
   };
 
-
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-[500px] max-h-[80vh] overflow-y-auto">
         <DialogHeader>
-          <div className="flex items-center justify-between">
-            <DialogTitle className="flex items-center gap-2">
-                <span>Space Settings</span>
-            </DialogTitle>
-          </div>
-            <p className="text-sm text-muted-foreground">
-              Manage your workspace name and sharing settings
-            </p>
+          <DialogTitle className="flex items-center gap-2">
+            <span>Space Settings</span>
+          </DialogTitle>
+          <p className="text-sm text-muted-foreground">
+            Manage your workspace name and sharing settings
+          </p>
         </DialogHeader>
 
+        {/* Success/Error Messages */}
+        {successMessage && (
+          <div className="flex items-center gap-2 p-3 bg-green-50 border border-green-200 rounded-md">
+            <CheckCircle className="h-4 w-4 text-green-600" />
+            <span className="text-sm text-green-700">{successMessage}</span>
+          </div>
+        )}
+
+        {errorMessage && (
+          <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-md">
+            <AlertCircle className="h-4 w-4 text-red-600" />
+            <span className="text-sm text-red-700">{errorMessage}</span>
+          </div>
+        )}
+
         <div className="space-y-6 py-2">
-          {/* 空間名稱 */}
+          {/* Space Name Section */}
           <div className="space-y-3">
             <h3 className="text-sm font-medium">Space Name</h3>
             <div className="flex items-center gap-2">
               <Input
-              value={spaceName}
-              onChange={(e) => setSpaceName(e.target.value)}
-              placeholder="個人專案"
-              disabled={isRenaming}
-              maxLength={50}
-              className="flex-1"
+                value={spaceName}
+                onChange={(e) => setSpaceName(e.target.value)}
+                placeholder="Enter space name"
+                disabled={isRenaming}
+                maxLength={50}
+                className="flex-1"
               />
               <Button
-              onClick={handleRenameSubmit}
-              disabled={!spaceName.trim() || spaceName.trim() === currentName || isRenaming}
-              size="sm"
-              className="px-4"
+                onClick={handleRenameSubmit}
+                disabled={!spaceName.trim() || spaceName.trim() === currentName || isRenaming}
+                size="sm"
+                className="px-4"
               >
                 {isRenaming ? (
-                <>
-                <FaSpinner className="animate-spin mr-2" />
-                Updating...
-                </>
+                  <>
+                    <FaSpinner className="animate-spin mr-2" />
+                    Updating...
+                  </>
                 ) : (
-                "Update Name"
+                  "Update Name"
                 )}
               </Button>
             </div>
           </div>
 
-          {/* 分享設定 */}
+          {/* Sharing Settings Section */}
           <div className="space-y-3">
             <h3 className="text-sm font-medium">Sharing Settings</h3>
             
+            {/* Universal Invite Links */}
+            <div className="border rounded-md p-3 bg-blue-50 border-blue-200">
+              <h4 className="text-sm font-medium text-blue-900 mb-2">Universal Invite Links</h4>
+              <p className="text-xs text-blue-700 mb-3">
+                Generate shareable links for invited users. Only users with email addresses in the shared list above can join using these links.
+              </p>
+              
+              <div className="space-y-2">
+                {/* View Permission Link */}
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-gray-600 w-12">View:</span>
+                  {inviteLinks.view ? (
+                    <div className="flex-1 flex items-center gap-2">
+                      <div className="text-xs text-green-600 bg-green-50 px-2 py-1 rounded border flex-1 truncate">
+                        {inviteLinks.view.link}
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 w-6 p-0 hover:bg-blue-100"
+                        onClick={() => handleCopyInviteLink('view')}
+                        title="Copy link"
+                      >
+                        <Copy className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  ) : (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleGenerateInviteLink('view')}
+                      disabled={generatingLink === 'view'}
+                      className="flex-1 h-7 text-xs"
+                    >
+                      {generatingLink === 'view' ? (
+                        <>
+                          <FaSpinner className="animate-spin mr-1" />
+                          Generating...
+                        </>
+                      ) : (
+                        'Generate View Link'
+                      )}
+                    </Button>
+                  )}
+                </div>
+
+                {/* Edit Permission Link */}
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-gray-600 w-12">Edit:</span>
+                  {inviteLinks.edit ? (
+                    <div className="flex-1 flex items-center gap-2">
+                      <div className="text-xs text-green-600 bg-green-50 px-2 py-1 rounded border flex-1 truncate">
+                        {inviteLinks.edit.link}
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 w-6 p-0 hover:bg-blue-100"
+                        onClick={() => handleCopyInviteLink('edit')}
+                        title="Copy link"
+                      >
+                        <Copy className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  ) : (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleGenerateInviteLink('edit')}
+                      disabled={generatingLink === 'edit'}
+                      className="flex-1 h-7 text-xs"
+                    >
+                      {generatingLink === 'edit' ? (
+                        <>
+                          <FaSpinner className="animate-spin mr-1" />
+                          Generating...
+                        </>
+                      ) : (
+                        'Generate Edit Link'
+                      )}
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </div>
+            
+            {/* Add Email Input */}
             <div className="flex gap-2">
               <Input
-                  value={emailInput}
-                  onChange={(e) => setEmailInput(e.target.value)}
-                  placeholder="Enter email address"
-                  className="flex-1"
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
+                value={emailInput}
+                onChange={(e) => setEmailInput(e.target.value)}
+                placeholder="Enter email address"
+                className="flex-1"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
                     e.preventDefault();
                     handleAddEmail();
-                    }
-                  }}
-                  />
+                  }
+                }}
+              />
+              <Select value={selectedPermission} onValueChange={(value: 'view' | 'edit') => setSelectedPermission(value)}>
+                <SelectTrigger className="w-20">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="view">View</SelectItem>
+                  <SelectItem value="edit">Edit</SelectItem>
+                </SelectContent>
+              </Select>
               <Button
                 type="button"
                 onClick={handleAddEmail}
                 className="px-3"
-                disabled={!emailInput.trim()}
-                >
+                disabled={!emailInput.trim() || loading}
+              >
                 <Plus className="h-4 w-4 mr-1" />
-                  Add
+                Add
               </Button>
             </div>
 
-            {/* 批量操作控制 */}
+            {/* Progress Bar */}
+            {savingShares && progress.total > 0 && (
+              <div className="space-y-2">
+                <div className="w-full bg-gray-200 rounded-full h-2.5">
+                  <div 
+                    className="bg-blue-600 h-2.5 rounded-full transition-all duration-300" 
+                    style={{ width: `${(progress.completed / progress.total) * 100}%` }}
+                  />
+                </div>
+                <p className="text-sm text-gray-600">
+                  Processing {progress.completed}/{progress.total} emails...
+                </p>
+              </div>
+            )}
+
+            {/* Batch Operations */}
             <div className="h-[48px] flex items-center">
-              {sharedEmails.length >= 2 && (
+              {shareRecords.length >= 2 && (
                 <div className="flex items-center justify-between p-2 border rounded-md bg-gray-25 w-full h-[44px]">
                   <div className="flex items-center gap-2">
                     <Checkbox
@@ -204,70 +512,99 @@ const SpaceSettingsDialog: React.FC<SpaceSettingsDialogProps> = ({
               )}
             </div>
 
-            {/* 已分享的 emails */}
+            {/* Share Records List */}
             <div className="space-y-2 max-h-[150px] overflow-y-auto">
-              {sharedEmails.map((email, index) => (
-                <div
-                  key={index}
-                  className="flex items-center justify-between p-2 bg-gray-50 rounded-md"
-                >
-                  <div className="flex items-center gap-2">
-                    <div className="w-4 h-4 flex items-center justify-center">
-                      {sharedEmails.length >= 2 ? (
-                        <Checkbox
-                          checked={selectedEmails.includes(email)}
-                          onCheckedChange={(checked) => handleSelectEmail(email, checked as boolean)}
-                        />
-                      ) : null}
-                    </div>
-                    <Mail className="h-4 w-4 text-gray-500" />
-                    <span className="text-sm">{email}</span>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-6 w-6 p-0 hover:bg-red-100 hover:text-red-600"
-                    onClick={() => handleRemoveEmail(email)}
-                  >
-                    <X className="h-3 w-3" />
-                  </Button>
+              {loading ? (
+                <div className="flex items-center justify-center p-4">
+                  <FaSpinner className="animate-spin mr-2" />
+                  Loading shares...
                 </div>
-              ))}
+              ) : shareRecords.length === 0 ? (
+                <p className="text-sm text-gray-500 italic text-center p-4">
+                  Not shared with anyone yet
+                </p>
+              ) : (
+                shareRecords.map((record, index) => (
+                  <div
+                    key={index}
+                    className="flex items-center justify-between p-2 bg-gray-50 rounded-md"
+                  >
+                    <div className="flex items-center gap-2">
+                      <div className="w-4 h-4 flex items-center justify-center">
+                        {shareRecords.length >= 2 ? (
+                          <Checkbox
+                            checked={selectedEmails.includes(record.email)}
+                            onCheckedChange={(checked) => handleSelectEmail(record.email, checked as boolean)}
+                          />
+                        ) : null}
+                      </div>
+                      <Mail className="h-4 w-4 text-gray-500" />
+                      <span className="text-sm flex-1">{record.email}</span>
+                      
+                      {/* Permission Selector */}
+                      <Select 
+                        value={record.permission} 
+                        onValueChange={(value: 'view' | 'edit') => handlePermissionChange(record.email, value)}
+                      >
+                        <SelectTrigger className="w-16 h-6">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="view">View</SelectItem>
+                          <SelectItem value="edit">Edit</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      
+                    </div>
+                    
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-6 w-6 p-0 ml-2 hover:bg-red-100 hover:text-red-600"
+                      onClick={() => handleRemoveEmail(record.email)}
+                    >
+                      <X className="h-3 w-3" />
+                    </Button>
+                  </div>
+                ))
+              )}
             </div>
 
-            {sharedEmails.length === 0 && (
-                <p className="text-sm text-gray-500 italic">Not shared with anyone yet</p>
-            )}
-
             <p className="text-xs text-gray-500">
-              Once shared, others will be able to view the contents of this workspace.
+              Once shared, others will be able to view and edit the contents of this workspace based on their permission level.
             </p>
 
+            {/* Save Sharing Settings Button */}
             <div className="flex justify-end">
               <Button
-                onClick={() => {
-                  // TODO: 實作分享設定儲存
-                  console.log("Save sharing settings:", sharedEmails);
-                }}
+                onClick={handleSaveSharing}
+                disabled={savingShares || loading || shareRecords.length === 0}
                 size="sm"
                 className="px-4"
               >
-                Save Sharing Settings
+                {savingShares ? (
+                  <>
+                    <FaSpinner className="animate-spin mr-2" />
+                    Saving...
+                  </>
+                ) : (
+                  "Save Sharing Settings"
+                )}
               </Button>
             </div>
           </div>
         </div>
 
         {/* Footer */}
-        <div className="flex justify-end pt-4 border-t">
+        <DialogFooter>
           <Button
             variant="outline"
             onClick={handleClose}
-            disabled={isRenaming}
+            disabled={isRenaming || savingShares}
           >
             Close
           </Button>
-        </div>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

@@ -27,6 +27,14 @@ export interface UpdatePromptSpaceRequest {
   name: string;
 }
 
+export interface SharedSpace {
+  space: PromptSpaceApiResponse;
+  permission: 'view' | 'edit';
+  sharedBy: string;
+  sharedAt: string;
+}
+
 export interface PromptSpaceListResponse {
-  spaces: PromptSpaceApiResponse[];
+  ownedSpaces: PromptSpaceApiResponse[];
+  sharedSpaces: SharedSpace[];
 }

@@ -34,13 +34,7 @@ export async function GET(
       }, { status: 400 });
     }
 
-    // Check if invite is active
-    if (shareData.status !== 'active') {
-      return NextResponse.json({
-        isValid: false,
-        error: 'Invite has been revoked'
-      }, { status: 410 });
-    }
+    // Note: If record exists, invite is valid (deleted records are truly deleted)
 
     // Check expiry - simplified logic
     if (shareData.expiresAt) {

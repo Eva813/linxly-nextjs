@@ -70,7 +70,6 @@ export async function GET(req: Request) {
     const sharedSpacesSnapshot = await adminDb
       .collection('space_shares')
       .where('sharedWithUserId', '==', userId)
-      .where('status', '==', 'active')
       .get();
 
     const sharedSpaces = [];

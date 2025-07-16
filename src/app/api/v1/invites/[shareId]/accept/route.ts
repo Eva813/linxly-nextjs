@@ -45,10 +45,7 @@ export async function POST(
       return NextResponse.json({ error: 'Invite has expired' }, { status: 410 });
     }
 
-    // Check if share is still active
-    if (shareData.status !== 'active') {
-      return NextResponse.json({ error: 'Share is no longer active' }, { status: 410 });
-    }
+    // Note: If record exists, share is valid (deleted records are truly deleted)
 
     // Get space info for owner first (we'll need it anyway)
     const spaceId = shareData.promptSpaceId;
@@ -64,39 +61,23 @@ export async function POST(
     }
 
     // Use parallel queries to improve performance
-    const [invitedUserQuery, existingShareQuery] = await Promise.all([
-      // For universal links, check if user is in the invite list
-      shareData.isUniversal ? adminDb
-        .collection('space_shares')
-        .where('promptSpaceId', '==', spaceId)
-        .where('sharedWithEmail', '==', userData?.email || '')
-        .where('status', '==', 'active')
-        .limit(1)
-        .get() : null,
-      
+    const [existingShareQuery, emailInviteQuery] = await Promise.all([
       // Check if user already has access to prevent duplicates
       adminDb
         .collection('space_shares')
         .where('promptSpaceId', '==', spaceId)
         .where('sharedWithUserId', '==', userId)
-        .where('status', '==', 'active')
         .limit(1)
-        .get()
-    ]);
-
-    // Check universal link access
-    if (shareData.isUniversal) {
-      const userEmail = userData?.email;
-      if (!userEmail) {
-        return NextResponse.json({ error: 'User email is required' }, { status: 400 });
-      }
+        .get(),
       
-      if (!invitedUserQuery || invitedUserQuery.empty) {
-        return NextResponse.json({ 
-          error: 'You are not invited to this space. Please contact the space owner for access.' 
-        }, { status: 403 });
-      }
-    }
+      // For universal links, check if user's email is in the share records list
+      shareData.isUniversal ? adminDb
+        .collection('space_shares')
+        .where('promptSpaceId', '==', spaceId)
+        .where('sharedWithEmail', '==', userData?.email || '')
+        .limit(1)
+        .get() : null
+    ]);
 
     // Check if user already has access
     if (!existingShareQuery.empty) {
@@ -109,43 +90,41 @@ export async function POST(
       });
     }
 
-    // Create a new personal share record for the user (don't modify the universal link)
-    const newShareRef = adminDb.collection('space_shares').doc();
-    const newShareData: {
-      promptSpaceId: string;
-      permission: string;
-      sharedWithUserId: string;
-      sharedWithEmail: string;
-      status: string;
-      createdAt: ReturnType<typeof FieldValue.serverTimestamp>;
-      updatedAt: ReturnType<typeof FieldValue.serverTimestamp>;
-      acceptedAt: ReturnType<typeof FieldValue.serverTimestamp>;
-      sourceInviteId: string;
-      ownerUserId?: string;
-    } = {
-      promptSpaceId: spaceId,
-      permission: shareData.permission,
-      sharedWithUserId: userId,
-      sharedWithEmail: userData?.email || '',
-      status: 'active',
-      createdAt: FieldValue.serverTimestamp(),
-      updatedAt: FieldValue.serverTimestamp(),
-      acceptedAt: FieldValue.serverTimestamp(),
-      sourceInviteId: shareId // Reference to the universal invite
-    };
+    // Handle universal link access
+    if (shareData.isUniversal) {
+      const userEmail = userData?.email;
+      if (!userEmail) {
+        return NextResponse.json({ error: 'User email is required' }, { status: 400 });
+      }
+      
+      // Check if user's email is in the share records list
+      if (!emailInviteQuery || emailInviteQuery.empty) {
+        return NextResponse.json({ 
+          error: 'You are not invited to this space. Please contact the space owner to add your email to the share list.' 
+        }, { status: 403 });
+      }
 
-    // Only add ownerUserId if we have a valid value
-    if (ownerId) {
-      newShareData.ownerUserId = ownerId;
+      // Update the email-specific share record with user ID
+      const emailShareDoc = emailInviteQuery.docs[0];
+      await adminDb.collection('space_shares').doc(emailShareDoc.id).update({
+        sharedWithUserId: userId,
+        acceptedAt: FieldValue.serverTimestamp(),
+        updatedAt: FieldValue.serverTimestamp()
+      });
+    } else {
+      // For direct email invites, update the share record with user ID
+      await adminDb.collection('space_shares').doc(shareId).update({
+        sharedWithUserId: userId,
+        acceptedAt: FieldValue.serverTimestamp(),
+        updatedAt: FieldValue.serverTimestamp()
+      });
     }
-
-    await newShareRef.set(newShareData);
 
     return NextResponse.json({
       success: true,
-      spaceId: shareData.spaceId,
+      spaceId: spaceId,
       permission: shareData.permission,
-      redirectUrl: `/prompts?space=${shareData.spaceId}`
+      redirectUrl: `/prompts?space=${spaceId}`
     });
 
   } catch (error) {

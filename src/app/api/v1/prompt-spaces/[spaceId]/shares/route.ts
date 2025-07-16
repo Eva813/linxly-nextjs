@@ -45,26 +45,30 @@ export async function GET(
       return NextResponse.json({ message: 'Only space owner can view shares' }, { status: 403 });
     }
 
-    // Get all shares for this space
+    // Get all shares for this space (exclude universal links)
     const sharesQuery = await adminDb
       .collection('space_shares')
       .where('promptSpaceId', '==', spaceId)
-      .where('status', '==', 'active')
       .orderBy('createdAt', 'desc')
       .get();
 
-    const shares = sharesQuery.docs.map(doc => {
-      const data = doc.data();
-      return {
-        id: doc.id,
-        email: data.sharedWithEmail,
-        userId: data.sharedWithUserId || undefined,
-        permission: data.permission,
-        status: data.status,
-        createdAt: data.createdAt?.toDate?.()?.toISOString() || data.createdAt,
-        updatedAt: data.updatedAt?.toDate?.()?.toISOString() || data.updatedAt,
-      };
-    });
+    const shares = sharesQuery.docs
+      .filter(doc => {
+        const data = doc.data();
+        // Exclude universal links from shares list
+        return !data.isUniversal;
+      })
+      .map(doc => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          email: data.sharedWithEmail,
+          userId: data.sharedWithUserId || undefined,
+          permission: data.permission,
+          createdAt: data.createdAt?.toDate?.()?.toISOString() || data.createdAt,
+          updatedAt: data.updatedAt?.toDate?.()?.toISOString() || data.updatedAt,
+        };
+      });
 
     return NextResponse.json({
       shares,
@@ -125,7 +129,6 @@ export async function POST(
     const currentSharesQuery = await adminDb
       .collection('space_shares')
       .where('promptSpaceId', '==', spaceId)
-      .where('status', '==', 'active')
       .get();
 
     if (currentSharesQuery.size >= 500) {
@@ -160,7 +163,6 @@ export async function POST(
             .collection('space_shares')
             .where('promptSpaceId', '==', spaceId)
             .where('sharedWithEmail', '==', email)
-            .where('status', '==', 'active')
             .limit(1)
             .get();
 
@@ -204,7 +206,6 @@ export async function POST(
             ownerUserId: string;
             sharedWithEmail: string;
             permission: string;
-            status: string;
             createdAt: Date;
             updatedAt: Date;
             sharedWithUserId?: string;
@@ -213,7 +214,6 @@ export async function POST(
             ownerUserId: userId,
             sharedWithEmail: email,
             permission,
-            status: 'active',
             createdAt: new Date(),
             updatedAt: new Date()
           };
@@ -325,7 +325,6 @@ export async function PUT(
             .collection('space_shares')
             .where('promptSpaceId', '==', spaceId)
             .where('sharedWithEmail', '==', email)
-            .where('status', '==', 'active')
             .limit(1)
             .get();
 
@@ -424,7 +423,6 @@ export async function DELETE(
             .collection('space_shares')
             .where('promptSpaceId', '==', spaceId)
             .where('sharedWithEmail', '==', email)
-            .where('status', '==', 'active')
             .limit(1)
             .get();
 
@@ -434,10 +432,7 @@ export async function DELETE(
           }
 
           const shareDoc = shareQuery.docs[0];
-          firestoreBatch.update(shareDoc.ref, {
-            status: 'revoked',
-            updatedAt: new Date()
-          });
+          firestoreBatch.delete(shareDoc.ref);
 
           results.deleted.push(email);
 

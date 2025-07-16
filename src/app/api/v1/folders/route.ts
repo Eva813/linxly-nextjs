@@ -38,8 +38,7 @@ export async function GET(req: Request) {
           .collection('space_shares')
           .where('promptSpaceId', '==', promptSpaceId)
           .where('sharedWithUserId', '==', userId)
-          .where('status', '==', 'active')
-          .limit(1)
+            .limit(1)
           .get();
         
         if (shareQuery.empty) {
@@ -164,7 +163,6 @@ export async function POST(req: Request) {
         .collection('space_shares')
         .where('promptSpaceId', '==', body.promptSpaceId)
         .where('sharedWithUserId', '==', userId)
-        .where('status', '==', 'active')
         .limit(1)
         .get();
       

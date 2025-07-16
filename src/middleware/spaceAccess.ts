@@ -24,7 +24,6 @@ export const getUserSpaceRole = async (userId: string, spaceId: string): Promise
       .collection('space_shares')
       .where('promptSpaceId', '==', spaceId)
       .where('sharedWithUserId', '==', userId)
-      .where('status', '==', 'active')
       .limit(1)
       .get();
 
@@ -130,7 +129,6 @@ export const getUserAccessibleSpaces = async (userId: string) => {
     const sharedSpacesQuery = await adminDb
       .collection('space_shares')
       .where('sharedWithUserId', '==', userId)
-      .where('status', '==', 'active')
       .get();
 
     const sharedSpaces = [];

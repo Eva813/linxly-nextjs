@@ -19,6 +19,7 @@ import {
   getSpaceShares, 
   batchCreateShares, 
   batchUpdateShares,
+  batchDeleteShares,
   createInviteLink,
   ShareItem,
   ShareRecord,
@@ -46,6 +47,7 @@ const SpaceSettingsDialog: React.FC<SpaceSettingsDialogProps> = ({
   const [emailInput, setEmailInput] = useState("");
   const [selectedPermission, setSelectedPermission] = useState<'view' | 'edit'>('view');
   const [shareRecords, setShareRecords] = useState<ShareRecord[]>([]);
+  const [originalShareRecords, setOriginalShareRecords] = useState<ShareRecord[]>([]);
   const [selectedEmails, setSelectedEmails] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [savingShares, setSavingShares] = useState(false);
@@ -69,6 +71,7 @@ const SpaceSettingsDialog: React.FC<SpaceSettingsDialogProps> = ({
         setLoading(true);
         const response = await getSpaceShares(spaceId);
         setShareRecords(response.shares);
+        setOriginalShareRecords(response.shares);
       } catch (error) {
         console.error('Failed to load share records:', error);
         setErrorMessage('Failed to load sharing settings');
@@ -125,7 +128,6 @@ const SpaceSettingsDialog: React.FC<SpaceSettingsDialogProps> = ({
       id: Date.now().toString(), // temporary ID
       email: emailInput.trim(),
       permission: selectedPermission,
-      status: 'active',
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     };
@@ -144,9 +146,36 @@ const SpaceSettingsDialog: React.FC<SpaceSettingsDialogProps> = ({
   };
 
   // Remove email from local list
-  const handleRemoveEmail = (emailToRemove: string) => {
-    setShareRecords(shareRecords.filter(record => record.email !== emailToRemove));
-    setSelectedEmails(selectedEmails.filter(email => email !== emailToRemove));
+  const handleRemoveEmail = async (emailToRemove: string) => {
+    try {
+      // Check if this email exists in original records (was saved to backend)
+      const existingRecord = originalShareRecords.find(record => record.email === emailToRemove);
+      
+      if (existingRecord) {
+        // Email exists in backend, delete it immediately
+        setLoading(true);
+        const deleteResults = await batchDeleteShares(spaceId, [emailToRemove]);
+        
+        if (deleteResults.failed.length > 0) {
+          setErrorMessage(`Failed to delete ${emailToRemove}: ${deleteResults.failed[0].reason}`);
+          return;
+        }
+        
+        // Update original records to reflect deletion
+        setOriginalShareRecords(originalShareRecords.filter(record => record.email !== emailToRemove));
+        setSuccessMessage(`Successfully removed ${emailToRemove}`);
+      }
+      
+      // Remove from local state regardless
+      setShareRecords(shareRecords.filter(record => record.email !== emailToRemove));
+      setSelectedEmails(selectedEmails.filter(email => email !== emailToRemove));
+      
+    } catch (error) {
+      console.error('Failed to remove email:', error);
+      setErrorMessage(`Failed to remove ${emailToRemove}`);
+    } finally {
+      setLoading(false);
+    }
   };
 
   // Batch selection
@@ -166,9 +195,40 @@ const SpaceSettingsDialog: React.FC<SpaceSettingsDialogProps> = ({
     }
   };
 
-  const handleBatchDelete = () => {
-    setShareRecords(shareRecords.filter(record => !selectedEmails.includes(record.email)));
-    setSelectedEmails([]);
+  const handleBatchDelete = async () => {
+    try {
+      // Find emails that exist in backend (need to be deleted via API)
+      const emailsToDeleteFromBackend = selectedEmails.filter(email => 
+        originalShareRecords.some(record => record.email === email)
+      );
+      
+      if (emailsToDeleteFromBackend.length > 0) {
+        setLoading(true);
+        const deleteResults = await batchDeleteShares(spaceId, emailsToDeleteFromBackend);
+        
+        if (deleteResults.failed.length > 0) {
+          setErrorMessage(`Failed to delete some emails. Check console for details.`);
+          console.error('Failed batch delete:', deleteResults.failed);
+        } else {
+          setSuccessMessage(`Successfully removed ${emailsToDeleteFromBackend.length} emails`);
+        }
+        
+        // Update original records to reflect deletions
+        setOriginalShareRecords(originalShareRecords.filter(record => 
+          !emailsToDeleteFromBackend.includes(record.email)
+        ));
+      }
+      
+      // Remove from local state
+      setShareRecords(shareRecords.filter(record => !selectedEmails.includes(record.email)));
+      setSelectedEmails([]);
+      
+    } catch (error) {
+      console.error('Failed to batch delete:', error);
+      setErrorMessage('Failed to delete selected emails');
+    } finally {
+      setLoading(false);
+    }
   };
 
   // Save all sharing changes
@@ -186,6 +246,8 @@ const SpaceSettingsDialog: React.FC<SpaceSettingsDialogProps> = ({
       const sharesToUpdate: ShareItem[] = shareRecords
         .filter(record => record.userId) // Existing shares with userId
         .map(record => ({ email: record.email, permission: record.permission }));
+
+      // Note: Deletions are handled immediately in handleRemoveEmail and handleBatchDelete
 
       const results: {
         success: Array<{email: string; shareId: string; inviteLink: string}>;
@@ -213,6 +275,8 @@ const SpaceSettingsDialog: React.FC<SpaceSettingsDialogProps> = ({
         results.failed.push(...(updateResults.failed || []));
       }
 
+      // Note: Deletions are handled immediately, no need to process here
+
       // Show results
       if (results.failed.length === 0) {
         setSuccessMessage(`Successfully shared with ${results.success.length} users!`);
@@ -224,6 +288,7 @@ const SpaceSettingsDialog: React.FC<SpaceSettingsDialogProps> = ({
       // Reload share records
       const response = await getSpaceShares(spaceId);
       setShareRecords(response.shares);
+      setOriginalShareRecords(response.shares);
 
     } catch (error) {
       console.error('Failed to save sharing settings:', error);

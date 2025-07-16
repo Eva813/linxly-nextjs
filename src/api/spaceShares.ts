@@ -10,7 +10,6 @@ export interface ShareRecord {
   email: string;
   userId?: string;
   permission: 'view' | 'edit';
-  status: 'active' | 'revoked';
   createdAt: string;
   updatedAt: string;
 }

@@ -200,7 +200,7 @@ export async function POST(
           // Create share record
           const shareRef = adminDb.collection('space_shares').doc();
           const shareData: {
-            spaceId: string;
+            promptSpaceId: string;
             ownerUserId: string;
             sharedWithEmail: string;
             permission: string;

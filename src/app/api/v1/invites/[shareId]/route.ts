@@ -54,7 +54,6 @@ export async function GET(
     }
 
     // Get space information
-    // Support both spaceId (legacy) and promptSpaceId (new)
     const spaceId = shareData.promptSpaceId ;
     if (!spaceId) {
       return NextResponse.json({

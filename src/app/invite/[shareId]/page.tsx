@@ -20,7 +20,7 @@ interface InviteInfo {
   createdAt: string;
 }
 
-export default function InvitePage() {
+function InvitePage() {
   const params = useParams();
   const shareId = params?.shareId as string;
   const router = useRouter();
@@ -30,6 +30,7 @@ export default function InvitePage() {
   const [joining, setJoining] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [validationAttempted, setValidationAttempted] = useState(false);
 
   useEffect(() => {
     const validateInvite = async () => {
@@ -56,10 +57,6 @@ export default function InvitePage() {
         
         setInviteInfo(data);
         
-        // If user is already signed in, they can join immediately
-        if (session?.user) {
-          // Don't auto-join, let user decide
-        }
       } catch (error) {
         console.error('Failed to validate invite:', error);
         setError(error instanceof Error ? error.message : 'Failed to validate invite');
@@ -68,10 +65,12 @@ export default function InvitePage() {
       }
     };
 
-    if (shareId) {
+    // Only validate once when component mounts with shareId
+    if (shareId && !inviteInfo && !validationAttempted) {
+      setValidationAttempted(true);
       validateInvite();
     }
-  }, [shareId, session?.user]);
+  }, [shareId, inviteInfo, validationAttempted]); // Add validationAttempted to prevent duplicate calls
 
   const acceptInvite = async () => {
     if (!session?.user?.id) {
@@ -101,10 +100,10 @@ export default function InvitePage() {
       if (result.success) {
         setSuccess(true);
         
-        // Redirect to prompt space after a short delay
+        // Redirect to prompt space after a shorter delay
         setTimeout(() => {
           router.push(result.redirectUrl || `/prompts?space=${inviteInfo?.spaceId}`);
-        }, 2000);
+        }, 1000); // Reduced from 2000ms to 1000ms
       } else {
         throw new Error(result.error || 'Failed to accept invite');
       }
@@ -116,8 +115,8 @@ export default function InvitePage() {
     }
   };
 
-  const handleSignInAndJoin = async () => {
-    await signIn('google', { 
+  const handleSignInAndJoin = () => {
+    signIn('google', { 
       callbackUrl: `/invite/${shareId}` 
     });
   };
@@ -333,3 +332,5 @@ export default function InvitePage() {
     </div>
   );
 }
+
+export default InvitePage;

@@ -61,7 +61,11 @@ export async function GET(
       }, { status: 400 });
     }
 
-    const spaceDoc = await adminDb.collection('prompt_spaces').doc(shareData.spaceId).get();
+    // Use parallel queries to improve performance
+    const [spaceDoc] = await Promise.all([
+      adminDb.collection('prompt_spaces').doc(shareData.spaceId).get()
+    ]);
+    
     if (!spaceDoc.exists) {
       return NextResponse.json({
         isValid: false,
@@ -70,14 +74,28 @@ export async function GET(
     }
     const spaceData = spaceDoc.data();
 
-    // Get owner information - simplified
+    // Get owner information - optimized with parallel queries
     let ownerName = 'Unknown User';
-    const ownerId = shareData.createdBy || shareData.ownerUserId || spaceData?.userId;
-    if (ownerId) {
-      const ownerDoc = await adminDb.collection('users').doc(ownerId).get();
+    const ownerId = spaceData?.userId;
+
+    if (!ownerId) {
+      return NextResponse.json({
+        isValid: false,
+        error: 'Space owner not found'
+      }, { status: 500 });
+    }
+    
+    // Use parallel queries to improve performance
+    const ownerPromise = adminDb.collection('users').doc(ownerId).get();
+    
+    try {
+      const ownerDoc = await ownerPromise;
       if (ownerDoc.exists) {
         ownerName = ownerDoc.data()?.name || 'Unknown User';
       }
+    } catch (error) {
+      console.warn('Failed to fetch owner info:', error);
+      // Continue with default name
     }
 
     // Return valid invite info

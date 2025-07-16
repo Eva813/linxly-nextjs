@@ -50,40 +50,51 @@ export async function POST(
       return NextResponse.json({ error: 'Share is no longer active' }, { status: 410 });
     }
 
-    // For universal links, check if user is in the invite list
-    // Universal links are only for convenience, not for open access
+    // Get space info for owner first (we'll need it anyway)
+    const spaceDoc = await adminDb.collection('prompt_spaces').doc(shareData.spaceId).get();
+    const spaceData = spaceDoc.data();
+    const ownerId = spaceData?.userId;
+
+    if (!ownerId) {
+      return NextResponse.json({ error: 'Space owner not found' }, { status: 500 });
+    }
+
+    // Use parallel queries to improve performance
+    const [invitedUserQuery, existingShareQuery] = await Promise.all([
+      // For universal links, check if user is in the invite list
+      shareData.isUniversal ? adminDb
+        .collection('space_shares')
+        .where('spaceId', '==', shareData.spaceId)
+        .where('sharedWithEmail', '==', userData?.email || '')
+        .where('status', '==', 'active')
+        .limit(1)
+        .get() : null,
+      
+      // Check if user already has access to prevent duplicates
+      adminDb
+        .collection('space_shares')
+        .where('spaceId', '==', shareData.spaceId)
+        .where('sharedWithUserId', '==', userId)
+        .where('status', '==', 'active')
+        .limit(1)
+        .get()
+    ]);
+
+    // Check universal link access
     if (shareData.isUniversal) {
-      // Check if user's email is in the shared list for this space
       const userEmail = userData?.email;
       if (!userEmail) {
         return NextResponse.json({ error: 'User email is required' }, { status: 400 });
       }
       
-      // Check if user is in the space's invited list
-      const invitedUserQuery = await adminDb
-        .collection('space_shares')
-        .where('spaceId', '==', shareData.spaceId)
-        .where('sharedWithEmail', '==', userEmail)
-        .where('status', '==', 'active')
-        .limit(1)
-        .get();
-      
-      if (invitedUserQuery.empty) {
+      if (!invitedUserQuery || invitedUserQuery.empty) {
         return NextResponse.json({ 
           error: 'You are not invited to this space. Please contact the space owner for access.' 
         }, { status: 403 });
       }
     }
 
-    // Check if user already has access to prevent duplicates
-    const existingShareQuery = await adminDb
-      .collection('space_shares')
-      .where('spaceId', '==', shareData.spaceId)
-      .where('sharedWithUserId', '==', userId)
-      .where('status', '==', 'active')
-      .limit(1)
-      .get();
-
+    // Check if user already has access
     if (!existingShareQuery.empty) {
       // User already has access, just redirect
       return NextResponse.json({
@@ -93,11 +104,6 @@ export async function POST(
         redirectUrl: `/prompts?space=${shareData.spaceId}`
       });
     }
-
-    // Get space info for owner
-    const spaceDoc = await adminDb.collection('prompt_spaces').doc(shareData.spaceId).get();
-    const spaceData = spaceDoc.data();
-    const ownerId = shareData.createdBy || shareData.ownerUserId || spaceData?.userId;
 
     // Create a new personal share record for the user (don't modify the universal link)
     const newShareRef = adminDb.collection('space_shares').doc();

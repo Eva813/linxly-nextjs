@@ -550,9 +550,8 @@ const SpaceSettingsDialog: React.FC<SpaceSettingsDialogProps> = ({
             )}
 
             {/* Batch Operations */}
-            <div className="h-[48px] flex items-center">
-              {shareRecords.length >= 2 && (
-                <div className="flex items-center justify-between p-2 border rounded-md bg-gray-25 w-full h-[44px]">
+            {shareRecords.length >= 2 && (
+              <div className="flex items-center justify-between p-2 border rounded-md bg-gray-25 w-full min-h-[44px]">
                   <div className="flex items-center gap-2">
                     <Checkbox
                       checked={isAllSelected}
@@ -561,21 +560,18 @@ const SpaceSettingsDialog: React.FC<SpaceSettingsDialogProps> = ({
                     <span className="text-sm text-gray-600">Select All</span>
                   </div>
                   <div className="min-w-[100px] flex justify-end">
-                    {selectedEmails.length > 0 && (
-                      <Button
-                        variant="destructive"
-                        size="sm"
-                        onClick={handleBatchDelete}
-                        className="h-[30px] px-3 bg-rose-500 text-white hover:bg-rose-600"
-                      >
-                        <Trash2 className="h-3 w-3 mr-1" />
-                        Delete ({selectedEmails.length})
-                      </Button>
-                    )}
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={handleBatchDelete}
+                      className={`h-[30px] px-3 bg-rose-500 text-white hover:bg-rose-600 ${selectedEmails.length > 0 ? 'visible' : 'invisible'}`}
+                    >
+                      <Trash2 className="h-3 w-3 mr-1" />
+                      Delete ({selectedEmails.length})
+                    </Button>
                   </div>
-                </div>
-              )}
-            </div>
+              </div>
+            )}
 
             {/* Share Records List */}
             <div className="space-y-2 max-h-[150px] overflow-y-auto">

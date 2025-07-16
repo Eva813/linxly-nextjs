@@ -59,7 +59,7 @@ export async function GET(req: Request) {
       // Check if user has shared access to this space
       const shareQuery = await adminDb
         .collection('space_shares')
-        .where('spaceId', '==', promptSpaceId)
+        .where('promptSpaceId', '==', promptSpaceId)
         .where('sharedWithUserId', '==', userId)
         .where('status', '==', 'active')
         .limit(1)
@@ -178,7 +178,7 @@ export async function POST(req: Request) {
       // Check if user has shared access with edit permission
       const shareQuery = await adminDb
         .collection('space_shares')
-        .where('spaceId', '==', promptSpaceId)
+        .where('promptSpaceId', '==', promptSpaceId)
         .where('sharedWithUserId', '==', userId)
         .where('status', '==', 'active')
         .limit(1)

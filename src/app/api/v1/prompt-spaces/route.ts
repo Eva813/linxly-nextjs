@@ -78,7 +78,9 @@ export async function GET(req: Request) {
       const shareData = shareDoc.data();
       
       // Get space details
-      const spaceDoc = await adminDb.collection('prompt_spaces').doc(shareData.spaceId).get();
+      // Support both spaceId (legacy) and promptSpaceId (new)
+      const spaceId = shareData.promptSpaceId;
+      const spaceDoc = await adminDb.collection('prompt_spaces').doc(spaceId).get();
       if (spaceDoc.exists) {
         const spaceData = spaceDoc.data() as PromptSpaceData;
         const createdAt = convertTimestampToDate(spaceData.createdAt);

@@ -48,7 +48,7 @@ export async function GET(
     // Get all shares for this space
     const sharesQuery = await adminDb
       .collection('space_shares')
-      .where('spaceId', '==', spaceId)
+      .where('promptSpaceId', '==', spaceId)
       .where('status', '==', 'active')
       .orderBy('createdAt', 'desc')
       .get();
@@ -124,7 +124,7 @@ export async function POST(
     // Check current share count
     const currentSharesQuery = await adminDb
       .collection('space_shares')
-      .where('spaceId', '==', spaceId)
+      .where('promptSpaceId', '==', spaceId)
       .where('status', '==', 'active')
       .get();
 
@@ -158,7 +158,7 @@ export async function POST(
           // Check if already shared
           const existingQuery = await adminDb
             .collection('space_shares')
-            .where('spaceId', '==', spaceId)
+            .where('promptSpaceId', '==', spaceId)
             .where('sharedWithEmail', '==', email)
             .where('status', '==', 'active')
             .limit(1)
@@ -209,7 +209,7 @@ export async function POST(
             updatedAt: Date;
             sharedWithUserId?: string;
           } = {
-            spaceId,
+            promptSpaceId: spaceId,
             ownerUserId: userId,
             sharedWithEmail: email,
             permission,
@@ -323,7 +323,7 @@ export async function PUT(
           // Find existing share
           const shareQuery = await adminDb
             .collection('space_shares')
-            .where('spaceId', '==', spaceId)
+            .where('promptSpaceId', '==', spaceId)
             .where('sharedWithEmail', '==', email)
             .where('status', '==', 'active')
             .limit(1)
@@ -422,7 +422,7 @@ export async function DELETE(
           // Find existing share
           const shareQuery = await adminDb
             .collection('space_shares')
-            .where('spaceId', '==', spaceId)
+            .where('promptSpaceId', '==', spaceId)
             .where('sharedWithEmail', '==', email)
             .where('status', '==', 'active')
             .limit(1)

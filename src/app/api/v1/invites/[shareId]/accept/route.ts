@@ -51,7 +51,11 @@ export async function POST(
     }
 
     // Get space info for owner first (we'll need it anyway)
-    const spaceDoc = await adminDb.collection('prompt_spaces').doc(shareData.spaceId).get();
+    const spaceId = shareData.promptSpaceId;
+    if (!spaceId) {
+      return NextResponse.json({ error: 'Invalid space ID' }, { status: 400 });
+    }
+    const spaceDoc = await adminDb.collection('prompt_spaces').doc(spaceId).get();
     const spaceData = spaceDoc.data();
     const ownerId = spaceData?.userId;
 
@@ -64,7 +68,7 @@ export async function POST(
       // For universal links, check if user is in the invite list
       shareData.isUniversal ? adminDb
         .collection('space_shares')
-        .where('spaceId', '==', shareData.spaceId)
+        .where('promptSpaceId', '==', spaceId)
         .where('sharedWithEmail', '==', userData?.email || '')
         .where('status', '==', 'active')
         .limit(1)
@@ -73,7 +77,7 @@ export async function POST(
       // Check if user already has access to prevent duplicates
       adminDb
         .collection('space_shares')
-        .where('spaceId', '==', shareData.spaceId)
+        .where('promptSpaceId', '==', spaceId)
         .where('sharedWithUserId', '==', userId)
         .where('status', '==', 'active')
         .limit(1)
@@ -99,16 +103,16 @@ export async function POST(
       // User already has access, just redirect
       return NextResponse.json({
         success: true,
-        spaceId: shareData.spaceId,
+        spaceId: spaceId,
         permission: shareData.permission,
-        redirectUrl: `/prompts?space=${shareData.spaceId}`
+        redirectUrl: `/prompts?space=${spaceId}`
       });
     }
 
     // Create a new personal share record for the user (don't modify the universal link)
     const newShareRef = adminDb.collection('space_shares').doc();
     const newShareData: {
-      spaceId: string;
+      promptSpaceId: string;
       permission: string;
       sharedWithUserId: string;
       sharedWithEmail: string;
@@ -119,7 +123,7 @@ export async function POST(
       sourceInviteId: string;
       ownerUserId?: string;
     } = {
-      spaceId: shareData.spaceId,
+      promptSpaceId: spaceId,
       permission: shareData.permission,
       sharedWithUserId: userId,
       sharedWithEmail: userData?.email || '',

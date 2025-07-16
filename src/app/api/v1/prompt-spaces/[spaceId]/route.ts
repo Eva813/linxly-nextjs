@@ -117,13 +117,46 @@ export async function DELETE(
       }, { status: 400 });
     }
 
-    // Delete the space
-    await adminDb.collection('prompt_spaces').doc(spaceId).delete();
+    // Start a batch write for atomic deletion
+    const batch = adminDb.batch();
 
-    // TODO: Also delete or reassign all folders and prompts associated with this space
-    // This would require additional logic to handle data migration
+    // 1. Delete all prompts in this space
+    const promptsQuery = await adminDb
+      .collection('prompts')
+      .where('promptSpaceId', '==', spaceId)
+      .get();
+    
+    promptsQuery.docs.forEach(doc => {
+      batch.delete(doc.ref);
+    });
 
-    return NextResponse.json({ message: 'Space deleted successfully' });
+    // 2. Delete all folders in this space
+    const foldersQuery = await adminDb
+      .collection('folders')
+      .where('promptSpaceId', '==', spaceId)
+      .get();
+    
+    foldersQuery.docs.forEach(doc => {
+      batch.delete(doc.ref);
+    });
+
+    // 3. Delete all space shares for this space
+    const sharesQuery = await adminDb
+      .collection('space_shares')
+      .where('promptSpaceId', '==', spaceId)
+      .get();
+    
+    sharesQuery.docs.forEach(doc => {
+      batch.delete(doc.ref);
+    });
+
+    // 4. Delete the space itself
+    batch.delete(adminDb.collection('prompt_spaces').doc(spaceId));
+
+    // Execute all deletions atomically
+    await batch.commit();
+
+    return NextResponse.json({ message: 'Space and all associated data deleted successfully' });
 
   } catch (error: unknown) {
     console.error("DELETE prompt-space 錯誤:", error);

@@ -22,7 +22,7 @@ export const getUserSpaceRole = async (userId: string, spaceId: string): Promise
     // Check if user has share access
     const shareQuery = await adminDb
       .collection('space_shares')
-      .where('spaceId', '==', spaceId)
+      .where('promptSpaceId', '==', spaceId)
       .where('sharedWithUserId', '==', userId)
       .where('status', '==', 'active')
       .limit(1)
@@ -136,7 +136,8 @@ export const getUserAccessibleSpaces = async (userId: string) => {
     const sharedSpaces = [];
     for (const shareDoc of sharedSpacesQuery.docs) {
       const shareData = shareDoc.data();
-      const spaceDoc = await adminDb.collection('prompt_spaces').doc(shareData.spaceId).get();
+      const spaceId = shareData.promptSpaceId;
+      const spaceDoc = await adminDb.collection('prompt_spaces').doc(spaceId).get();
       
       if (spaceDoc.exists) {
         sharedSpaces.push({

@@ -44,7 +44,7 @@ export async function POST(
     const expiresAt = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000); // 30 days
 
     const shareData = {
-      spaceId,
+      promptSpaceId: spaceId,
       permission,
       isUniversal: true, // Mark as universal link
       status: 'active',
@@ -58,7 +58,7 @@ export async function POST(
     // 簡化查詢以避免索引問題
     const existingQuery = await adminDb
       .collection('space_shares')
-      .where('spaceId', '==', spaceId)
+      .where('promptSpaceId', '==', spaceId)
       .where('isUniversal', '==', true)
       .get();
 

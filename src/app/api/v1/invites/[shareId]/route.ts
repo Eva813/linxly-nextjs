@@ -54,7 +54,9 @@ export async function GET(
     }
 
     // Get space information
-    if (!shareData.spaceId) {
+    // Support both spaceId (legacy) and promptSpaceId (new)
+    const spaceId = shareData.promptSpaceId ;
+    if (!spaceId) {
       return NextResponse.json({
         isValid: false,
         error: 'Invalid space ID'
@@ -63,7 +65,7 @@ export async function GET(
 
     // Use parallel queries to improve performance
     const [spaceDoc] = await Promise.all([
-      adminDb.collection('prompt_spaces').doc(shareData.spaceId).get()
+      adminDb.collection('prompt_spaces').doc(spaceId).get()
     ]);
     
     if (!spaceDoc.exists) {
@@ -100,7 +102,7 @@ export async function GET(
 
     // Return valid invite info
     return NextResponse.json({
-      spaceId: shareData.spaceId,
+      spaceId: spaceId,
       spaceName: spaceData?.name || 'Unknown Space',
       ownerName,
       permission: shareData.permission || 'view',

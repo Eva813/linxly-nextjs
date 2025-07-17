@@ -341,7 +341,7 @@ const SpaceSettingsDialog: React.FC<SpaceSettingsDialogProps> = ({
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="view">View</SelectItem>
-                      <SelectItem value="edit">Edit</SelectItem>
+                        <SelectItem value="edit" disabled>Edit</SelectItem>
                     </SelectContent>
                   </Select>
                   <Button

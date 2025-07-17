@@ -144,7 +144,8 @@ const InviteLinksSection: React.FC<InviteLinksProps> = ({
                 variant="outline"
                 size="sm"
                 onClick={() => onGenerateLink('edit')}
-                disabled={generatingLink === 'edit' || loading}
+                // {generatingLink === 'edit' || loading}
+                disabled={true}
                 className="w-full h-8 text-xs"
               >
                 {generatingLink === 'edit' ? (

@@ -84,7 +84,7 @@ const ShareRecordsTable: React.FC<ShareRecordsTableProps> = ({
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="view">View</SelectItem>
-            <SelectItem value="edit">Edit</SelectItem>
+            <SelectItem value="edit" disabled>Edit</SelectItem>
           </SelectContent>
         </Select>
       ),

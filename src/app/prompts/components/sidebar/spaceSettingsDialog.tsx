@@ -7,7 +7,6 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -62,6 +61,9 @@ const SpaceSettingsDialog: React.FC<SpaceSettingsDialogProps> = ({
   }>({});
   const [generatingLink, setGeneratingLink] = useState<'view' | 'edit' | null>(null);
   
+  // Tab state
+  const [activeTab, setActiveTab] = useState<'general' | 'sharing'>('general');
+  
   const { renameSpace } = usePromptSpaceActions();
 
   // Reset state when dialog opens
@@ -88,6 +90,7 @@ const SpaceSettingsDialog: React.FC<SpaceSettingsDialogProps> = ({
       setSuccessMessage("");
       setErrorMessage("");
       setInviteLinks({});
+      setActiveTab('general');
       loadShareRecords();
     }
   }, [isOpen, currentName, spaceId]);
@@ -354,7 +357,7 @@ const SpaceSettingsDialog: React.FC<SpaceSettingsDialogProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-[500px] max-h-[80vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[700px] max-h-[80vh] overflow-hidden">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <span>Space Settings</span>
@@ -363,309 +366,372 @@ const SpaceSettingsDialog: React.FC<SpaceSettingsDialogProps> = ({
             Manage your workspace name and sharing settings
           </p>
         </DialogHeader>
-
-        {/* Success/Error Messages */}
-        {successMessage && (
-          <div className="flex items-center gap-2 p-3 bg-green-50 border border-green-200 rounded-md">
-            <CheckCircle className="h-4 w-4 text-green-600" />
-            <span className="text-sm text-green-700">{successMessage}</span>
-          </div>
-        )}
-
-        {errorMessage && (
-          <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-md">
-            <AlertCircle className="h-4 w-4 text-red-600" />
-            <span className="text-sm text-red-700">{errorMessage}</span>
-          </div>
-        )}
-
-        <div className="space-y-6 py-2">
-          {/* Space Name Section */}
-          <div className="space-y-3">
-            <h3 className="text-sm font-medium">Space Name</h3>
-            <div className="flex items-center gap-2">
-              <Input
-                value={spaceName}
-                onChange={(e) => setSpaceName(e.target.value)}
-                placeholder="Enter space name"
-                disabled={isRenaming}
-                maxLength={50}
-                className="flex-1"
-              />
-              <Button
-                onClick={handleRenameSubmit}
-                disabled={!spaceName.trim() || spaceName.trim() === currentName || isRenaming}
-                size="sm"
-                className="px-4"
+        
+        <div className="flex h-[60vh]">
+          {/* Left Sidebar */}
+          <div className="w-32 border-r border-gray-200 pr-4">
+            <nav className="space-y-1">
+              <button
+                onClick={() => setActiveTab('general')}
+                className={`w-full text-left px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                  activeTab === 'general' 
+                    ? 'bg-blue-100 text-blue-700' 
+                    : 'text-gray-600 hover:bg-gray-100'
+                }`}
               >
-                {isRenaming ? (
-                  <>
-                    <FaSpinner className="animate-spin mr-2" />
-                    Updating...
-                  </>
-                ) : (
-                  "Update Name"
-                )}
-              </Button>
-            </div>
-          </div>
-
-          {/* Sharing Settings Section */}
-          <div className="space-y-3">
-            <h3 className="text-sm font-medium">Sharing Settings</h3>
-            
-            {/* Universal Invite Links */}
-            <div className="border rounded-md p-3 bg-blue-50 border-blue-200">
-              <h4 className="text-sm font-medium text-blue-900 mb-2">Universal Invite Links</h4>
-              <p className="text-xs text-blue-700 mb-3">
-                Generate shareable links for invited users. Only users with email addresses in the shared list above can join using these links.
-              </p>
-              
-              <div className="space-y-2">
-                {/* View Permission Link */}
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-gray-600 w-12">View:</span>
-                  {inviteLinks.view ? (
-                    <div className="flex-1 flex items-center gap-2">
-                      <div className="text-xs text-green-600 bg-green-50 px-2 py-1 rounded border flex-1 truncate">
-                        {inviteLinks.view.link}
-                      </div>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-6 w-6 p-0 hover:bg-blue-100"
-                        onClick={() => handleCopyInviteLink('view')}
-                        title="Copy link"
-                      >
-                        <Copy className="h-3 w-3" />
-                      </Button>
-                    </div>
-                  ) : (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleGenerateInviteLink('view')}
-                      disabled={generatingLink === 'view'}
-                      className="flex-1 h-7 text-xs"
-                    >
-                      {generatingLink === 'view' ? (
-                        <>
-                          <FaSpinner className="animate-spin mr-1" />
-                          Generating...
-                        </>
-                      ) : (
-                        'Generate View Link'
-                      )}
-                    </Button>
-                  )}
-                </div>
-
-                {/* Edit Permission Link */}
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-gray-600 w-12">Edit:</span>
-                  {inviteLinks.edit ? (
-                    <div className="flex-1 flex items-center gap-2">
-                      <div className="text-xs text-green-600 bg-green-50 px-2 py-1 rounded border flex-1 truncate">
-                        {inviteLinks.edit.link}
-                      </div>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-6 w-6 p-0 hover:bg-blue-100"
-                        onClick={() => handleCopyInviteLink('edit')}
-                        title="Copy link"
-                      >
-                        <Copy className="h-3 w-3" />
-                      </Button>
-                    </div>
-                  ) : (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleGenerateInviteLink('edit')}
-                      disabled={generatingLink === 'edit'}
-                      className="flex-1 h-7 text-xs"
-                    >
-                      {generatingLink === 'edit' ? (
-                        <>
-                          <FaSpinner className="animate-spin mr-1" />
-                          Generating...
-                        </>
-                      ) : (
-                        'Generate Edit Link'
-                      )}
-                    </Button>
-                  )}
-                </div>
-              </div>
-            </div>
-            
-            {/* Add Email Input */}
-            <div className="flex gap-2">
-              <Input
-                value={emailInput}
-                onChange={(e) => setEmailInput(e.target.value)}
-                placeholder="Enter email address"
-                className="flex-1"
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    e.preventDefault();
-                    handleAddEmail();
-                  }
-                }}
-              />
-              <Select value={selectedPermission} onValueChange={(value: 'view' | 'edit') => setSelectedPermission(value)}>
-                <SelectTrigger className="w-20">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="view">View</SelectItem>
-                  <SelectItem value="edit">Edit</SelectItem>
-                </SelectContent>
-              </Select>
-              <Button
-                type="button"
-                onClick={handleAddEmail}
-                className="px-3"
-                disabled={!emailInput.trim() || loading}
+                General
+              </button>
+              <button
+                onClick={() => setActiveTab('sharing')}
+                className={`w-full text-left px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                  activeTab === 'sharing' 
+                    ? 'bg-blue-100 text-blue-700' 
+                    : 'text-gray-600 hover:bg-gray-100'
+                }`}
               >
-                <Plus className="h-4 w-4 mr-1" />
-                Add
-              </Button>
-            </div>
-
-            {/* Progress Bar */}
-            {savingShares && progress.total > 0 && (
-              <div className="space-y-2">
-                <div className="w-full bg-gray-200 rounded-full h-2.5">
-                  <div 
-                    className="bg-blue-600 h-2.5 rounded-full transition-all duration-300" 
-                    style={{ width: `${(progress.completed / progress.total) * 100}%` }}
-                  />
-                </div>
-                <p className="text-sm text-gray-600">
-                  Processing {progress.completed}/{progress.total} emails...
-                </p>
-              </div>
-            )}
-
-            {/* Batch Operations */}
-            {shareRecords.length >= 2 && (
-              <div className="flex items-center justify-between p-2 border rounded-md bg-gray-25 w-full min-h-[44px]">
-                  <div className="flex items-center gap-2">
-                    <Checkbox
-                      checked={isAllSelected}
-                      onCheckedChange={(checked) => handleSelectAll(checked as boolean)}
-                    />
-                    <span className="text-sm text-gray-600">Select All</span>
-                  </div>
-                  <div className="min-w-[100px] flex justify-end">
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      onClick={handleBatchDelete}
-                      className={`h-[30px] px-3 bg-rose-500 text-white hover:bg-rose-600 ${selectedEmails.length > 0 ? 'visible' : 'invisible'}`}
-                    >
-                      <Trash2 className="h-3 w-3 mr-1" />
-                      Delete ({selectedEmails.length})
-                    </Button>
-                  </div>
-              </div>
-            )}
-
-            {/* Share Records List */}
-            <div className="space-y-2 max-h-[150px] overflow-y-auto">
-              {loading ? (
-                <div className="flex items-center justify-center p-4">
-                  <FaSpinner className="animate-spin mr-2" />
-                  Loading shares...
-                </div>
-              ) : shareRecords.length === 0 ? (
-                <p className="text-sm text-gray-500 italic text-center p-4">
-                  Not shared with anyone yet
-                </p>
-              ) : (
-                shareRecords.map((record, index) => (
-                  <div
-                    key={index}
-                    className="flex items-center justify-between p-2 bg-gray-50 rounded-md"
-                  >
+                Sharing
+              </button>
+            </nav>
+          </div>
+          
+          {/* Main Content */}
+          <div className="flex-1 pl-4">
+            {activeTab === 'general' && (
+              <div className="space-y-6">
+                {/* Success/Error Messages */}
+                {successMessage && (
+                  <div className="flex items-center justify-between gap-2 p-3 bg-green-50 border border-green-200 rounded-md">
                     <div className="flex items-center gap-2">
-                      <div className="w-4 h-4 flex items-center justify-center">
-                        {shareRecords.length >= 2 ? (
-                          <Checkbox
-                            checked={selectedEmails.includes(record.email)}
-                            onCheckedChange={(checked) => handleSelectEmail(record.email, checked as boolean)}
-                          />
-                        ) : null}
-                      </div>
-                      <Mail className="h-4 w-4 text-gray-500" />
-                      <span className="text-sm flex-1">{record.email}</span>
-                      
-                      {/* Permission Selector */}
-                      <Select 
-                        value={record.permission} 
-                        onValueChange={(value: 'view' | 'edit') => handlePermissionChange(record.email, value)}
-                      >
-                        <SelectTrigger className="w-16 h-6">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="view">View</SelectItem>
-                          <SelectItem value="edit">Edit</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      
+                      <CheckCircle className="h-4 w-4 text-green-600" />
+                      <span className="text-sm text-green-700">{successMessage}</span>
                     </div>
-                    
+                    <button onClick={() => setSuccessMessage("")} className="p-1 rounded-full hover:bg-green-100">
+                      <X className="h-4 w-4 text-green-700" />
+                    </button>
+                  </div>
+                )}
+
+                {errorMessage && (
+                  <div className="flex items-center justify-between gap-2 p-3 bg-red-50 border border-red-200 rounded-md">
+                    <div className="flex items-center gap-2">
+                      <AlertCircle className="h-4 w-4 text-red-600" />
+                      <span className="text-sm text-red-700">{errorMessage}</span>
+                    </div>
+                    <button onClick={() => setErrorMessage("")} className="p-1 rounded-full hover:bg-red-100">
+                      <X className="h-4 w-4 text-red-700" />
+                    </button>
+                  </div>
+                )}
+
+                {/* Space Name Section */}
+                <div className="space-y-3">
+                  <h3 className="text-sm font-medium">Space Name</h3>
+                  <div className="flex items-center gap-2">
+                    <Input
+                      value={spaceName}
+                      onChange={(e) => setSpaceName(e.target.value)}
+                      placeholder="Enter space name"
+                      disabled={isRenaming}
+                      maxLength={50}
+                      className="flex-1"
+                    />
                     <Button
-                      variant="ghost"
+                      onClick={handleRenameSubmit}
+                      disabled={!spaceName.trim() || spaceName.trim() === currentName || isRenaming}
                       size="sm"
-                      className="h-6 w-6 p-0 ml-2 hover:bg-red-100 hover:text-red-600"
-                      onClick={() => handleRemoveEmail(record.email)}
+                      className="px-4"
                     >
-                      <X className="h-3 w-3" />
+                      {isRenaming ? (
+                        <>
+                          <FaSpinner className="animate-spin mr-2" />
+                          Updating...
+                        </>
+                      ) : (
+                        "Update Name"
+                      )}
                     </Button>
                   </div>
-                ))
-              )}
-            </div>
-
-            <p className="text-xs text-gray-500">
-              Once shared, others will be able to view and edit the contents of this workspace based on their permission level.
-            </p>
-
-            {/* Save Sharing Settings Button */}
-            <div className="flex justify-end">
-              <Button
-                onClick={handleSaveSharing}
-                disabled={savingShares || loading || shareRecords.length === 0}
-                size="sm"
-                className="px-4"
-              >
-                {savingShares ? (
-                  <>
-                    <FaSpinner className="animate-spin mr-2" />
-                    Saving...
-                  </>
-                ) : (
-                  "Save Sharing Settings"
+                </div>
+              </div>
+            )}
+            
+            {activeTab === 'sharing' && (
+              <div className="space-y-3">
+                {/* Success/Error Messages */}
+                {successMessage && (
+                  <div className="flex items-center justify-between gap-2 p-3 bg-green-50 border border-green-200 rounded-md">
+                    <div className="flex items-center gap-2">
+                      <CheckCircle className="h-4 w-4 text-green-600" />
+                      <span className="text-sm text-green-700">{successMessage}</span>
+                    </div>
+                    <button onClick={() => setSuccessMessage("")} className="p-1 rounded-full hover:bg-green-100">
+                      <X className="h-4 w-4 text-green-700" />
+                    </button>
+                  </div>
                 )}
-              </Button>
-            </div>
+
+                {errorMessage && (
+                  <div className="flex items-center justify-between gap-2 p-3 bg-red-50 border border-red-200 rounded-md">
+                    <div className="flex items-center gap-2">
+                      <AlertCircle className="h-4 w-4 text-red-600" />
+                      <span className="text-sm text-red-700">{errorMessage}</span>
+                    </div>
+                    <button onClick={() => setErrorMessage("")} className="p-1 rounded-full hover:bg-red-100">
+                      <X className="h-4 w-4 text-red-700" />
+                    </button>
+                  </div>
+                )}
+
+                {/* Universal Invite Links */}
+                <div className="border rounded-md p-3 bg-blue-50 border-blue-200">
+                  <h4 className="text-sm font-medium text-blue-900 mb-2">Universal Invite Links</h4>
+                  <p className="text-xs text-blue-700 mb-3">
+                    Generate shareable links for invited users. Only users with email addresses in the shared list above can join using these links.
+                  </p>
+                  
+                  <div className="space-y-3">
+                    {/* Generate Links Row */}
+                    <div className="flex gap-2">
+                      {/* View Permission Link */}
+                      <div className="flex-1">
+                        {inviteLinks.view ? (
+                          <div className="flex items-center gap-1">
+                            <Input
+                              value={inviteLinks.view.link}
+                              readOnly
+                              className="flex-1 h-8 text-xs bg-green-50 border-green-200"
+                            />
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-8 w-8 p-0 hover:bg-green-100 flex-shrink-0"
+                              onClick={() => handleCopyInviteLink('view')}
+                              title="Copy link"
+                            >
+                              <Copy className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        ) : (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleGenerateInviteLink('view')}
+                            disabled={generatingLink === 'view'}
+                            className="w-full h-8 text-xs"
+                          >
+                            {generatingLink === 'view' ? (
+                              <>
+                                <FaSpinner className="animate-spin mr-1" />
+                                Generating...
+                              </>
+                            ) : (
+                              'Generate View Link'
+                            )}
+                          </Button>
+                        )}
+                      </div>
+
+                      {/* Edit Permission Link */}
+                      <div className="flex-1">
+                        {inviteLinks.edit ? (
+                          <div className="flex items-center gap-1">
+                            <Input
+                              value={inviteLinks.edit.link}
+                              readOnly
+                              className="flex-1 h-8 text-xs bg-green-50 border-green-200"
+                            />
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-8 w-8 p-0 hover:bg-green-100 flex-shrink-0"
+                              onClick={() => handleCopyInviteLink('edit')}
+                              title="Copy link"
+                            >
+                              <Copy className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        ) : (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleGenerateInviteLink('edit')}
+                            disabled={generatingLink === 'edit'}
+                            className="w-full h-8 text-xs"
+                          >
+                            {generatingLink === 'edit' ? (
+                              <>
+                                <FaSpinner className="animate-spin mr-1" />
+                                Generating...
+                              </>
+                            ) : (
+                              'Generate Edit Link'
+                            )}
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Add Email Input */}
+                <div className="flex items-center gap-2">
+                  <Input
+                    value={emailInput}
+                    onChange={(e) => setEmailInput(e.target.value)}
+                    placeholder="Enter email address"
+                    className="flex-1"
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        handleAddEmail();
+                      }
+                    }}
+                  />
+                  <Select value={selectedPermission} onValueChange={(value: 'view' | 'edit') => setSelectedPermission(value)}>
+                    <SelectTrigger className="w-20">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="view">View</SelectItem>
+                      <SelectItem value="edit">Edit</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Button
+                    type="button"
+                    onClick={handleAddEmail}
+                    className="px-3"
+                    disabled={!emailInput.trim() || loading}
+                  >
+                    <Plus className="h-4 w-4 mr-1" />
+                    Add
+                  </Button>
+                </div>
+
+                {/* Progress Bar */}
+                {savingShares && progress.total > 0 && (
+                  <div className="space-y-2">
+                    <div className="w-full bg-gray-200 rounded-full h-2.5">
+                      <div 
+                        className="bg-blue-600 h-2.5 rounded-full transition-all duration-300" 
+                        style={{ width: `${(progress.completed / progress.total) * 100}%` }}
+                      />
+                    </div>
+                    <p className="text-sm text-gray-600">
+                      Processing {progress.completed}/{progress.total} emails...
+                    </p>
+                  </div>
+                )}
+
+                {/* Batch Operations */}
+                {shareRecords.length >= 2 && (
+                  <div className="flex items-center justify-between p-2 border rounded-md bg-gray-25 w-full min-h-[44px]">
+                      <div className="flex items-center gap-2">
+                        <Checkbox
+                          checked={isAllSelected}
+                          onCheckedChange={(checked) => handleSelectAll(checked as boolean)}
+                        />
+                        <span className="text-sm text-gray-600">Select All</span>
+                      </div>
+                      <div className="min-w-[100px] flex justify-end">
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={handleBatchDelete}
+                          className={`h-[30px] px-3 bg-rose-500 text-white hover:bg-rose-600 ${selectedEmails.length > 0 ? 'visible' : 'invisible'}`}
+                        >
+                          <Trash2 className="h-3 w-3 mr-1" />
+                          Delete ({selectedEmails.length})
+                        </Button>
+                      </div>
+                  </div>
+                )}
+
+                {/* Share Records List */}
+                <div className="space-y-2 max-h-[160px] overflow-y-auto border rounded-md">
+                  {loading ? (
+                    <div className="flex items-center justify-center p-4">
+                      <FaSpinner className="animate-spin mr-2" />
+                      Loading shares...
+                    </div>
+                  ) : shareRecords.length === 0 ? (
+                    <p className="text-sm text-gray-500 italic text-center p-4">
+                      Not shared with anyone yet
+                    </p>
+                  ) : (
+                    shareRecords.map((record, index) => (
+                      <div
+                        key={index}
+                        className="flex items-center justify-between p-2 bg-gray-50 rounded-md"
+                      >
+                        <div className="flex items-center gap-2">
+                          <div className="w-4 h-4 flex items-center justify-center">
+                            <Checkbox
+                              checked={selectedEmails.includes(record.email)}
+                              onCheckedChange={(checked) => handleSelectEmail(record.email, checked as boolean)}
+                              className={shareRecords.length >= 2 ? "visible" : "invisible"}
+                            />
+                          </div>
+                          <Mail className="h-4 w-4 text-gray-500" />
+                          <span className="text-sm flex-1">{record.email}</span>
+                          
+                          {/* Permission Selector */}
+                          <Select 
+                            value={record.permission} 
+                            onValueChange={(value: 'view' | 'edit') => handlePermissionChange(record.email, value)}
+                          >
+                            <SelectTrigger className="w-16 h-6">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="view">View</SelectItem>
+                              <SelectItem value="edit">Edit</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          
+                        </div>
+                        
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 w-6 p-0 ml-2 hover:bg-red-100 hover:text-red-600"
+                          onClick={() => handleRemoveEmail(record.email)}
+                        >
+                          <X className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    ))
+                  )}
+                </div>
+
+                <p className="text-xs text-gray-500">
+                  Once shared, others will be able to view and edit the contents of this workspace based on their permission level.
+                </p>
+
+                {/* Save Sharing Settings Button */}
+                <div className="flex justify-end">
+                  <Button
+                    onClick={handleSaveSharing}
+                    disabled={savingShares || loading || shareRecords.length === 0}
+                    size="sm"
+                    className="px-4"
+                  >
+                    {savingShares ? (
+                      <>
+                        <FaSpinner className="animate-spin mr-2" />
+                        Saving...
+                      </>
+                    ) : (
+                      "Save Sharing Settings"
+                    )}
+                  </Button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
-        {/* Footer */}
-        <DialogFooter>
-          <Button
-            variant="outline"
-            onClick={handleClose}
-            disabled={isRenaming || savingShares}
-          >
-            Close
-          </Button>
-        </DialogFooter>
+
+
       </DialogContent>
     </Dialog>
   );

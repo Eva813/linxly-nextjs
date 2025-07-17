@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { usePromptSpaceActions } from "@/hooks/promptSpace";
 import {
   Dialog,
@@ -12,6 +12,23 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  ColumnDef,
+  flexRender,
+  getCoreRowModel,
+  useReactTable,
+  getFilteredRowModel,
+  getSortedRowModel,
+  RowSelectionState,
+} from "@tanstack/react-table";
 import { FaSpinner } from "react-icons/fa";
 import { X, Mail, Plus, Trash2, Copy, CheckCircle, AlertCircle } from "lucide-react";
 import { 
@@ -48,6 +65,7 @@ const SpaceSettingsDialog: React.FC<SpaceSettingsDialogProps> = ({
   const [shareRecords, setShareRecords] = useState<ShareRecord[]>([]);
   const [originalShareRecords, setOriginalShareRecords] = useState<ShareRecord[]>([]);
   const [selectedEmails, setSelectedEmails] = useState<string[]>([]);
+  const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
   const [loading, setLoading] = useState(false);
   const [savingShares, setSavingShares] = useState(false);
   const [progress, setProgress] = useState({ completed: 0, total: 0 });
@@ -87,6 +105,7 @@ const SpaceSettingsDialog: React.FC<SpaceSettingsDialogProps> = ({
       setEmailInput("");
       setSelectedPermission('view');
       setSelectedEmails([]);
+      setRowSelection({});
       setSuccessMessage("");
       setErrorMessage("");
       setInviteLinks({});
@@ -141,62 +160,128 @@ const SpaceSettingsDialog: React.FC<SpaceSettingsDialogProps> = ({
     setErrorMessage("");
   };
 
-  // Update permission for existing share
-  const handlePermissionChange = (email: string, newPermission: 'view' | 'edit') => {
-    setShareRecords(shareRecords.map(record => 
-      record.email === email ? { ...record, permission: newPermission } : record
-    ));
-  };
 
-  // Remove email from local list
-  const handleRemoveEmail = async (emailToRemove: string) => {
-    try {
-      // Check if this email exists in original records (was saved to backend)
-      const existingRecord = originalShareRecords.find(record => record.email === emailToRemove);
-      
-      if (existingRecord) {
-        // Email exists in backend, delete it immediately
-        setLoading(true);
-        const deleteResults = await batchDeleteShares(spaceId, [emailToRemove]);
-        
-        if (deleteResults.failed.length > 0) {
-          setErrorMessage(`Failed to delete ${emailToRemove}: ${deleteResults.failed[0].reason}`);
-          return;
-        }
-        
-        // Update original records to reflect deletion
-        setOriginalShareRecords(originalShareRecords.filter(record => record.email !== emailToRemove));
-        setSuccessMessage(`Successfully removed ${emailToRemove}`);
-      }
-      
-      // Remove from local state regardless
-      setShareRecords(shareRecords.filter(record => record.email !== emailToRemove));
-      setSelectedEmails(selectedEmails.filter(email => email !== emailToRemove));
-      
-    } catch (error) {
-      console.error('Failed to remove email:', error);
-      setErrorMessage(`Failed to remove ${emailToRemove}`);
-    } finally {
-      setLoading(false);
-    }
-  };
 
-  // Batch selection
-  const handleSelectEmail = (email: string, isSelected: boolean) => {
-    if (isSelected) {
-      setSelectedEmails([...selectedEmails, email]);
-    } else {
-      setSelectedEmails(selectedEmails.filter(e => e !== email));
-    }
-  };
+  // Define columns for the data table
+  const columns = useMemo<ColumnDef<ShareRecord>[]>(() => [
+    {
+      id: "select",
+      header: ({ table }) => (
+        <Checkbox
+          checked={table.getIsAllPageRowsSelected()}
+          onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+          aria-label="Select all"
+        />
+      ),
+      cell: ({ row }) => (
+        <Checkbox
+          checked={row.getIsSelected()}
+          onCheckedChange={(value) => row.toggleSelected(!!value)}
+          aria-label="Select row"
+        />
+      ),
+      enableSorting: false,
+      enableHiding: false,
+    },
+    {
+      accessorKey: "email",
+      header: "Email",
+      cell: ({ row }) => (
+        <div className="flex items-center gap-2">
+          <Mail className="h-4 w-4 text-gray-500" />
+          <span className="text-sm">{row.getValue("email")}</span>
+        </div>
+      ),
+    },
+    {
+      accessorKey: "permission",
+      header: "Permission",
+      cell: ({ row }) => (
+        <Select
+          value={row.original.permission}
+          onValueChange={(value: 'view' | 'edit') => {
+            setShareRecords(shareRecords.map(record => 
+              record.email === row.original.email ? { ...record, permission: value } : record
+            ));
+          }}
+        >
+          <SelectTrigger className="w-20 h-8">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="view">View</SelectItem>
+            <SelectItem value="edit">Edit</SelectItem>
+          </SelectContent>
+        </Select>
+      ),
+    },
+    {
+      id: "actions",
+      header: "Actions",
+      cell: ({ row }) => (
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-8 w-8 p-0 hover:bg-red-100 hover:text-red-600"
+          onClick={async () => {
+            const emailToRemove = row.original.email;
+            try {
+              // Check if this email exists in original records (was saved to backend)
+              const existingRecord = originalShareRecords.find(record => record.email === emailToRemove);
+              
+              if (existingRecord) {
+                // Email exists in backend, delete it immediately
+                setLoading(true);
+                const deleteResults = await batchDeleteShares(spaceId, [emailToRemove]);
+                
+                if (deleteResults.failed.length > 0) {
+                  setErrorMessage(`Failed to delete ${emailToRemove}: ${deleteResults.failed[0].reason}`);
+                  return;
+                }
+                
+                // Update original records to reflect deletion
+                setOriginalShareRecords(originalShareRecords.filter(record => record.email !== emailToRemove));
+                setSuccessMessage(`Successfully removed ${emailToRemove}`);
+              }
+              
+              // Remove from local state regardless
+              setShareRecords(shareRecords.filter(record => record.email !== emailToRemove));
+              setSelectedEmails(selectedEmails.filter(email => email !== emailToRemove));
+              
+            } catch (error) {
+              console.error('Failed to remove email:', error);
+              setErrorMessage(`Failed to remove ${emailToRemove}`);
+            } finally {
+              setLoading(false);
+            }
+          }}
+        >
+          <X className="h-4 w-4" />
+        </Button>
+      ),
+      enableSorting: false,
+    },
+  ], [shareRecords, originalShareRecords, selectedEmails, spaceId, setLoading, setErrorMessage, setSuccessMessage, setOriginalShareRecords, setShareRecords, setSelectedEmails]);
 
-  const handleSelectAll = (isSelected: boolean) => {
-    if (isSelected) {
-      setSelectedEmails(shareRecords.map(record => record.email));
-    } else {
-      setSelectedEmails([]);
-    }
-  };
+  // Create table instance
+  const table = useReactTable({
+    data: shareRecords,
+    columns,
+    getCoreRowModel: getCoreRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    onRowSelectionChange: setRowSelection,
+    state: {
+      rowSelection,
+    },
+  });
+
+  // Sync table selection with selectedEmails
+  useEffect(() => {
+    const selectedRows = table.getFilteredSelectedRowModel().rows;
+    const emails = selectedRows.map(row => row.original.email);
+    setSelectedEmails(emails);
+  }, [rowSelection, table]);
 
   const handleBatchDelete = async () => {
     try {
@@ -225,6 +310,7 @@ const SpaceSettingsDialog: React.FC<SpaceSettingsDialogProps> = ({
       // Remove from local state
       setShareRecords(shareRecords.filter(record => !selectedEmails.includes(record.email)));
       setSelectedEmails([]);
+      setRowSelection({});
       
     } catch (error) {
       console.error('Failed to batch delete:', error);
@@ -341,7 +427,6 @@ const SpaceSettingsDialog: React.FC<SpaceSettingsDialogProps> = ({
     }
   };
 
-  const isAllSelected = shareRecords.length > 0 && selectedEmails.length === shareRecords.length;
 
   const handleClose = () => {
     if (!isRenaming && !savingShares) {
@@ -623,83 +708,89 @@ const SpaceSettingsDialog: React.FC<SpaceSettingsDialogProps> = ({
                 )}
 
                 {/* Batch Operations */}
-                {shareRecords.length >= 2 && (
+                {shareRecords.length > 0 && selectedEmails.length > 0 && (
                   <div className="flex items-center justify-between p-2 border rounded-md bg-gray-25 w-full min-h-[44px]">
-                      <div className="flex items-center gap-2">
-                        <Checkbox
-                          checked={isAllSelected}
-                          onCheckedChange={(checked) => handleSelectAll(checked as boolean)}
-                        />
-                        <span className="text-sm text-gray-600">Select All</span>
-                      </div>
-                      <div className="min-w-[100px] flex justify-end">
-                        <Button
-                          variant="destructive"
-                          size="sm"
-                          onClick={handleBatchDelete}
-                          className={`h-[30px] px-3 bg-rose-500 text-white hover:bg-rose-600 ${selectedEmails.length > 0 ? 'visible' : 'invisible'}`}
-                        >
-                          <Trash2 className="h-3 w-3 mr-1" />
-                          Delete ({selectedEmails.length})
-                        </Button>
-                      </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-gray-600">
+                        {selectedEmails.length} of {shareRecords.length} selected
+                      </span>
+                    </div>
+                    <div className="min-w-[100px] flex justify-end">
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={handleBatchDelete}
+                        className="h-[30px] px-3 bg-rose-500 text-white hover:bg-rose-600"
+                      >
+                        <Trash2 className="h-3 w-3 mr-1" />
+                        Delete ({selectedEmails.length})
+                      </Button>
+                    </div>
                   </div>
                 )}
 
-                {/* Share Records List */}
-                <div className="space-y-2 max-h-[160px] overflow-y-auto border rounded-md">
+                {/* Share Records Data Table */}
+                <div className="border rounded-md max-h-[200px] overflow-hidden">
                   {loading ? (
-                    <div className="flex items-center justify-center p-4">
+                    <div className="flex items-center justify-center p-8">
                       <FaSpinner className="animate-spin mr-2" />
                       Loading shares...
                     </div>
                   ) : shareRecords.length === 0 ? (
-                    <p className="text-sm text-gray-500 italic text-center p-4">
-                      Not shared with anyone yet
-                    </p>
+                    <div className="text-center p-8">
+                      <p className="text-sm text-gray-500 italic">
+                        Not shared with anyone yet
+                      </p>
+                    </div>
                   ) : (
-                    shareRecords.map((record, index) => (
-                      <div
-                        key={index}
-                        className="flex items-center justify-between p-2 bg-gray-50 rounded-md"
-                      >
-                        <div className="flex items-center gap-2">
-                          <div className="w-4 h-4 flex items-center justify-center">
-                            <Checkbox
-                              checked={selectedEmails.includes(record.email)}
-                              onCheckedChange={(checked) => handleSelectEmail(record.email, checked as boolean)}
-                              className={shareRecords.length >= 2 ? "visible" : "invisible"}
-                            />
-                          </div>
-                          <Mail className="h-4 w-4 text-gray-500" />
-                          <span className="text-sm flex-1">{record.email}</span>
-                          
-                          {/* Permission Selector */}
-                          <Select 
-                            value={record.permission} 
-                            onValueChange={(value: 'view' | 'edit') => handlePermissionChange(record.email, value)}
-                          >
-                            <SelectTrigger className="w-16 h-6">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="view">View</SelectItem>
-                              <SelectItem value="edit">Edit</SelectItem>
-                            </SelectContent>
-                          </Select>
-                          
-                        </div>
-                        
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-6 w-6 p-0 ml-2 hover:bg-red-100 hover:text-red-600"
-                          onClick={() => handleRemoveEmail(record.email)}
-                        >
-                          <X className="h-3 w-3" />
-                        </Button>
-                      </div>
-                    ))
+                    <div className="max-h-[200px] overflow-y-auto">
+                      <Table>
+                        <TableHeader className="sticky top-0 bg-white z-10 border-b">
+                          {table.getHeaderGroups().map((headerGroup) => (
+                            <TableRow key={headerGroup.id}>
+                              {headerGroup.headers.map((header) => (
+                                <TableHead key={header.id}>
+                                  {header.isPlaceholder
+                                    ? null
+                                    : flexRender(
+                                        header.column.columnDef.header,
+                                        header.getContext()
+                                      )}
+                                </TableHead>
+                              ))}
+                            </TableRow>
+                          ))}
+                        </TableHeader>
+                        <TableBody>
+                          {table.getRowModel().rows?.length ? (
+                            table.getRowModel().rows.map((row) => (
+                              <TableRow
+                                key={row.id}
+                                data-state={row.getIsSelected() && "selected"}
+                              >
+                                {row.getVisibleCells().map((cell) => (
+                                  <TableCell key={cell.id}>
+                                    {flexRender(
+                                      cell.column.columnDef.cell,
+                                      cell.getContext()
+                                    )}
+                                  </TableCell>
+                                ))}
+                              </TableRow>
+                            ))
+                          ) : (
+                            <TableRow>
+                              <TableCell
+                                colSpan={columns.length}
+                                className="h-24 text-center"
+                              >
+                                No results.
+                              </TableCell>
+                            </TableRow>
+                          )}
+                        </TableBody>
+                      </Table>
+                    </div>
                   )}
                 </div>
 

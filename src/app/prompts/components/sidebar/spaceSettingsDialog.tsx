@@ -68,10 +68,10 @@ const SpaceSettingsDialog: React.FC<SpaceSettingsDialogProps> = ({
   const {
     inviteLinks,
     generatingLink,
+    loading: inviteLinksLoading,
     generateInviteLink,
-    copyInviteLink,
-    resetInviteLinks
-  } = useInviteLinks({ spaceId });
+    copyInviteLink
+  } = useInviteLinks({ spaceId, isOpen });
 
   // Reset state when dialog opens
   useEffect(() => {
@@ -84,9 +84,9 @@ const SpaceSettingsDialog: React.FC<SpaceSettingsDialogProps> = ({
       setSuccessMessage("");
       setErrorMessage("");
       setActiveTab('general');
-      resetInviteLinks();
+      // Don't reset invite links - they should persist across dialog opens
     }
-  }, [isOpen, currentName, resetInviteLinks]);
+  }, [isOpen, currentName]);
 
 
   // Rename space
@@ -196,14 +196,14 @@ const SpaceSettingsDialog: React.FC<SpaceSettingsDialogProps> = ({
       setSelectedEmails([]);
       setSuccessMessage("");
       setErrorMessage("");
-      resetInviteLinks();
+      // Keep invite links - they should persist across dialog sessions
       onClose();
     }
-  }, [isRenaming, savingShares, currentName, resetInviteLinks, onClose]);
+  }, [isRenaming, savingShares, currentName, onClose]);
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-[700px] max-h-[80vh] overflow-hidden p-4">
+      <DialogContent className="sm:max-w-[700px] max-h-[80vh] overflow-hidden p-4" aria-describedby={undefined}>
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <span>Space Settings</span>
@@ -316,6 +316,7 @@ const SpaceSettingsDialog: React.FC<SpaceSettingsDialogProps> = ({
                 <InviteLinksSection
                   inviteLinks={inviteLinks}
                   generatingLink={generatingLink}
+                  loading={inviteLinksLoading}
                   onGenerateLink={handleGenerateInviteLink}
                   onCopyLink={handleCopyInviteLink}
                 />

@@ -77,6 +77,14 @@ export interface CreateInviteLinkResponse {
   expiresAt: string;
 }
 
+export interface GetInviteLinksResponse {
+  inviteLinks: {
+    view?: { link: string; shareId: string; expiresAt: string };
+    edit?: { link: string; shareId: string; expiresAt: string };
+  };
+  success: boolean;
+}
+
 // Base API function with error handling
 const apiCall = async <T>(url: string, options: RequestInit = {}): Promise<T> => {
   const response = await fetch(url, {
@@ -163,6 +171,16 @@ export const acceptInvite = async (
     method: 'POST',
     body: JSON.stringify({ userId }),
   });
+};
+
+/**
+ * Get existing invite links for a space (owner only)
+ */
+export const getInviteLinks = async (
+  spaceId: string
+): Promise<GetInviteLinksResponse> => {
+  const url = `/api/v1/prompt-spaces/${spaceId}/invite-links`;
+  return apiCall<GetInviteLinksResponse>(url);
 };
 
 /**

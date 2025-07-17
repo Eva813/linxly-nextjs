@@ -730,69 +730,67 @@ const SpaceSettingsDialog: React.FC<SpaceSettingsDialogProps> = ({
                 )}
 
                 {/* Share Records Data Table */}
-                <div className="border rounded-md max-h-[200px] overflow-hidden">
-                  {loading ? (
-                    <div className="flex items-center justify-center p-8">
-                      <FaSpinner className="animate-spin mr-2" />
-                      Loading shares...
-                    </div>
-                  ) : shareRecords.length === 0 ? (
-                    <div className="text-center p-8">
-                      <p className="text-sm text-gray-500 italic">
-                        Not shared with anyone yet
-                      </p>
-                    </div>
-                  ) : (
-                    <div className="max-h-[200px] overflow-y-auto">
-                      <Table>
-                        <TableHeader className="sticky top-0 bg-white z-10 border-b">
-                          {table.getHeaderGroups().map((headerGroup) => (
-                            <TableRow key={headerGroup.id}>
-                              {headerGroup.headers.map((header) => (
-                                <TableHead key={header.id}>
-                                  {header.isPlaceholder
-                                    ? null
-                                    : flexRender(
-                                        header.column.columnDef.header,
-                                        header.getContext()
-                                      )}
-                                </TableHead>
+                {loading ? (
+                  <div className="flex items-center justify-center p-8 border rounded-md">
+                    <FaSpinner className="animate-spin mr-2" />
+                    Loading shares...
+                  </div>
+                ) : shareRecords.length === 0 ? (
+                  <div className="text-center p-8 border rounded-md">
+                    <p className="text-sm text-gray-500 italic">
+                      Not shared with anyone yet
+                    </p>
+                  </div>
+                ) : (
+                  <div className="relative w-full max-h-[200px] border rounded-md overflow-y-auto">
+                    <Table noWrapper>
+                      <TableHeader className="bg-background sticky top-0 z-10">
+                        {table.getHeaderGroups().map((headerGroup) => (
+                          <TableRow key={headerGroup.id}>
+                            {headerGroup.headers.map((header) => (
+                              <TableHead key={header.id}>
+                                {header.isPlaceholder
+                                  ? null
+                                  : flexRender(
+                                      header.column.columnDef.header,
+                                      header.getContext()
+                                    )}
+                              </TableHead>
+                            ))}
+                          </TableRow>
+                        ))}
+                      </TableHeader>
+                      <TableBody>
+                        {table.getRowModel().rows?.length ? (
+                          table.getRowModel().rows.map((row) => (
+                            <TableRow
+                              key={row.id}
+                              data-state={row.getIsSelected() && "selected"}
+                            >
+                              {row.getVisibleCells().map((cell) => (
+                                <TableCell key={cell.id}>
+                                  {flexRender(
+                                    cell.column.columnDef.cell,
+                                    cell.getContext()
+                                  )}
+                                </TableCell>
                               ))}
                             </TableRow>
-                          ))}
-                        </TableHeader>
-                        <TableBody>
-                          {table.getRowModel().rows?.length ? (
-                            table.getRowModel().rows.map((row) => (
-                              <TableRow
-                                key={row.id}
-                                data-state={row.getIsSelected() && "selected"}
-                              >
-                                {row.getVisibleCells().map((cell) => (
-                                  <TableCell key={cell.id}>
-                                    {flexRender(
-                                      cell.column.columnDef.cell,
-                                      cell.getContext()
-                                    )}
-                                  </TableCell>
-                                ))}
-                              </TableRow>
-                            ))
-                          ) : (
-                            <TableRow>
-                              <TableCell
-                                colSpan={columns.length}
-                                className="h-24 text-center"
-                              >
-                                No results.
-                              </TableCell>
-                            </TableRow>
-                          )}
-                        </TableBody>
-                      </Table>
-                    </div>
-                  )}
-                </div>
+                          ))
+                        ) : (
+                          <TableRow>
+                            <TableCell
+                              colSpan={columns.length}
+                              className="h-24 text-center"
+                            >
+                              No results.
+                            </TableCell>
+                          </TableRow>
+                        )}
+                      </TableBody>
+                    </Table>
+                  </div>
+                )}
 
                 <p className="text-xs text-gray-500">
                   Once shared, others will be able to view and edit the contents of this workspace based on their permission level.

@@ -2,7 +2,7 @@
 
 import dynamic from 'next/dynamic';
 import { useParams } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { usePromptStore } from "@/stores/prompt";
@@ -30,7 +30,7 @@ export default function BoardPage() {
   const params = useParams();
   const boardId = params?.boardId as string;
   const { boardName, setBoardName, saveBoardName } = useBoardStorage(boardId);
-  const { fetchFolders } = usePromptStore();
+  // Folders are available from store - no need to fetch here
 
   const [selectedFolder, setSelectedFolder] = useState<string | null>(null);
   const [promptToAdd, setPromptToAdd] = useState<Prompt | null>(null);
@@ -39,16 +39,7 @@ export default function BoardPage() {
     setPromptToAdd(prompt);
   };
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        await fetchFolders();
-      } catch (error) {
-        console.error('Failed to fetch folders:', error);
-      }
-    };
-    fetchData();
-  }, [fetchFolders]);
+  // Folders are fetched by FullPageLoading and managed by store
 
   return (
     <div className="w-full h-[calc(100vh-64px)] bg-white-50">

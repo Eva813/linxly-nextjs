@@ -1,5 +1,6 @@
 import { useCallback } from 'react';
 import { usePromptSpaceStore } from '@/stores/promptSpace';
+import { usePromptStore } from '@/stores/prompt';
 import { promptSpaceApi } from '@/lib/api/promptSpace';
 
 export const usePromptSpaceActions = () => {
@@ -13,6 +14,7 @@ export const usePromptSpaceActions = () => {
     setError, 
     setCreatingSpace 
   } = usePromptSpaceStore();
+  const { fetchFolders } = usePromptStore();
 
   const fetchSpaces = useCallback(async () => {
     try {
@@ -120,10 +122,22 @@ export const usePromptSpaceActions = () => {
     }
   }, [setLoading, setError, removeSpace]);
 
+  // 切換 space 並自動獲取該 space 的 folders
+  const switchToSpace = async (spaceId: string) => {
+    try {
+      setCurrentSpace(spaceId);
+      await fetchFolders(spaceId);
+    } catch (error) {
+      console.error('Failed to fetch folders for space:', spaceId, error);
+      // 即使 fetchFolders 失敗，仍然切換 space
+    }
+  };
+
   return {
     fetchSpaces,
     createSpace,
     renameSpace,
-    deleteSpace
+    deleteSpace,
+    switchToSpace
   };
 };

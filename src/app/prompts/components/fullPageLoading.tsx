@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
-import { usePromptStore } from "@/stores/prompt";
+import { usePromptSpaceActions } from "@/hooks/promptSpace";
 import { Skeleton } from "@/components/ui/skeleton";
 import EditorSkeleton from "@/app/prompts/components/editorSkeleton";
 import LoadingOverlay from "@/app/components/loadingOverlay";
@@ -9,7 +9,7 @@ import { useRouter } from "next/navigation";
 
 // 當資料尚未載入完成時顯示載入動畫
 export default function FullPageLoading({ children }: { children: React.ReactNode }) {
-  const { fetchFolders } = usePromptStore();
+  const { fetchSpaces } = usePromptSpaceActions();
   const [isLoaded, setIsLoaded] = useState(false);
   // guard ref，確保只呼叫一次
   const hasCalled = useRef(false);
@@ -19,7 +19,8 @@ useEffect(() => {
   if (hasCalled.current) return;
   hasCalled.current = true;
 
-  fetchFolders()
+  // Initialize spaces only - folders will be fetched when space is selected
+  fetchSpaces()
     .then(() => {
       setIsLoaded(true);
     })
@@ -27,11 +28,11 @@ useEffect(() => {
       if (err.status === 401) {
         router.replace('/login');
       } else {
-        console.error('fetchFolders error:', err);
+        console.error('fetchSpaces error:', err);
         setIsLoaded(true); 
       }
     });
-}, [fetchFolders, router]);
+}, [fetchSpaces, router]);
 
   if (!isLoaded) {
     return (

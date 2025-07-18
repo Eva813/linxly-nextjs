@@ -27,13 +27,12 @@ const PromptSpaceSelector: React.FC<PromptSpaceSelectorProps> = ({ onCreateSpace
     ownedSpaces,
     sharedSpaces,
     currentSpaceId, 
-    setCurrentSpace, 
     getCurrentSpace,
     getCurrentSpaceRole,
     isLoading 
   } = usePromptSpaceStore();
-  const { fetchSpaces, deleteSpace } = usePromptSpaceActions();
-  const { fetchFolders, folders } = usePromptStore();
+  const { fetchSpaces, deleteSpace, switchToSpace } = usePromptSpaceActions();
+  const { folders } = usePromptStore();
   const { navigateToFirstFolderIfNeeded, navigation } = useSmartNavigation();
 
   const currentSpace = getCurrentSpace();
@@ -45,16 +44,10 @@ const PromptSpaceSelector: React.FC<PromptSpaceSelectorProps> = ({ onCreateSpace
   const [settingsDialogOpen, setSettingsDialogOpen] = useState(false);
   const [spaceToEdit, setSpaceToEdit] = useState<{id: string, name: string} | null>(null);
 
+  // Fetch spaces once on mount - folders will be fetched automatically
   useEffect(() => {
     fetchSpaces();
   }, [fetchSpaces]);
-
-  // When currentSpaceId changes, fetch folders for that space
-  useEffect(() => {
-    if (currentSpaceId) {
-      fetchFolders(currentSpaceId);
-    }
-  }, [currentSpaceId, fetchFolders]);
 
   // 智能導航：只在需要時導航到第一個資料夾
   useEffect(() => {
@@ -68,7 +61,7 @@ const PromptSpaceSelector: React.FC<PromptSpaceSelectorProps> = ({ onCreateSpace
   }, [folders, currentSpaceId, navigation.currentFolderId, navigateToFirstFolderIfNeeded]);
 
   const handleSpaceChange = (spaceId: string) => {
-    setCurrentSpace(spaceId);
+    switchToSpace(spaceId);
   };
 
   const handleSettingsClose = () => {

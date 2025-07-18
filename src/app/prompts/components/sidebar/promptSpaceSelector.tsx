@@ -1,10 +1,8 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { usePromptSpaceStore } from "@/stores/promptSpace";
 import { usePromptSpaceActions } from "@/hooks/promptSpace";
-import { usePromptStore } from "@/stores/prompt";
-import { useSmartNavigation } from "@/hooks/sidebar";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -31,9 +29,9 @@ const PromptSpaceSelector: React.FC<PromptSpaceSelectorProps> = ({ onCreateSpace
     getCurrentSpaceRole,
     isLoading 
   } = usePromptSpaceStore();
-  const { fetchSpaces, deleteSpace, switchToSpace } = usePromptSpaceActions();
-  const { folders } = usePromptStore();
-  const { navigateToFirstFolderIfNeeded, navigation } = useSmartNavigation();
+  const { deleteSpace, switchToSpace } = usePromptSpaceActions();
+  
+
 
   const currentSpace = getCurrentSpace();
   const currentSpaceRole = getCurrentSpaceRole();
@@ -44,24 +42,17 @@ const PromptSpaceSelector: React.FC<PromptSpaceSelectorProps> = ({ onCreateSpace
   const [settingsDialogOpen, setSettingsDialogOpen] = useState(false);
   const [spaceToEdit, setSpaceToEdit] = useState<{id: string, name: string} | null>(null);
 
-  // Fetch spaces once on mount - folders will be fetched automatically
-  useEffect(() => {
-    fetchSpaces();
-  }, [fetchSpaces]);
+  // Spaces are already initialized by fullPageLoading, no need to fetch again
 
-  // 智能導航：只在需要時導航到第一個資料夾
-  useEffect(() => {
-    if (currentSpaceId && folders.length > 0) {
-      navigateToFirstFolderIfNeeded(
-        folders, 
-        currentSpaceId, 
-        navigation.currentFolderId
-      );
+  // 移除 smart navigation - 這會在 switchToSpace 中直接處理
+
+  const handleSpaceChange = async (spaceId: string) => {
+    try {
+      // 用戶主動切換 space 時，強制導航到第一個 folder
+      await switchToSpace(spaceId, true);
+    } catch (error) {
+      console.error('Error in handleSpaceChange:', error);
     }
-  }, [folders, currentSpaceId, navigation.currentFolderId, navigateToFirstFolderIfNeeded]);
-
-  const handleSpaceChange = (spaceId: string) => {
-    switchToSpace(spaceId);
   };
 
   const handleSettingsClose = () => {

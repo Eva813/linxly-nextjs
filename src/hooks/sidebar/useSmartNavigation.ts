@@ -28,21 +28,35 @@ export const useSmartNavigation = () => {
     // 如果沒有資料夾，不進行導航
     if (folders.length === 0) return;
 
-    // 如果當前已經在某個資料夾頁面，且該資料夾存在於新的 space 中，不進行導航
-    if (currentFolderId && folders.some(folder => folder.id === currentFolderId)) {
+    // 檢查當前是否在 prompt 頁面 - 如果是，不要進行自動導航
+    if (navigation.currentPromptId) {
+      console.log('Smart navigation skipped: user is viewing a prompt');
       return;
     }
 
-    // 如果是同一個 space，不進行導航
-    if (lastNavigatedSpaceRef.current === currentSpaceId) {
+    // 如果是不同的 space，導航到第一個資料夾
+    if (lastNavigatedSpaceRef.current !== currentSpaceId) {
+      console.log('Smart navigation: switching to first folder of new space', {
+        lastNavigatedSpace: lastNavigatedSpaceRef.current,
+        currentSpaceId,
+        firstFolderId: folders[0]?.id
+      });
+      // 延遲導航，避免在快速切換時造成不必要的導航
+      navigationTimeoutRef.current = setTimeout(() => {
+        navigation.navigateToFolder(folders[0].id);
+        lastNavigatedSpaceRef.current = currentSpaceId;
+        console.log('Smart navigation: updated lastNavigatedSpace to', currentSpaceId);
+      }, 100);
       return;
     }
 
-    // 延遲導航，避免在快速切換時造成不必要的導航
-    navigationTimeoutRef.current = setTimeout(() => {
-      navigation.navigateToFolder(folders[0].id);
-      lastNavigatedSpaceRef.current = currentSpaceId;
-    }, 300);
+    // 如果是同一個 space，但沒有選中任何資料夾，導航到第一個
+    if (!currentFolderId && folders.length > 0) {
+      console.log('Smart navigation: no folder selected, navigating to first folder');
+      navigationTimeoutRef.current = setTimeout(() => {
+        navigation.navigateToFolder(folders[0].id);
+      }, 100);
+    }
 
   }, [navigation]);
 

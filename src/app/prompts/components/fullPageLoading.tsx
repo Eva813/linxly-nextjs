@@ -1,7 +1,9 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
-import { usePromptSpaceActions } from "@/hooks/promptSpace";
+import { usePromptSpaceStore } from "@/stores/promptSpace";
+import { usePromptStore } from "@/stores/prompt";
+import { promptSpaceApi } from '@/lib/api/promptSpace';
 import { Skeleton } from "@/components/ui/skeleton";
 import EditorSkeleton from "@/app/prompts/components/editorSkeleton";
 import LoadingOverlay from "@/app/components/loadingOverlay";
@@ -9,32 +11,93 @@ import { useRouter } from "next/navigation";
 
 // 當資料尚未載入完成時顯示載入動畫
 export default function FullPageLoading({ children }: { children: React.ReactNode }) {
-  const { fetchSpaces } = usePromptSpaceActions();
-  const [isLoaded, setIsLoaded] = useState(false);
+  const { 
+    currentSpaceId, 
+    isOverviewLoading, 
+    getCurrentSpaceOverview,
+    setAllSpaces,
+    setCurrentSpace,
+    loadSpaceOverview,
+    setLoading,
+    setError
+  } = usePromptSpaceStore();
+  const { fetchFolders } = usePromptStore();
+  const [isInitialized, setIsInitialized] = useState(false);
   // guard ref，確保只呼叫一次
   const hasCalled = useRef(false);
   const router = useRouter();
+  
+  const overview = getCurrentSpaceOverview();
 
 useEffect(() => {
   if (hasCalled.current) return;
   hasCalled.current = true;
 
-  // Initialize spaces only - folders will be fetched when space is selected
-  fetchSpaces()
-    .then(() => {
-      setIsLoaded(true);
-    })
-    .catch(err => {
+  // 初始化 spaces - 直接在這裡實作，不依賴外部函數
+  const initializeSpaces = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const response = await promptSpaceApi.getAll();
+      
+      // 轉換 owned spaces
+      const ownedSpaces = response.ownedSpaces.map(space => ({
+        id: space.id,
+        name: space.name,
+        userId: space.userId,
+        createdAt: new Date(space.createdAt),
+        updatedAt: space.updatedAt ? new Date(space.updatedAt) : undefined
+      }));
+      
+      // 轉換 shared spaces
+      const sharedSpaces = response.sharedSpaces.map(shared => ({
+        space: {
+          id: shared.space.id,
+          name: shared.space.name,
+          userId: shared.space.userId,
+          createdAt: new Date(shared.space.createdAt),
+          updatedAt: shared.space.updatedAt ? new Date(shared.space.updatedAt) : undefined
+        },
+        permission: shared.permission,
+        sharedBy: shared.sharedBy,
+        sharedAt: shared.sharedAt
+      }));
+      
+      setAllSpaces(ownedSpaces, sharedSpaces);
+      
+      // 設定第一個 space 並載入其 overview
+      const allSpaces = [...ownedSpaces, ...sharedSpaces.map(s => s.space)];
+      if (allSpaces.length > 0) {
+        const firstSpaceId = allSpaces[0].id;
+        setCurrentSpace(firstSpaceId);
+        await loadSpaceOverview(firstSpaceId);
+        // 同步 prompt store 的 folders 資料
+        await fetchFolders(firstSpaceId);
+      }
+      
+      setIsInitialized(true);
+    } catch (error) {
+      console.error('Failed to initialize spaces:', error);
+      const err = error as { status?: number };
       if (err.status === 401) {
         router.replace('/login');
       } else {
-        console.error('fetchSpaces error:', err);
-        setIsLoaded(true); 
+        setError(error instanceof Error ? error.message : 'Unknown error');
+        setIsInitialized(true); 
       }
-    });
-}, [fetchSpaces, router]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  if (!isLoaded) {
+  initializeSpaces();
+}, [router, setAllSpaces, setCurrentSpace, loadSpaceOverview, setLoading, setError, fetchFolders]);
+
+// 當 spaces 初始化完成且有 currentSpaceId 時，overview 會自動載入
+const isFullyLoaded = isInitialized && (!currentSpaceId || (overview && !isOverviewLoading));
+
+  if (!isFullyLoaded) {
     return (
       <div className="flex h-[calc(100vh-4rem)] overflow-hidden">
         {/* 側邊欄載入狀態 */}

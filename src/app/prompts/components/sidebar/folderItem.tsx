@@ -33,7 +33,7 @@ const FolderItem: React.FC<FolderItemProps> = ({
     toggleFolderCollapse 
   } = useSidebarStore();
   const { navigation, handleDeleteFolder } = useSidebarActions();
-  const isActiveFolder = navigation.pathname === `/prompts/folder/${folder.id}`;
+  const isActiveFolder = navigation.currentFolderId === folder.id;
   const isCollapsed = collapsedFolderIds.has(folder.id);
 
   return (

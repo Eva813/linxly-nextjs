@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { promptSpaceOverviewApi } from '@/api/promptSpaceOverview';
 
 export interface PromptSpace {
   id: string;
@@ -16,12 +17,40 @@ export interface SharedSpace {
   sharedAt: string;
 }
 
+interface PromptSpaceOverview {
+  space: {
+    id: string;
+    name: string;
+    userRole: 'owner' | 'edit' | 'view';
+    permissions: {
+      canEdit: boolean;
+      canDelete: boolean;
+      canShare: boolean;
+      canManageMembers: boolean;
+    };
+  };
+  folders: Array<{
+    id: string;
+    name: string;
+    description?: string;
+    promptCount: number;
+    lastUpdated: Date;
+    readOnly: boolean;
+  }>;
+  stats: {
+    totalFolders: number;
+    totalPrompts: number;
+  };
+}
+
 interface PromptSpaceState {
   ownedSpaces: PromptSpace[];
   sharedSpaces: SharedSpace[];
   currentSpaceId: string | null;
   currentSpaceRole: 'owner' | 'edit' | 'view' | null;
+  currentSpaceOverview: PromptSpaceOverview | null;
   isLoading: boolean;
+  isOverviewLoading: boolean;
   error: string | null;
   isCreatingSpace: boolean;
 }
@@ -31,14 +60,18 @@ interface PromptSpaceActions {
   setSharedSpaces: (spaces: SharedSpace[]) => void;
   setAllSpaces: (ownedSpaces: PromptSpace[], sharedSpaces: SharedSpace[]) => void;
   setCurrentSpace: (spaceId: string) => void;
+  loadSpaceOverview: (spaceId: string) => Promise<void>;
+  setCurrentSpaceOverview: (overview: PromptSpaceOverview | null) => void;
   addSpace: (space: PromptSpace) => void;
   updateSpace: (spaceId: string, updates: Partial<PromptSpace>) => void;
   removeSpace: (spaceId: string) => void;
   setLoading: (loading: boolean) => void;
+  setOverviewLoading: (loading: boolean) => void;
   setError: (error: string | null) => void;
   setCreatingSpace: (creating: boolean) => void;
   getCurrentSpace: () => PromptSpace | null;
   getCurrentSpaceRole: () => 'owner' | 'edit' | 'view' | null;
+  getCurrentSpaceOverview: () => PromptSpaceOverview | null;
   getAllSpaces: () => PromptSpace[];
 }
 
@@ -51,7 +84,9 @@ export const usePromptSpaceStore = create<PromptSpaceStore>()(
       sharedSpaces: [],
       currentSpaceId: null,
       currentSpaceRole: null,
+      currentSpaceOverview: null,
       isLoading: false,
+      isOverviewLoading: false,
       error: null,
       isCreatingSpace: false,
 
@@ -133,9 +168,32 @@ export const usePromptSpaceStore = create<PromptSpaceStore>()(
       
       setLoading: (loading) => set({ isLoading: loading }),
       
+      setOverviewLoading: (loading) => set({ isOverviewLoading: loading }),
+      
       setError: (error) => set({ error }),
       
       setCreatingSpace: (creating) => set({ isCreatingSpace: creating }),
+      
+      setCurrentSpaceOverview: (overview) => set({ currentSpaceOverview: overview }),
+      
+      loadSpaceOverview: async (spaceId: string) => {
+        const { setOverviewLoading, setError, setCurrentSpaceOverview } = get();
+        
+        try {
+          setOverviewLoading(true);
+          setError(null);
+          
+          const overview = await promptSpaceOverviewApi.getOverview(spaceId);
+          
+          setCurrentSpaceOverview(overview);
+        } catch (error) {
+          const errorMessage = error instanceof Error ? error.message : 'Failed to load space overview';
+          setError(errorMessage);
+          console.error('Error loading space overview:', error);
+        } finally {
+          setOverviewLoading(false);
+        }
+      },
       
       getCurrentSpace: () => {
         const { ownedSpaces, sharedSpaces, currentSpaceId } = get();
@@ -152,6 +210,11 @@ export const usePromptSpaceStore = create<PromptSpaceStore>()(
         return currentSpaceRole;
       },
       
+      getCurrentSpaceOverview: () => {
+        const { currentSpaceOverview } = get();
+        return currentSpaceOverview;
+      },
+      
       getAllSpaces: () => {
         const { ownedSpaces, sharedSpaces } = get();
         return [...ownedSpaces, ...sharedSpaces.map(shared => shared.space)];
@@ -164,6 +227,7 @@ export const usePromptSpaceStore = create<PromptSpaceStore>()(
         sharedSpaces: state.sharedSpaces, 
         currentSpaceId: state.currentSpaceId,
         currentSpaceRole: state.currentSpaceRole
+        // currentSpaceOverview 不持久化，每次重新獲取
       }),
     }
   )

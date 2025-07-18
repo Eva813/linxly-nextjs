@@ -1,7 +1,11 @@
 import React from 'react';
 import { usePromptSpacePermission } from '@/hooks/usePromptSpacePermission';
-import { Input, InputProps } from '@/components/ui/input';
-import { Textarea, TextareaProps } from '@/components/ui/textarea';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { ComponentProps } from 'react';
+
+type InputProps = ComponentProps<typeof Input>;
+type TextareaProps = ComponentProps<typeof Textarea>;
 
 /**
  * 權限感知的 Input 組件
@@ -14,8 +18,8 @@ export const EditableInput = React.forwardRef<HTMLInputElement, InputProps>(
     return (
       <Input
         ref={ref}
-        className={`${className} ${editableProps.className}`}
         {...editableProps}
+        className={`${className} ${editableProps.className}`}
         {...props}
       />
     );
@@ -35,8 +39,8 @@ export const EditableTextarea = React.forwardRef<HTMLTextAreaElement, TextareaPr
     return (
       <Textarea
         ref={ref}
-        className={`${className} ${editableProps.className}`}
         {...editableProps}
+        className={`${className} ${editableProps.className}`}
         {...props}
       />
     );

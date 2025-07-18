@@ -22,12 +22,12 @@ const PromptItem: React.FC<PromptItemProps> = React.memo(({
   const { activePromptMenuId, setActivePromptMenu } = useSidebarStore();
   const { navigation, handleDeletePrompt } = useSidebarActions();
   
-  const isActivePrompt = navigation.pathname === `/prompts/prompt/${prompt.id}`;
+  const isActivePrompt = navigation.currentPromptId === prompt.id;
 
   return (
     <li className="mb-2">
       <div
-        className={`flex items-center justify-between px-2 py-1 w-full font-bold block rounded hover:bg-light dark:hover:text-third ${
+        className={`flex items-center justify-between px-2 py-1 w-full font-bold rounded hover:bg-light dark:hover:text-third ${
           isActivePrompt ? "bg-light text-primary dark:text-third" : "bg-transparent"
         }`}
       >
@@ -37,7 +37,7 @@ const PromptItem: React.FC<PromptItemProps> = React.memo(({
           onClick={() => {
             if (isOpen) toggleSidebar();
           }}
-          className="flex-1 flex items-center justify-between block"
+          className="flex items-center justify-between flex-1"
         >
           <span className="max-w-[120px] truncate">{prompt.name}</span>
           <span className="inline-block px-3 py-0 border-2 border-secondary dark:text-third dark:border-third text-sm leading-5 rounded-full max-w-[120px] truncate">
@@ -54,7 +54,7 @@ const PromptItem: React.FC<PromptItemProps> = React.memo(({
                   activePromptMenuId === prompt.id ? null : prompt.id
                 );
               }}
-              className="focus:outline-none hover:bg-light dark:hover:bg-light p-1 rounded"
+              className="focus:outline-none hover:bg-light dark:hover:bg-light p-1 rounded ml-2"
             >
               <BsThreeDotsVertical className="text-gray-400" />
             </button>

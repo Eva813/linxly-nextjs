@@ -5,7 +5,6 @@ import { useParams } from 'next/navigation';
 import { useState } from 'react';
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { usePromptStore } from "@/stores/prompt";
 import { useBoardStorage } from './useBoardStorage';
 import { Prompt } from '@/types/prompt';
 import PromptSheet from './components/promptSheet'
@@ -30,7 +29,6 @@ export default function BoardPage() {
   const params = useParams();
   const boardId = params?.boardId as string;
   const { boardName, setBoardName, saveBoardName } = useBoardStorage(boardId);
-  // Folders are available from store - no need to fetch here
 
   const [selectedFolder, setSelectedFolder] = useState<string | null>(null);
   const [promptToAdd, setPromptToAdd] = useState<Prompt | null>(null);

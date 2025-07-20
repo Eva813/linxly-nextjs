@@ -5,17 +5,16 @@ import { useSidebarNavigation } from '@/hooks/sidebar/useSidebarNavigation';
 import { promptSpaceApi } from '@/lib/api/promptSpace';
 
 export const usePromptSpaceActions = () => {
-  const { 
+  const {
     setAllSpaces,
-    setCurrentSpace, 
+    setCurrentSpace,
     loadSpaceOverview,
-    getCurrentSpaceOverview,
-    addSpace, 
+    addSpace,
     updateSpace,
     removeSpace,
-    setLoading, 
-    setError, 
-    setCreatingSpace 
+    setLoading,
+    setError,
+    setCreatingSpace
   } = usePromptSpaceStore();
   const { fetchFolders } = usePromptStore();
   const navigation = useSidebarNavigation();
@@ -24,9 +23,9 @@ export const usePromptSpaceActions = () => {
     try {
       setLoading(true);
       setError(null);
-      
+
       const response = await promptSpaceApi.getAll();
-      
+
       // 轉換 owned spaces
       const ownedSpaces = response.ownedSpaces.map(space => ({
         id: space.id,
@@ -35,7 +34,7 @@ export const usePromptSpaceActions = () => {
         createdAt: new Date(space.createdAt),
         updatedAt: space.updatedAt ? new Date(space.updatedAt) : undefined
       }));
-      
+
       // 轉換 shared spaces
       const sharedSpaces = response.sharedSpaces.map(shared => ({
         space: {
@@ -49,9 +48,9 @@ export const usePromptSpaceActions = () => {
         sharedBy: shared.sharedBy,
         sharedAt: shared.sharedAt
       }));
-      
+
       setAllSpaces(ownedSpaces, sharedSpaces);
-      
+
       // 不在這裡設定 currentSpace，讓 fullPageLoading 處理初始化
     } catch (error) {
       console.error('Failed to fetch prompt spaces:', error);
@@ -65,15 +64,32 @@ export const usePromptSpaceActions = () => {
     try {
       setCreatingSpace(true);
       setError(null);
-      
+
+      // 1. 調用 API 創建新的 prompt space（後端只創建 space，不創建 folder）
       const newSpace = await promptSpaceApi.create({ name });
+
+      // 2. 將新創建的 space 添加到本地狀態中
       addSpace({
         id: newSpace.id,
         name: newSpace.name,
         userId: newSpace.userId,
         createdAt: new Date(newSpace.createdAt)
       });
-      
+
+      // 3. 立即切換到新創建的 space 並觸發完整的數據載入流程
+      // switchToSpace 會執行以下操作：
+      // - setCurrentSpace(spaceId) 
+      // - loadSpaceOverview(spaceId) 載入 space 詳細資訊
+      // - fetchFolders(spaceId) 載入 folders
+      // 
+      // 關鍵：fetchFolders 在 folderSlice 中有自動創建預設 folder 的邏輯
+      // 當檢測到 folders.length === 0 時，會自動調用 createFolder API
+      // 創建名為 "My Sample Prompts" 的預設 folder
+      //
+      // forceNavigateToFolder=true 確保用戶會被導航到第一個 folder
+      console.log('Creating new prompt space:', newSpace);
+      await switchToSpace(newSpace.id, true);
+
       return newSpace;
     } catch (error) {
       console.error('Failed to create prompt space:', error);
@@ -88,13 +104,13 @@ export const usePromptSpaceActions = () => {
     try {
       setLoading(true);
       setError(null);
-      
+
       const updatedSpace = await promptSpaceApi.update(spaceId, { name: newName });
       updateSpace(spaceId, {
         name: updatedSpace.name,
         updatedAt: new Date(updatedSpace.updatedAt || updatedSpace.createdAt)
       });
-      
+
       return updatedSpace;
     } catch (error) {
       console.error('Failed to rename prompt space:', error);
@@ -109,10 +125,10 @@ export const usePromptSpaceActions = () => {
     try {
       setLoading(true);
       setError(null);
-      
+
       await promptSpaceApi.delete(spaceId);
       removeSpace(spaceId);
-      
+
     } catch (error) {
       console.error('Failed to delete prompt space:', error);
       setError(error instanceof Error ? error.message : 'Unknown error');
@@ -128,18 +144,18 @@ export const usePromptSpaceActions = () => {
       setCurrentSpace(spaceId);
       // 自動載入 overview 資訊
       await loadSpaceOverview(spaceId);
-      
+
       // 同步 prompt store 的 folders 資料 - 等待完成後進行導航
       await fetchFolders(spaceId);
-      
-      // fetchFolders 完成後，store 的 folders 應該已經更新
-      // 導航邏輯：只有在強制導航或用戶不在查看 prompt 時才導航
-      const overview = getCurrentSpaceOverview();
-      if (overview?.folders && overview.folders.length > 0) {
+
+      // 使用 prompt store 的最新 folders 數據進行導航
+      const { folders } = usePromptStore.getState();
+
+      if (folders && folders.length > 0) {
         const shouldNavigate = forceNavigateToFolder || !navigation.currentPromptId;
-        
+
         if (shouldNavigate) {
-          const firstFolder = overview.folders[0];
+          const firstFolder = folders[0];
           console.log('Smart navigation: navigating to first folder after space switch', {
             folderId: firstFolder.id,
             folderName: firstFolder.name,

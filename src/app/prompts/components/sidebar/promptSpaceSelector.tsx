@@ -49,13 +49,16 @@ const PromptSpaceSelector: React.FC<PromptSpaceSelectorProps> = ({ onCreateSpace
 
   const handleSpaceChange = async (spaceId: string) => {
     try {
-      // 1. 切換 space 並載入數據
+      // 避免重複切換到相同的 space
+      if (currentSpaceId === spaceId) return;
+      
+      // 1. 切換 space 並載入數據 - switchToSpace 會更新所有相關狀態
       await switchToSpace(spaceId);
 
-      // 2. 導航到第一個 folder
-      const currentFolders = usePromptStore.getState().folders;
-      if (currentFolders.length > 0) {
-        navigation.navigateToFolder(currentFolders[0].id);
+      // 2. 導航到第一個 folder - 確保從最新狀態取得 folders
+      const freshFolders = usePromptStore.getState().folders;
+      if (freshFolders.length > 0) {
+        navigation.navigateToFolder(freshFolders[0].id);
       }
     } catch (error) {
       console.error('Error in handleSpaceChange:', error);
@@ -104,7 +107,12 @@ const PromptSpaceSelector: React.FC<PromptSpaceSelectorProps> = ({ onCreateSpace
               disabled={isLoading}
             >
               {isLoading ? (
-                <FaSpinner className="animate-spin" />
+                <div className="flex items-center gap-2">
+                  <FaSpinner className="animate-spin h-3 w-3" />
+                  <span className="truncate">
+                    {currentSpace?.name || "Loading..."}
+                  </span>
+                </div>
               ) : (
                 <>
                   <span className="truncate">

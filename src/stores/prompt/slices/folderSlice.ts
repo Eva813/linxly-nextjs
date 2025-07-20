@@ -14,6 +14,7 @@ export interface FolderSlice {
   addFolder: (folder: Omit<Folder, "id">, promptSpaceId?: string) => Promise<Folder>;
   deleteFolder: (id: string) => Promise<void>;
   clearCache: () => void;
+  clearSpaceCache: (spaceId: string) => void;
 }
 // 預設資料夾結構
 const DEFAULT_FOLDERS: Folder[] = [
@@ -205,4 +206,10 @@ export const createFolderSlice: StateCreator<FolderSlice> = (set, get) => ({
 
   // 清除快取方法
   clearCache: () => set({ folderCache: {} }),
+  // 清除特定 space 的快取
+  clearSpaceCache: (spaceId: string) => set((state) => {
+    const newCache = { ...state.folderCache };
+    delete newCache[spaceId];
+    return { folderCache: newCache };
+  }),
 });

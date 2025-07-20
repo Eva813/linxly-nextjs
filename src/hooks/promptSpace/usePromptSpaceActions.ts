@@ -1,7 +1,6 @@
 import { useCallback } from 'react';
 import { usePromptSpaceStore } from '@/stores/promptSpace';
 import { usePromptStore } from '@/stores/prompt';
-import { useSidebarNavigation } from '@/hooks/sidebar/useSidebarNavigation';
 import { promptSpaceApi } from '@/lib/api/promptSpace';
 
 export const usePromptSpaceActions = () => {
@@ -17,7 +16,6 @@ export const usePromptSpaceActions = () => {
     setCreatingSpace
   } = usePromptSpaceStore();
   const { fetchFolders } = usePromptStore();
-  const navigation = useSidebarNavigation();
 
   const fetchSpaces = useCallback(async () => {
     try {
@@ -86,9 +84,9 @@ export const usePromptSpaceActions = () => {
       // 當檢測到 folders.length === 0 時，會自動調用 createFolder API
       // 創建名為 "My Sample Prompts" 的預設 folder
       //
-      // forceNavigateToFolder=true 確保用戶會被導航到第一個 folder
+      // 切換到新創建的 space，載入 folders 數據
       console.log('Creating new prompt space:', newSpace);
-      await switchToSpace(newSpace.id, true);
+      await switchToSpace(newSpace.id);
 
       return newSpace;
     } catch (error) {
@@ -139,7 +137,7 @@ export const usePromptSpaceActions = () => {
   }, [setLoading, setError, removeSpace]);
 
   // 切換 space 並自動獲取該 space 的完整資訊
-  const switchToSpace = async (spaceId: string, forceNavigateToFolder = false) => {
+  const switchToSpace = async (spaceId: string) => {
     try {
       setCurrentSpace(spaceId);
       // 自動載入 overview 資訊
@@ -148,25 +146,7 @@ export const usePromptSpaceActions = () => {
       // 同步 prompt store 的 folders 資料 - 等待完成後進行導航
       await fetchFolders(spaceId);
 
-      // 使用 prompt store 的最新 folders 數據進行導航
-      const { folders } = usePromptStore.getState();
-
-      if (folders && folders.length > 0) {
-        const shouldNavigate = forceNavigateToFolder || !navigation.currentPromptId;
-
-        if (shouldNavigate) {
-          const firstFolder = folders[0];
-          console.log('Smart navigation: navigating to first folder after space switch', {
-            folderId: firstFolder.id,
-            folderName: firstFolder.name,
-            wasViewingPrompt: !!navigation.currentPromptId,
-            forceNavigate: forceNavigateToFolder
-          });
-          navigation.navigateToFolder(firstFolder.id);
-        } else {
-          console.log('Smart navigation: skipped navigation because user is viewing a prompt');
-        }
-      }
+      // switchToSpace 專注於數據載入，導航由調用者處理
     } catch (error) {
       console.error('Failed to switch to space:', spaceId, error);
     }

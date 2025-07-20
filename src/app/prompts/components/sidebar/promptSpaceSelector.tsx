@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import { usePromptSpaceStore } from "@/stores/promptSpace";
 import { usePromptSpaceActions } from "@/hooks/promptSpace";
+import { usePromptStore } from "@/stores/prompt";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -15,41 +16,47 @@ import { Settings } from "lucide-react";
 import { FaSpinner } from "react-icons/fa";
 import DeleteSpaceDialog from "./deleteSpaceDialog";
 import SpaceSettingsDialog from "./spaceSettingsDialog";
+import { useSmartNavigation } from "@/hooks/sidebar/useSmartNavigation";
 
 interface PromptSpaceSelectorProps {
   onCreateSpace: () => void;
 }
 
 const PromptSpaceSelector: React.FC<PromptSpaceSelectorProps> = ({ onCreateSpace }) => {
-  const { 
+  const {
     ownedSpaces,
     sharedSpaces,
-    currentSpaceId, 
+    currentSpaceId,
     getCurrentSpace,
     getCurrentSpaceRole,
-    isLoading 
+    isLoading
   } = usePromptSpaceStore();
   const { deleteSpace, switchToSpace } = usePromptSpaceActions();
-  
+  const { navigation } = useSmartNavigation();
+
 
 
   const currentSpace = getCurrentSpace();
   const currentSpaceRole = getCurrentSpaceRole();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [spaceToDelete, setSpaceToDelete] = useState<{id: string, name: string} | null>(null);
+  const [spaceToDelete, setSpaceToDelete] = useState<{ id: string, name: string } | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
-  
+
   const [settingsDialogOpen, setSettingsDialogOpen] = useState(false);
-  const [spaceToEdit, setSpaceToEdit] = useState<{id: string, name: string} | null>(null);
+  const [spaceToEdit, setSpaceToEdit] = useState<{ id: string, name: string } | null>(null);
 
   // Spaces are already initialized by fullPageLoading, no need to fetch again
 
-  // 移除 smart navigation - 這會在 switchToSpace 中直接處理
-
   const handleSpaceChange = async (spaceId: string) => {
     try {
-      // 用戶主動切換 space 時，強制導航到第一個 folder
-      await switchToSpace(spaceId, true);
+      // 1. 切換 space 並載入數據
+      await switchToSpace(spaceId);
+
+      // 2. 導航到第一個 folder
+      const currentFolders = usePromptStore.getState().folders;
+      if (currentFolders.length > 0) {
+        navigation.navigateToFolder(currentFolders[0].id);
+      }
     } catch (error) {
       console.error('Error in handleSpaceChange:', error);
     }
@@ -60,7 +67,7 @@ const PromptSpaceSelector: React.FC<PromptSpaceSelectorProps> = ({ onCreateSpace
     setSpaceToEdit(null);
   };
 
-  const handleDeleteClick = (e: React.MouseEvent, space: {id: string, name: string}) => {
+  const handleDeleteClick = (e: React.MouseEvent, space: { id: string, name: string }) => {
     e.stopPropagation();
     setSpaceToDelete(space);
     setDeleteDialogOpen(true);
@@ -68,7 +75,7 @@ const PromptSpaceSelector: React.FC<PromptSpaceSelectorProps> = ({ onCreateSpace
 
   const handleDeleteConfirm = async () => {
     if (!spaceToDelete) return;
-    
+
     try {
       setIsDeleting(true);
       await deleteSpace(spaceToDelete.id);
@@ -119,9 +126,8 @@ const PromptSpaceSelector: React.FC<PromptSpaceSelectorProps> = ({ onCreateSpace
                   <DropdownMenuItem
                     key={space.id}
                     onClick={() => handleSpaceChange(space.id)}
-                    className={`cursor-pointer flex items-center justify-between ${
-                      currentSpaceId === space.id ? "bg-accent" : ""
-                    } ${index > 0 ? "mt-1" : ""}`}
+                    className={`cursor-pointer flex items-center justify-between ${currentSpaceId === space.id ? "bg-accent" : ""
+                      } ${index > 0 ? "mt-1" : ""}`}
                   >
                     <span className="flex-1 truncate">{space.name}</span>
                     {space.name !== 'promptSpace-default' && (
@@ -139,7 +145,7 @@ const PromptSpaceSelector: React.FC<PromptSpaceSelectorProps> = ({ onCreateSpace
                 ))}
               </>
             )}
-            
+
             {/* Shared Spaces */}
             {sharedSpaces.length > 0 && (
               <>
@@ -151,9 +157,8 @@ const PromptSpaceSelector: React.FC<PromptSpaceSelectorProps> = ({ onCreateSpace
                   <DropdownMenuItem
                     key={shared.space.id}
                     onClick={() => handleSpaceChange(shared.space.id)}
-                    className={`cursor-pointer flex items-center justify-between ${
-                      currentSpaceId === shared.space.id ? "bg-accent" : ""
-                    } ${index > 0 ? "mt-1" : ""}`}
+                    className={`cursor-pointer flex items-center justify-between ${currentSpaceId === shared.space.id ? "bg-accent" : ""
+                      } ${index > 0 ? "mt-1" : ""}`}
                   >
                     <div className="flex-1 flex items-center gap-2">
                       <span className="flex-1 truncate">{shared.space.name}</span>
@@ -167,7 +172,7 @@ const PromptSpaceSelector: React.FC<PromptSpaceSelectorProps> = ({ onCreateSpace
             )}
           </DropdownMenuContent>
         </DropdownMenu>
-        
+
         <Button
           variant="outline"
           size="sm"
@@ -183,7 +188,7 @@ const PromptSpaceSelector: React.FC<PromptSpaceSelectorProps> = ({ onCreateSpace
         >
           <Settings className="h-4 w-4" />
         </Button>
-        
+
         <Button
           variant="outline"
           size="sm"
@@ -195,14 +200,14 @@ const PromptSpaceSelector: React.FC<PromptSpaceSelectorProps> = ({ onCreateSpace
           <PlusIcon className="h-4 w-4" />
         </Button>
       </div>
-      
+
       <SpaceSettingsDialog
         isOpen={settingsDialogOpen}
         onClose={handleSettingsClose}
         spaceId={spaceToEdit?.id || ""}
         currentName={spaceToEdit?.name || ""}
       />
-      
+
       <DeleteSpaceDialog
         isOpen={deleteDialogOpen}
         onClose={handleDeleteCancel}

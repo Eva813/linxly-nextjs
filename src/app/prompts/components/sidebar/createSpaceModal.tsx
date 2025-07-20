@@ -2,7 +2,9 @@
 
 import React, { useState } from "react";
 import { usePromptSpaceStore } from "@/stores/promptSpace";
+import { usePromptStore } from "@/stores/prompt";
 import { usePromptSpaceActions } from "@/hooks/promptSpace";
+import { useSidebarNavigation } from "@/hooks/sidebar/useSidebarNavigation";
 import {
   Dialog,
   DialogContent,
@@ -22,14 +24,26 @@ interface CreateSpaceModalProps {
 const CreateSpaceModal: React.FC<CreateSpaceModalProps> = ({ isOpen, onClose }) => {
   const [spaceName, setSpaceName] = useState("");
   const { isCreatingSpace } = usePromptSpaceStore();
+  const { folders } = usePromptStore();
   const { createSpace } = usePromptSpaceActions();
+  const navigation = useSidebarNavigation();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!spaceName.trim()) return;
 
     try {
+      // 1. 創建 space（包含自動創建預設 folder）
       await createSpace(spaceName.trim());
+      
+      // 2. 直接導航到第一個 folder（參考 useSidebarActions 的模式）
+      // createSpace 完成後，folders 狀態應該已經更新
+      const currentFolders = usePromptStore.getState().folders;
+      if (currentFolders.length > 0) {
+        navigation.navigateToFolder(currentFolders[0].id);
+      }
+      
+      // 3. 關閉 modal
       setSpaceName("");
       onClose();
     } catch (error) {

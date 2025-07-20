@@ -41,6 +41,9 @@ export const createPromptSlice: StateCreator<
       // 直接使用 API，讓後端處理所有排序邏輯
       const newPrompt = await createPrompt({ folderId, afterPromptId, promptSpaceId, ...prompt });
 
+      // 清除該 space 的快取，確保下次切換時會重新載入最新數據
+      get().clearSpaceCache(promptSpaceId);
+
       // 重新獲取該資料夾的所有 prompts，確保排序正確
       await get().fetchPromptsForFolder(folderId, promptSpaceId);
 
@@ -95,6 +98,22 @@ export const createPromptSlice: StateCreator<
 
       const updated = await apiUpdatePrompt(promptId, promptDataToUpdate);
 
+      // 找到 prompt 所屬的 promptSpaceId 以清除正確的快取
+      let promptSpaceId: string | undefined;
+      for (const folder of get().folders) {
+        const foundPrompt = folder.prompts.find(p => p.id === promptId);
+        if (foundPrompt) {
+          // 假設 prompt 有 promptSpaceId 或從 API 回應中取得
+          promptSpaceId = updated.promptSpaceId || foundPrompt.promptSpaceId;
+          break;
+        }
+      }
+
+      // 如果找到 promptSpaceId，清除該 space 的快取
+      if (promptSpaceId) {
+        get().clearSpaceCache(promptSpaceId);
+      }
+
       set((state) => ({
         folders: state.folders.map((folder) => ({
           ...folder,
@@ -102,20 +121,6 @@ export const createPromptSlice: StateCreator<
             prompt.id === promptId ? { ...prompt, ...updated } : prompt
           ),
         })),
-        // 同步更新快取
-        folderCache: Object.keys(state.folderCache).reduce((acc, spaceId) => {
-          acc[spaceId] = {
-            ...state.folderCache[spaceId],
-            folders: state.folderCache[spaceId].folders.map((folder) => ({
-              ...folder,
-              prompts: folder.prompts.map((prompt) =>
-                prompt.id === promptId ? { ...prompt, ...updated } : prompt
-              ),
-            })),
-            lastFetched: Date.now()
-          };
-          return acc;
-        }, {} as Record<string, { folders: Folder[]; lastFetched: number }>)
       }));
 
       return updated;

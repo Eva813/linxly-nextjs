@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { usePromptStore } from "@/stores/prompt";
+import { usePromptSpaceStore } from "@/stores/promptSpace";
 import { useCurrentPrompt } from '@/lib/useCurrentPrompt';
 import { useSaveStore } from '@/stores/loading';
 import { deepEqual } from '@/lib/utils/deepEqual';
@@ -62,6 +63,7 @@ const validateShortcut = (
 
 export const usePromptPageLogic = ({ promptId }: UsePromptPageLogicProps) => {
   const { folders, updatePrompt } = usePromptStore();
+  const { currentSpaceId } = usePromptSpaceStore();
   const { prompt: currentPrompt } = useCurrentPrompt(promptId);
   const { setSaving, setSaved, setSaveError, setActive } = useSaveStore();
 
@@ -100,7 +102,7 @@ export const usePromptPageLogic = ({ promptId }: UsePromptPageLogicProps) => {
     try {
       isApiOperationRef.current = true;
       setSaving(true, promptId);
-      await updatePrompt(promptId, updatedPrompt);
+      await updatePrompt(promptId, updatedPrompt, currentSpaceId || undefined);
 
       setSaved(promptId);
       setInitialValues(dataToSave);

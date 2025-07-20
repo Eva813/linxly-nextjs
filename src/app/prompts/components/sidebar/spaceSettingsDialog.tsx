@@ -91,11 +91,12 @@ const SpaceSettingsDialog: React.FC<SpaceSettingsDialogProps> = ({
 
   // Rename space
   const handleRenameSubmit = useCallback(async () => {
-    if (!spaceName.trim() || spaceName.trim() === currentName) return;
+    const trimmedName = spaceName.trim();
+    if (!trimmedName || trimmedName === currentName) return;
 
     try {
       setIsRenaming(true);
-      await renameSpace(spaceId, spaceName.trim());
+      await renameSpace(spaceId, trimmedName);
       setSuccessMessage("Space renamed successfully!");
     } catch (error) {
       console.error("Failed to rename space:", error);

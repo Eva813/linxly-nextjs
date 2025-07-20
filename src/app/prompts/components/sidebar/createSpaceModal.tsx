@@ -24,7 +24,6 @@ interface CreateSpaceModalProps {
 const CreateSpaceModal: React.FC<CreateSpaceModalProps> = ({ isOpen, onClose }) => {
   const [spaceName, setSpaceName] = useState("");
   const { isCreatingSpace } = usePromptSpaceStore();
-  const { folders } = usePromptStore();
   const { createSpace } = usePromptSpaceActions();
   const navigation = useSidebarNavigation();
 
@@ -35,14 +34,14 @@ const CreateSpaceModal: React.FC<CreateSpaceModalProps> = ({ isOpen, onClose }) 
     try {
       // 1. 創建 space（包含自動創建預設 folder）
       await createSpace(spaceName.trim());
-      
+
       // 2. 直接導航到第一個 folder（參考 useSidebarActions 的模式）
       // createSpace 完成後，folders 狀態應該已經更新
       const currentFolders = usePromptStore.getState().folders;
       if (currentFolders.length > 0) {
         navigation.navigateToFolder(currentFolders[0].id);
       }
-      
+
       // 3. 關閉 modal
       setSpaceName("");
       onClose();
@@ -62,19 +61,19 @@ const CreateSpaceModal: React.FC<CreateSpaceModalProps> = ({ isOpen, onClose }) 
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>建立新的工作空間</DialogTitle>
+          <DialogTitle>Create New Prompt Space</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit}>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
               <label htmlFor="spaceName" className="text-sm font-medium">
-                工作空間名稱
+                Prompt Space Name
               </label>
               <Input
                 id="spaceName"
                 value={spaceName}
                 onChange={(e) => setSpaceName(e.target.value)}
-                placeholder="輸入工作空間名稱"
+                placeholder="Enter a new prompt space name"
                 disabled={isCreatingSpace}
                 autoFocus
                 maxLength={50}
@@ -88,7 +87,7 @@ const CreateSpaceModal: React.FC<CreateSpaceModalProps> = ({ isOpen, onClose }) 
               onClick={handleClose}
               disabled={isCreatingSpace}
             >
-              取消
+              Cancel
             </Button>
             <Button
               type="submit"
@@ -97,10 +96,10 @@ const CreateSpaceModal: React.FC<CreateSpaceModalProps> = ({ isOpen, onClose }) 
               {isCreatingSpace ? (
                 <>
                   <FaSpinner className="animate-spin mr-2" />
-                  建立中...
+                  Creating...
                 </>
               ) : (
-                "建立"
+                "Create"
               )}
             </Button>
           </DialogFooter>

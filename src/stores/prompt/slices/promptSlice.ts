@@ -7,7 +7,7 @@ export interface PromptSlice {
   fetchPromptsForFolder: (folderId: string, promptSpaceId?: string) => Promise<void>;
   addPromptToFolder: (folderId: string, prompt: Omit<Prompt, 'id'>, afterPromptId?: string, promptSpaceId?: string) => Promise<Prompt>;
   deletePromptFromFolder: (folderId: string, promptId: string) => Promise<void>;
-  updatePrompt: (promptId: string, updatedPrompt: Partial<Prompt>) => Promise<Prompt>;
+  updatePrompt: (promptId: string, updatedPrompt: Partial<Prompt>, promptSpaceId?: string) => Promise<Prompt>;
 }
 
 // 這裡依賴 FolderSlice，因為 prompts 都儲存在 folders 內
@@ -91,25 +91,14 @@ export const createPromptSlice: StateCreator<
       throw error;
     }
   },
-  updatePrompt: async (promptId, updatedPrompt) => {
+  updatePrompt: async (promptId, updatedPrompt, promptSpaceId) => {
     try {
       // 忽略 id 欄位，因為 API 不需要
       const { ...promptDataToUpdate } = updatedPrompt;
 
       const updated = await apiUpdatePrompt(promptId, promptDataToUpdate);
 
-      // 找到 prompt 所屬的 promptSpaceId 以清除正確的快取
-      let promptSpaceId: string | undefined;
-      for (const folder of get().folders) {
-        const foundPrompt = folder.prompts.find(p => p.id === promptId);
-        if (foundPrompt) {
-          // 假設 prompt 有 promptSpaceId 或從 API 回應中取得
-          promptSpaceId = updated.promptSpaceId || foundPrompt.promptSpaceId;
-          break;
-        }
-      }
-
-      // 如果找到 promptSpaceId，清除該 space 的快取
+      // 如果提供了 promptSpaceId，清除該 space 的快取確保資料同步
       if (promptSpaceId) {
         get().clearSpaceCache(promptSpaceId);
       }

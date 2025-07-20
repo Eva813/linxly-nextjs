@@ -39,10 +39,11 @@ const RenameSpaceDialog: React.FC<RenameSpaceDialogProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!spaceName.trim() || spaceName.trim() === currentName) return;
+    const trimmedName = spaceName.trim();
+    if (!trimmedName || trimmedName === currentName) return;
 
     try {
-      await renameSpace(spaceId, spaceName.trim());
+      await renameSpace(spaceId, trimmedName);
       onClose();
     } catch (error) {
       console.error("Failed to rename space:", error);

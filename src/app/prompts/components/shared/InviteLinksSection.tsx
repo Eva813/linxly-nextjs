@@ -30,22 +30,20 @@ const InviteLinksSection: React.FC<InviteLinksProps> = ({
   onGenerateLink,
   onCopyLink
 }) => {
-  // Helper function to check if link is expired (Taiwan timezone)
+  // Helper function to check if link is expired
   const isLinkExpired = (expiresAt: string) => {
-    const nowTaipei = new Date().toLocaleString("en-US", { timeZone: "Asia/Taipei" });
-    const expiryTaipei = new Date(expiresAt).toLocaleString("en-US", { timeZone: "Asia/Taipei" });
-    return new Date(nowTaipei) > new Date(expiryTaipei);
+    return new Date() > new Date(expiresAt);
   };
 
   // Helper function to get expiry status and message (Taiwan timezone)
   const getExpiryInfo = (expiresAt: string) => {
-    const nowTaipei = new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Taipei" }));
-    const expiryTaipei = new Date(new Date(expiresAt).toLocaleString("en-US", { timeZone: "Asia/Taipei" }));
-    const diffMs = expiryTaipei.getTime() - nowTaipei.getTime();
+    const now = new Date();
+    const expiry = new Date(expiresAt);
+    const diffMs = expiry.getTime() - now.getTime();
     const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
     
     if (diffMs <= 0) {
-      return { status: 'expired', message: 'Expired', className: 'text-red-600' };
+      return { status: 'expired', message: 'Expired', className: 'text-rose-600' };
     } else if (diffDays <= 3) {
       return { 
         status: 'expiring', 

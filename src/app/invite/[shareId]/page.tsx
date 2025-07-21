@@ -222,11 +222,12 @@ function InvitePage() {
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <div className="flex justify-center mb-4">
-            <UserPlus className="text-blue-600" size={48} />
+            <UserPlus className="text-primary" size={40} />
           </div>
           <CardTitle>Join Workspace</CardTitle>
           <CardDescription>
-            You&apos;ve been invited to join &quot;{inviteInfo.spaceName}&quot;
+            You&apos;ve been invited to join &quot;
+            <strong>{inviteInfo.spaceName}</strong>&quot;
           </CardDescription>
         </CardHeader>
         
@@ -236,9 +237,9 @@ function InvitePage() {
             <div className="flex items-center gap-3">
               <div className="flex-shrink-0">
                 {inviteInfo.permission === 'edit' ? (
-                  <Edit className="text-blue-600" size={20} />
+                  <Edit className="text-primary" size={20} />
                 ) : (
-                  <Eye className="text-green-600" size={20} />
+                  <Eye className="text-teal-600" size={20} />
                 )}
               </div>
               <div className="flex-1">
@@ -261,7 +262,7 @@ function InvitePage() {
             <p>
               {inviteInfo.permission === 'edit' 
                 ? 'You can view and modify prompts in this workspace.'
-                : 'You can view prompts in this workspace but cannot make changes.'
+                : 'You can view prompts in this workspace but can\'t edit them.'
               }
             </p>
           </div>

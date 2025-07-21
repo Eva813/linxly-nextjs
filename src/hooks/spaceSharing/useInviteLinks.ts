@@ -131,15 +131,8 @@ export const useInviteLinks = ({ spaceId, isOpen = false }: UseInviteLinksProps)
       return;
     }
     
-    // Check if we have valid cache
-    if (hasValidCache()) {
-      // Use valid cache
-      const cachedLinks = loadFromCache();
-      setInviteLinks(cachedLinks);
-    } else {
-      // No valid cache, fetch from API
-      fetchInviteLinks();
-    }
+    // Always fetch from API to ensure latest data, but use cache as fallback
+    fetchInviteLinks();
   }, [spaceId, isOpen, hasValidCache, loadFromCache, fetchInviteLinks]);
 
   // Generate invite link (create via API, then refresh from API)

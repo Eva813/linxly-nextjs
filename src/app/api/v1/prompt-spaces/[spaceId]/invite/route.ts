@@ -40,14 +40,45 @@ export async function POST(
       .get();
 
     let shareId;
+    let actualExpiresAt;
     
     if (!existingQuery.empty) {
-      // Use existing universal link
-      shareId = existingQuery.docs[0].id;
+      // Check if existing link is still valid
+      const existingDoc = existingQuery.docs[0];
+      const existingData = existingDoc.data();
+      const existingExpiresAt = existingData.expiresAt;
+      
+      // Handle both Firestore Timestamp and Date objects
+      const expiryDate = existingExpiresAt?.toDate ? existingExpiresAt.toDate() : new Date(existingExpiresAt);
+      
+      if (new Date() < expiryDate) {
+        // Use existing valid link
+        shareId = existingDoc.id;
+        actualExpiresAt = expiryDate.toISOString();
+      } else {
+        // Existing link is expired, create new one
+        const now = new Date();
+        actualExpiresAt = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString();
+
+        const shareRef = adminDb.collection('space_shares').doc();
+        shareId = shareRef.id;
+
+        const shareData = {
+          promptSpaceId: spaceId,
+          permission,
+          isUniversal: true,
+          createdAt: now,
+          updatedAt: now,
+          expiresAt: new Date(actualExpiresAt),
+          createdBy: userId
+        };
+
+        await shareRef.set(shareData);
+      }
     } else {
       // Create new universal link
       const now = new Date();
-      const expiresAt = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000); // 30 days
+      actualExpiresAt = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString();
 
       const shareRef = adminDb.collection('space_shares').doc();
       shareId = shareRef.id;
@@ -58,7 +89,7 @@ export async function POST(
         isUniversal: true,
         createdAt: now,
         updatedAt: now,
-        expiresAt,
+        expiresAt: new Date(actualExpiresAt),
         createdBy: userId
       };
 
@@ -72,7 +103,7 @@ export async function POST(
       inviteLink,
       shareId,
       permission,
-      expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+      expiresAt: actualExpiresAt
     });
 
   } catch (error) {

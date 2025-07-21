@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { promptSpaceOverviewApi } from '@/api/promptSpaceOverview';
+import { getPromptSpaceOverview, PromptSpaceOverview } from '@/api/promptSpaceOverview';
 
 export interface PromptSpace {
   id: string;
@@ -15,32 +15,6 @@ export interface SharedSpace {
   permission: 'view' | 'edit';
   sharedBy: string;
   sharedAt: string;
-}
-
-interface PromptSpaceOverview {
-  space: {
-    id: string;
-    name: string;
-    userRole: 'owner' | 'edit' | 'view';
-    permissions: {
-      canEdit: boolean;
-      canDelete: boolean;
-      canShare: boolean;
-      canManageMembers: boolean;
-    };
-  };
-  folders: Array<{
-    id: string;
-    name: string;
-    description?: string;
-    promptCount: number;
-    lastUpdated: Date;
-    readOnly: boolean;
-  }>;
-  stats: {
-    totalFolders: number;
-    totalPrompts: number;
-  };
 }
 
 interface PromptSpaceState {
@@ -183,7 +157,7 @@ export const usePromptSpaceStore = create<PromptSpaceStore>()(
           setOverviewLoading(true);
           setError(null);
           
-          const overview = await promptSpaceOverviewApi.getOverview(spaceId);
+          const overview = await getPromptSpaceOverview(spaceId);
           
           setCurrentSpaceOverview(overview);
         } catch (error) {

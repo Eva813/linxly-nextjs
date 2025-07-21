@@ -13,15 +13,15 @@ const MessageAlert: React.FC<MessageAlertProps> = ({ type, message, onClose }) =
   const baseClasses = "flex items-center justify-between gap-2 p-3 border rounded-md";
   const typeClasses = isSuccess 
     ? "bg-green-50 border-green-200"
-    : "bg-red-50 border-red-200";
+    : "bg-rose-50 border-rose-200";
   
   const iconClasses = isSuccess 
     ? "h-4 w-4 text-green-600"
-    : "h-4 w-4 text-red-600";
+    : "h-4 w-4 text-rose-600";
     
   const textClasses = isSuccess 
     ? "text-sm text-green-700"
-    : "text-sm text-red-700";
+    : "text-sm text-rose-700";
     
   const buttonClasses = isSuccess
     ? "p-1 rounded-full hover:bg-green-100"
@@ -29,7 +29,7 @@ const MessageAlert: React.FC<MessageAlertProps> = ({ type, message, onClose }) =
     
   const buttonIconClasses = isSuccess
     ? "h-4 w-4 text-green-700"
-    : "h-4 w-4 text-red-700";
+    : "h-4 w-4 text-rose-700";
 
   return (
     <div className={`${baseClasses} ${typeClasses}`}>

@@ -126,7 +126,7 @@ function InvitePage() {
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <Card className="w-full max-w-md">
           <CardContent className="flex flex-col items-center justify-center py-8">
-            <FaSpinner className="animate-spin text-blue-600 mb-4" size={32} />
+            <FaSpinner className="animate-spin text-primary mb-4" size={32} />
             <p className="text-gray-600">Validating invite...</p>
           </CardContent>
         </Card>
@@ -140,9 +140,9 @@ function InvitePage() {
         <Card className="w-full max-w-md">
           <CardHeader className="text-center">
             <div className="flex justify-center mb-4">
-              <AlertCircle className="text-red-500" size={48} />
+              <AlertCircle className="text-rose-600" size={48} />
             </div>
-            <CardTitle className="text-red-600">Invalid Invite</CardTitle>
+            <CardTitle className="text-rose-600">Invalid Invite</CardTitle>
             <CardDescription>
               {error}
             </CardDescription>

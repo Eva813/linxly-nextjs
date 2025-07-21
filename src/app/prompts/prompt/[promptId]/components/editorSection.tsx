@@ -79,21 +79,23 @@ export const EditorSection = ({
       </section>
 
       {/* 桌面版側邊欄 */}
-      <div className="hidden lg:block">
-        <aside className="min-h-0 overflow-y-auto">
-          {isEditPanelVisible && activeEditInfo ? (
-            <EditPanel editInfo={activeEditInfo} onChange={onTextInputChange} />
-          ) : (
-            <Sidebar
-              onInsertTextFieldClick={onInsertTextFieldClick}
-              onInsertMenuFieldClick={onInsertMenuFieldClick}
-            />
-          )}
-        </aside>
-      </div>
+      {canEdit && (
+        <div className="hidden lg:block">
+          <aside className="min-h-0 overflow-y-auto">
+            {isEditPanelVisible && activeEditInfo ? (
+              <EditPanel editInfo={activeEditInfo} onChange={onTextInputChange} />
+            ) : (
+              <Sidebar
+                onInsertTextFieldClick={onInsertTextFieldClick}
+                onInsertMenuFieldClick={onInsertMenuFieldClick}
+              />
+            )}
+          </aside>
+        </div>
+      )}
       
       {/* 手機版覆蓋面板 */}
-      {(isMobilePanelOpen || isMobilePanelClosing) && (
+      {canEdit && (isMobilePanelOpen || isMobilePanelClosing) && (
         <div className="fixed inset-0 z-50 flex justify-end">
           <div
             className="fixed inset-0 bg-black opacity-50"

@@ -106,6 +106,7 @@ export const PromptHeader = ({
           className="h-10 lg:hidden text-primary border-secondary hover:bg-light hover:text-primary"
           variant="outline"
           onClick={onToggleMobilePanel}
+          disabled={!canEdit}
         >
           Tools
         </Button>

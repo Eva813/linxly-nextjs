@@ -6,6 +6,7 @@ import ShortcutErrorAlert from "@/app/prompts/components/shortcutErrorAlert";
 import EditViewButtons, { Mode } from "@/app/prompts/components/editViewButtons";
 import TryItOutPopup from '../tryItOutPopup';
 import SecureInput from '@/components/ui/secureInput';
+import { useEditableState } from '@/hooks/useEditableState';
 
 interface ShortcutError {
   conflictingShortcut: string;
@@ -37,6 +38,7 @@ export const PromptHeader = ({
 }: PromptHeaderProps) => {
   const [isPopupVisible, setIsPopupVisible] = useState(false);
   const tryItOutButtonRef = useRef<HTMLButtonElement>(null);
+  const { canEdit } = useEditableState();
 
   return (
     <header className="grid grid-cols-1 lg:grid-cols-[3fr_1fr] mb-4 pt-4 sm:pt-6 md:pt-4 gap-y-4 lg:gap-y-0 justify-items-start sm:justify-items-stretch">
@@ -50,6 +52,7 @@ export const PromptHeader = ({
             value={name}
             onChange={onNameChange}
             variant="default"
+            disabled={!canEdit}
             styleConfig={{
               paddingLeft: '2.25rem',
               paddingRight: '0.75rem',
@@ -67,6 +70,7 @@ export const PromptHeader = ({
               value={shortcut}
               onChange={onShortcutChange}
               variant="shortcut"
+              disabled={!canEdit}
             />
             <FaKeyboard className="absolute left-[10px] top-1/2 h-4 w-4 text-muted-foreground -translate-y-1/2" />
             <Button

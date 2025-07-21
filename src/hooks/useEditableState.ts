@@ -30,22 +30,6 @@ export const useEditableState = () => {
     return true;
   }, [canDelete]);
 
-  /**
-   * 獲取輸入欄位的 props（包含權限狀態）
-   */
-  const getInputProps = useCallback(
-    (additionalProps: Record<string, unknown> = {}) => {
-      const editableProps = getEditableProps();
-      const { className: additionalClassName, ...otherProps } = additionalProps;
-      
-      return {
-        ...editableProps,
-        ...otherProps,
-        className: `${additionalClassName || ''} ${editableProps.className}`.trim(),
-      };
-    },
-    [getEditableProps]
-  );
 
   /**
    * 獲取按鈕的 props（包含權限狀態）
@@ -71,7 +55,6 @@ export const useEditableState = () => {
     canDelete,
     checkEditPermission,
     checkDeletePermission,
-    getInputProps,
     getButtonProps,
     getEditableProps,
   };

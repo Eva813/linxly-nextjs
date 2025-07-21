@@ -25,20 +25,20 @@
 
 ### 方法 1: 使用 `useEditableState` Hook
 
-適用於需要複雜邏輯控制的組件：
+適用於需要權限控制的組件：
 
 ```typescript
 import { useEditableState } from '@/hooks/useEditableState';
 
 const MyComponent = () => {
-  const { canEdit, checkEditPermission, getInputProps, getButtonProps } = useEditableState();
+  const { canEdit, checkEditPermission, getButtonProps } = useEditableState();
 
   // 在函數內部檢查權限
   const handleSave = useCallback(async () => {
-    if (!checkEditPermission()) return;
+    if (!canEdit) return;  // 直接檢查權限
     
     // 保存邏輯
-  }, [checkEditPermission]);
+  }, [canEdit]);
 
   // 直接使用 canEdit 檢查
   const handleChange = useCallback((value) => {
@@ -49,13 +49,12 @@ const MyComponent = () => {
 
   return (
     <div>
-      {/* 輸入欄位自動應用權限 */}
+      {/* 直接控制輸入欄位的 disabled 狀態 */}
       <input
         value={value}
         onChange={handleChange}
-        {...getInputProps({
-          className: "your-custom-classes"
-        })}
+        disabled={!canEdit}
+        className="your-custom-classes"
       />
       
       {/* 按鈕自動應用權限 */}
@@ -126,19 +125,21 @@ const ConditionalComponent = () => {
 
 ### 🔄 已完成
 - ✅ Folder 編輯頁面 (`/folder/[folderId]/page.tsx`)
+  - ✅ Folder name input: `disabled={!canEdit}`
+  - ✅ Description textarea: `disabled={!canEdit}`
+- ✅ **Prompt Header 組件** (`/prompt/[promptId]/components/promptHeader.tsx`)
+  - ✅ 名稱輸入框: `disabled={!canEdit}`
+  - ✅ 快捷鍵輸入框: `disabled={!canEdit}`
+- ✅ **Prompt 業務邏輯** (`/prompt/[promptId]/hooks/usePromptPageLogic.ts`)
+  - ✅ 保存函數權限檢查: `if (!canEdit) return`
+  - ✅ 自動保存權限檢查
 
 ### ⚠️ 待處理
 
 #### 高優先級 - Prompt 編輯核心功能
-1. **Prompt 編輯頁面** (`/prompt/[promptId]/page.tsx`)
-   - 名稱編輯
-   - 快捷鍵編輯
-   - 內容編輯
-
-2. **Prompt Header 組件** (`/prompt/[promptId]/components/promptHeader.tsx`)
-   - 名稱輸入框
-   - 快捷鍵輸入框
-   - 編輯/預覽切換
+1. **Prompt 內容編輯器**
+   - TipTap 編輯器權限控制
+   - 表單欄位插入功能
 
 3. **編輯面板** (`/prompt/[promptId]/editPanel.tsx`)
    - 表單欄位屬性編輯
@@ -162,11 +163,11 @@ const ConditionalComponent = () => {
 
 ### ✅ 輸入欄位
 - [ ] 添加 `useEditableState` hook
-- [ ] 使用 `getInputProps()` 或權限感知組件
+- [ ] 使用 `disabled={!canEdit}` 直接控制權限
 - [ ] 測試 view 權限時的禁用狀態
 
 ### ✅ 編輯函數
-- [ ] 使用 `withEditPermission()` 包裝
+- [ ] 在函數內直接檢查權限: `if (!canEdit) return`
 - [ ] 確保自動保存邏輯包含權限檢查
 - [ ] 測試權限不足時的行為
 
@@ -186,11 +187,62 @@ const ConditionalComponent = () => {
 2. **Edit 權限**: 可編輯，不能分享/刪除空間
 3. **View 權限**: 所有編輯功能禁用，只能查看
 
+## 權限控制最佳實踐
+
+### 1. 輸入欄位權限控制
+
+**推薦方式 - 直接使用 disabled**:
+```typescript
+const { canEdit } = useEditableState();
+
+<input
+  value={name}
+  onChange={handleNameChange}
+  disabled={!canEdit}
+  className="your-classes"
+/>
+```
+
+**優點**:
+- 直觀易懂
+- 瀏覽器原生支援
+- 自動處理樣式和互動
+
+### 2. 函數權限檢查
+
+**推薦方式 - 函數內部檢查**:
+```typescript
+const saveData = useCallback(async () => {
+  if (!canEdit) return;  // 簡單直接
+  
+  // 保存邏輯
+}, [canEdit, ...otherDeps]);
+```
+
+**優點**:
+- 邏輯清晰
+- 依賴穩定
+- 避免複雜的高階函數
+
+### 3. 避免的做法
+
+❌ **不推薦** - 使用 `getInputProps()`:
+```typescript
+// 已移除，過於複雜
+<input {...getInputProps()} />
+```
+
+❌ **不推薦** - 高階函數包裝:
+```typescript
+// 會導致依賴不穩定
+const wrappedSave = withEditPermission(saveFunction);
+```
+
 ## 注意事項
 
-1. **性能考量**: `useEditableState` 使用 `useCallback` 來避免不必要的重渲染
-2. **一致性**: 所有禁用狀態都使用相同的視覺樣式
-3. **用戶友好**: 提供清楚的權限提示訊息
+1. **性能考量**: 直接使用 `disabled={!canEdit}` 性能最佳
+2. **一致性**: 所有輸入欄位都使用 `disabled` 屬性控制
+3. **用戶友好**: disabled 狀態有清楚的視覺回饋
 4. **安全性**: 前端權限檢查 + 後端 API 權限驗證雙重保護
 
 

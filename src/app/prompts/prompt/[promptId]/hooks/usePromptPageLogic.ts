@@ -5,6 +5,7 @@ import { useCurrentPrompt } from '@/lib/useCurrentPrompt';
 import { useSaveStore } from '@/stores/loading';
 import { deepEqual } from '@/lib/utils/deepEqual';
 import debounce from '@/lib/utils/debounce';
+import { useEditableState } from '@/hooks/useEditableState';
 
 interface ShortcutError {
   conflictingShortcut: string;
@@ -66,6 +67,7 @@ export const usePromptPageLogic = ({ promptId }: UsePromptPageLogicProps) => {
   const { currentSpaceId } = usePromptSpaceStore();
   const { prompt: currentPrompt } = useCurrentPrompt(promptId);
   const { setSaving, setSaved, setSaveError, setActive } = useSaveStore();
+  const { canEdit } = useEditableState();
 
   // 表單狀態
   const [formData, setFormData] = useState({
@@ -92,7 +94,7 @@ export const usePromptPageLogic = ({ promptId }: UsePromptPageLogicProps) => {
 
   // 穩定的儲存函式
   const savePrompt = useCallback(async (dataToSave: typeof formData) => {
-    if (!currentPrompt || isApiOperationRef.current) return;
+    if (!currentPrompt || isApiOperationRef.current || !canEdit) return;
 
     const updatedPrompt = {
       ...currentPrompt,
@@ -113,7 +115,7 @@ export const usePromptPageLogic = ({ promptId }: UsePromptPageLogicProps) => {
     } finally {
       isApiOperationRef.current = false;
     }
-  }, [currentPrompt, promptId, updatePrompt, setSaving, setSaved, setSaveError]);
+  }, [currentPrompt, promptId, updatePrompt, setSaving, setSaved, setSaveError, canEdit]);
 
   // 建立穩定的 debounced 儲存函式
   const debouncedSave = useMemo(() => {
@@ -132,7 +134,7 @@ export const usePromptPageLogic = ({ promptId }: UsePromptPageLogicProps) => {
     setFormData(newData);
     setHasUnsavedChanges(hasChanges);
 
-    if (hasChanges && currentPrompt && !isApiOperationRef.current) {
+    if (hasChanges && currentPrompt && !isApiOperationRef.current && canEdit) {
         setActive(true, promptId);
         debouncedSave(newData);
     } else if (!hasChanges) {
@@ -154,7 +156,7 @@ export const usePromptPageLogic = ({ promptId }: UsePromptPageLogicProps) => {
             setShortcutError(validation.error || null);
         }
     }
-}, [allPrompts, promptId, initialValues, currentPrompt, setActive, debouncedSave, formData]);
+}, [allPrompts, promptId, initialValues, currentPrompt, setActive, debouncedSave, formData, canEdit]);
 
   // 表單處理器
   const handleNameChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {

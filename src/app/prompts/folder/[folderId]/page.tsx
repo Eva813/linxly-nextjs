@@ -2,6 +2,7 @@
 import { usePromptStore } from "@/stores/prompt";
 import { useEditableState } from "@/hooks/useEditableState";
 import { useState, useEffect, useCallback, useMemo } from 'react';
+import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import EditorSkeleton from '@/app/prompts/components/editorSkeleton';
 import { useSaveStore } from '@/stores/loading';
@@ -18,7 +19,7 @@ interface FolderPageProps {
 const FolderPage = ({ params }: FolderPageProps) => {
   const { folderId } = params;
   const { folders, updateFolder } = usePromptStore();
-  const { canEdit, getInputProps } = useEditableState();
+  const { canEdit } = useEditableState();
   const { setFolderSaving, setFolderSaved, setFolderSaveError, setFolderActive } = useSaveStore();
 
   const currentFolder = folders.find(folder => folder.id === folderId);
@@ -115,13 +116,12 @@ const FolderPage = ({ params }: FolderPageProps) => {
           id={folderId}
           className="absolute -top-1 left-0 z-10"
         />
-        <input
+        <Input
           type="text"
           value={formData.name}
           onChange={handleNameChange}
-          {...getInputProps({
-            className: "text-2xl focus:outline-none mb-2 dark:bg-black pt-4"
-          })}
+          disabled={!canEdit}
+          className="!text-2xl border-none focus:outline-none focus-visible:ring-0 mb-2 dark:bg-black pt-4 px-0"
         />
       </div>
       <Textarea
@@ -129,9 +129,8 @@ const FolderPage = ({ params }: FolderPageProps) => {
         rows={4}
         onChange={handleDescriptionChange}
         placeholder="input description"
-        {...getInputProps({
-          className: "hover:ring-1 hover:ring-gray-400 p-2 rounded mb-2 dark:border-gray-200 resize-y max-h-64"
-        })}
+        disabled={!canEdit}
+        className="hover:ring-1 hover:ring-gray-400 p-2 rounded mb-2 dark:border-gray-200 resize-y max-h-64"
       />
 
     </div>

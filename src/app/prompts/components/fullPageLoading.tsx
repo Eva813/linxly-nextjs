@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef } from "react";
 import { usePromptSpaceStore } from "@/stores/promptSpace";
 import { usePromptStore } from "@/stores/prompt";
-import { promptSpaceApi } from '@/lib/api/promptSpace';
+import { getAllPromptSpaces } from '@/api/promptSpace';
 import { Skeleton } from "@/components/ui/skeleton";
 import EditorSkeleton from "@/app/prompts/components/editorSkeleton";
 import LoadingOverlay from "@/app/components/loadingOverlay";
@@ -39,7 +39,7 @@ useEffect(() => {
       setLoading(true);
       setError(null);
       
-      const response = await promptSpaceApi.getAll();
+      const response = await getAllPromptSpaces();
       
       // 轉換 owned spaces
       const ownedSpaces = response.ownedSpaces.map(space => ({

@@ -115,7 +115,7 @@ export const usePromptPageLogic = ({ promptId }: UsePromptPageLogicProps) => {
     } finally {
       isApiOperationRef.current = false;
     }
-  }, [currentPrompt, promptId, updatePrompt, setSaving, setSaved, setSaveError, canEdit]);
+  }, [currentPrompt, promptId, updatePrompt, setSaving, setSaved, setSaveError, canEdit, currentSpaceId]);
 
   // 建立穩定的 debounced 儲存函式
   const debouncedSave = useMemo(() => {

@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
 import { usePromptSpaceStore } from '@/stores/promptSpace';
 import { usePromptStore } from '@/stores/prompt';
-import { promptSpaceApi } from '@/lib/api/promptSpace';
+import { getAllPromptSpaces, createPromptSpace, updatePromptSpace, deletePromptSpace } from '@/api/promptSpace';
 
 export const usePromptSpaceActions = () => {
   const {
@@ -22,7 +22,7 @@ export const usePromptSpaceActions = () => {
       setLoading(true);
       setError(null);
 
-      const response = await promptSpaceApi.getAll();
+      const response = await getAllPromptSpaces();
 
       // 轉換 owned spaces
       const ownedSpaces = response.ownedSpaces.map(space => ({
@@ -64,7 +64,7 @@ export const usePromptSpaceActions = () => {
       setError(null);
 
       // 1. 調用 API 創建新的 prompt space（後端只創建 space，不創建 folder）
-      const newSpace = await promptSpaceApi.create({ name });
+      const newSpace = await createPromptSpace({ name });
 
       // 2. 將新創建的 space 添加到本地狀態中
       addSpace({
@@ -102,7 +102,7 @@ export const usePromptSpaceActions = () => {
       setLoading(true);
       setError(null);
 
-      const updatedSpace = await promptSpaceApi.update(spaceId, { name: newName });
+      const updatedSpace = await updatePromptSpace(spaceId, { name: newName });
       updateSpace(spaceId, {
         name: updatedSpace.name,
         updatedAt: new Date(updatedSpace.updatedAt || updatedSpace.createdAt)
@@ -123,7 +123,7 @@ export const usePromptSpaceActions = () => {
       setLoading(true);
       setError(null);
 
-      await promptSpaceApi.delete(spaceId);
+      await deletePromptSpace(spaceId);
       removeSpace(spaceId);
 
     } catch (error) {

@@ -85,7 +85,6 @@ export const usePromptSpaceActions = () => {
       // 創建名為 "My Sample Prompts" 的預設 folder
       //
       // 切換到新創建的 space，載入 folders 數據
-      console.log('Creating new prompt space:', newSpace);
       await switchToSpace(newSpace.id);
 
       return newSpace;

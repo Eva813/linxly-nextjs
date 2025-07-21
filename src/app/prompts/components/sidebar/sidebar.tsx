@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { usePromptStore } from "@/stores/prompt";
 import { useSidebarStore } from "@/stores/sidebar";
 import { useSidebarActions } from "@/hooks/sidebar";
+import { useEditableState } from "@/hooks/useEditableState";
 import { Button } from "@/components/ui/button";
 import { FaFolderPlus, FaFileMedical, FaSpinner } from "react-icons/fa";
 import SmartLoadingSkeleton from "./components/smartLoadingSkeleton";
@@ -15,6 +16,7 @@ const Sidebar = () => {
   const { folders, isLoading, error } = usePromptStore();
   const { isCreatingFolder, isCreatingPrompt } = useSidebarStore();
   const { handleCreateFolder, handleCreatePrompt } = useSidebarActions();
+  const { canEdit } = useEditableState();
   const [isCreateSpaceModalOpen, setIsCreateSpaceModalOpen] = useState(false);
 
   return (
@@ -25,7 +27,7 @@ const Sidebar = () => {
         <Button
           className="h-8 dark:text-third"
           onClick={handleCreateFolder}
-          disabled={isCreatingFolder}
+          disabled={isCreatingFolder || !canEdit}
         >
           {isCreatingFolder ? <FaSpinner className="animate-spin" /> : <FaFolderPlus />}
           Add Folder
@@ -33,7 +35,7 @@ const Sidebar = () => {
         <Button
           className="h-8 dark:text-third"
           onClick={handleCreatePrompt}
-          disabled={isCreatingPrompt}
+          disabled={isCreatingPrompt || !canEdit}
         >
           {isCreatingPrompt ? <FaSpinner className="animate-spin" /> : <FaFileMedical />}
           Add Prompt

@@ -3,6 +3,19 @@
   flex-direction: column;
   min-height: 12rem;
   height: calc(100vh - 18rem);
+  
+  &.disabled {
+    .tiptap-container {
+      color: #9e9e9e;
+      cursor: not-allowed;
+      border-color: #d0d0d0;
+    }
+    
+    .toolbar {
+      color: #9e9e9e;
+      border-color: #d0d0d0;
+    }
+  }
 
   .tiptap-container {
     border: 1px solid #BDBDBD;

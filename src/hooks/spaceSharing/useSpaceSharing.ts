@@ -4,10 +4,9 @@ import {
   batchCreateShares, 
   batchUpdateShares,
   batchDeleteShares,
-  ShareRecord,
-  ShareItem,
   isValidEmail 
 } from '@/api/spaceShares';
+import { ShareRecord, ShareItem } from '@/shared/types/spaceSharing';
 
 interface UseSpaceSharingProps {
   spaceId: string;

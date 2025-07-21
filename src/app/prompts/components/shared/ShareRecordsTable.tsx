@@ -20,7 +20,7 @@ import {
   RowSelectionState,
 } from "@tanstack/react-table";
 import { Mail, X } from "lucide-react";
-import { ShareRecord } from "@/api/spaceShares";
+import { ShareRecord } from "@/shared/types/spaceSharing";
 
 interface ShareRecordsTableProps {
   data: ShareRecord[];

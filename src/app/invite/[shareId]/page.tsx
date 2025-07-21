@@ -7,18 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { FaSpinner } from "react-icons/fa";
 import { CheckCircle, AlertCircle, UserPlus, Eye, Edit } from "lucide-react";
-
-interface InviteInfo {
-  spaceId: string;
-  spaceName: string;
-  ownerName: string;
-  permission: 'view' | 'edit';
-  needsRegistration: boolean;
-  isValid: boolean;
-  isUniversal: boolean;
-  expiresAt: string;
-  createdAt: string;
-}
+import { getInviteInfo, acceptInvite } from "@/api/spaceShares";
+import { InviteInfo } from "@/shared/types/spaceSharing";
 
 function InvitePage() {
   const params = useParams();
@@ -38,21 +28,11 @@ function InvitePage() {
         setLoading(true);
         setError(null);
         
-        const response = await fetch(`/api/v1/invites/${shareId}`, {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        });
-
-        if (!response.ok) {
-          throw new Error('Invalid or expired invite link');
-        }
-
-        const data = await response.json();
+        // 使用統一的 API 函式
+        const data = await getInviteInfo(shareId);
         
         if (!data.isValid) {
-          throw new Error(data.error || 'Invalid invite');
+          throw new Error('Invalid invite');
         }
         
         setInviteInfo(data);
@@ -72,7 +52,7 @@ function InvitePage() {
     }
   }, [shareId, inviteInfo, validationAttempted]); // Add validationAttempted to prevent duplicate calls
 
-  const acceptInvite = async () => {
+  const acceptInviteHandler = async () => {
     if (!session?.user?.id) {
       setError('You must be signed in to accept this invite');
       return;
@@ -82,20 +62,8 @@ function InvitePage() {
       setJoining(true);
       setError(null);
       
-      const response = await fetch(`/api/v1/invites/${shareId}/accept`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ userId: session.user.id }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to accept invite');
-      }
-
-      const result = await response.json();
+      // 使用統一的 API 函式
+      const result = await acceptInvite(shareId, session.user.id);
       
       if (result.success) {
         setSuccess(true);
@@ -105,7 +73,7 @@ function InvitePage() {
           router.push(result.redirectUrl || `/prompts?space=${inviteInfo?.spaceId}`);
         }, 1000); // Reduced from 2000ms to 1000ms
       } else {
-        throw new Error(result.error || 'Failed to accept invite');
+        throw new Error('Failed to accept invite');
       }
     } catch (error) {
       console.error('Failed to accept invite:', error);
@@ -294,7 +262,7 @@ function InvitePage() {
                   {inviteInfo.isUniversal ? 'Sign In with Invited Email' : 'Sign In to Join'}
                 </Button>
                 <p className="text-xs text-gray-500 text-center">
-                  {inviteInfo.isUniversal 
+                  {inviteInfo.isUniversal
                     ? 'Sign in with the email address that received this invitation.'
                     : 'Sign in with your Google account to join this workspace.'
                   }
@@ -303,7 +271,7 @@ function InvitePage() {
             ) : (
               <>
                 <Button 
-                  onClick={acceptInvite}
+                  onClick={acceptInviteHandler}
                   disabled={joining}
                   className="w-full"
                   size="lg"

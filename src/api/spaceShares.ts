@@ -1,89 +1,15 @@
 // Frontend API functions for space sharing functionality
-
-export interface ShareItem {
-  email: string;
-  permission: 'view' | 'edit';
-}
-
-export interface ShareRecord {
-  id: string;
-  email: string;
-  userId?: string;
-  permission: 'view' | 'edit';
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface CreateSharesResponse {
-  success: {
-    email: string;
-    shareId: string;
-    inviteLink: string;
-  }[];
-  failed: {
-    email: string;
-    reason: string;
-  }[];
-  summary: {
-    total: number;
-    successful: number;
-    failed: number;
-  };
-}
-
-export interface GetSharesResponse {
-  shares: ShareRecord[];
-  total: number;
-}
-
-export interface UpdateSharesResponse {
-  updated: string[];
-  failed: {
-    email: string;
-    reason: string;
-  }[];
-}
-
-export interface DeleteSharesResponse {
-  deleted: string[];
-  failed: {
-    email: string;
-    reason: string;
-  }[];
-}
-
-export interface InviteInfo {
-  spaceId: string;
-  spaceName: string;
-  ownerName: string;
-  permission: 'view' | 'edit';
-  needsRegistration: boolean;
-  isValid: boolean;
-  expiresAt: string;
-  createdAt: string;
-}
-
-export interface AcceptInviteResponse {
-  success: boolean;
-  spaceId: string;
-  permission: 'view' | 'edit';
-  redirectUrl: string;
-}
-
-export interface CreateInviteLinkResponse {
-  inviteLink: string;
-  shareId: string;
-  permission: 'view' | 'edit';
-  expiresAt: string;
-}
-
-export interface GetInviteLinksResponse {
-  inviteLinks: {
-    view?: { link: string; shareId: string; expiresAt: string };
-    edit?: { link: string; shareId: string; expiresAt: string };
-  };
-  success: boolean;
-}
+import {
+  ShareItem,
+  CreateSharesResponse,
+  GetSharesResponse,
+  UpdateSharesResponse,
+  DeleteSharesResponse,
+  InviteInfo,
+  AcceptInviteResponse,
+  CreateInviteLinkResponse,
+  GetInviteLinksResponse
+} from '@/shared/types/spaceSharing';
 
 // Base API function with error handling
 const apiCall = async <T>(url: string, options: RequestInit = {}): Promise<T> => {

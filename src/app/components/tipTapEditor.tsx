@@ -202,7 +202,7 @@ const TipTapEditor = ({
 
   return (
     <div className={`editor-container flex flex-col mb-4 ${disabled ? 'disabled' : ''}`}>
-      <div className={`toolbar flex flex-wrap items-center py-2 px-1 ${disabled ? 'opacity-50 pointer-events-none' : ''}`}>
+      <div className={`toolbar flex flex-wrap items-center py-2 px-1 ${disabled ? 'pointer-events-none' : ''}`}>
         {/* Font Size */}
         <Popover>
           <PopoverTrigger>

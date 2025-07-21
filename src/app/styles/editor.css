@@ -14,6 +14,17 @@
     .toolbar {
       color: #9e9e9e;
       border-color: #d0d0d0;
+      
+      /* 禁用狀態下覆蓋所有 active/primary 顏色 */
+      .bg-primary, 
+      [data-state="on"],
+      .is-active,
+      button.bg-primary,
+      button[data-state="on"] {
+        background-color: #e0e0e0 !important;
+        color: #9e9e9e !important;
+        border-color: #d0d0d0 !important;
+      }
     }
   }
 

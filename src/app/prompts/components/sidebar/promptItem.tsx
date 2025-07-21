@@ -13,6 +13,7 @@ import {
 import { PromptItemProps } from "@/types/prompt";
 import { useSidebarStore } from "@/stores/sidebar";
 import { useSidebarActions } from "@/hooks/sidebar";
+import { useEditableState } from '@/hooks/useEditableState';
 
 const PromptItem: React.FC<PromptItemProps> = React.memo(({
   prompt,
@@ -21,6 +22,7 @@ const PromptItem: React.FC<PromptItemProps> = React.memo(({
   const { isOpen, toggleSidebar } = useContext(SidebarContext);
   const { activePromptMenuId, setActivePromptMenu } = useSidebarStore();
   const { navigation, handleDeletePrompt } = useSidebarActions();
+  const { canDelete } = useEditableState();
   
   const isActivePrompt = navigation.currentPromptId === prompt.id;
 
@@ -44,6 +46,7 @@ const PromptItem: React.FC<PromptItemProps> = React.memo(({
             {prompt.shortcut}
           </span>
         </Link>
+        {canDelete && (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <button
@@ -72,6 +75,7 @@ const PromptItem: React.FC<PromptItemProps> = React.memo(({
             </DropdownMenuContent>
           )}
         </DropdownMenu>
+        )}
       </div>
     </li>
   );

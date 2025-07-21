@@ -121,7 +121,7 @@ const FolderPage = ({ params }: FolderPageProps) => {
           value={formData.name}
           onChange={handleNameChange}
           disabled={!canEdit}
-          className="!text-2xl border-none focus:outline-none focus-visible:ring-0 mb-2 dark:bg-black pt-4 px-0"
+          className="!text-2xl border-none focus:outline-none focus-visible:ring-0 shadow-none mb-2 dark:bg-black pt-4 px-0"
         />
       </div>
       <Textarea

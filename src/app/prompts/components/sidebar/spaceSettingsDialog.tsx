@@ -17,8 +17,9 @@ import { Plus, Trash2 } from "lucide-react";
 import { RowSelectionState } from "@tanstack/react-table";
 import MessageAlert from "../shared/MessageAlert";
 import ShareRecordsTable from "../shared/ShareRecordsTable";
-import InviteLinksSection from "../shared/InviteLinksSection";
+import InviteLinksSection from "../shared/inviteLinksSection";
 import ProgressBar from "../shared/ProgressBar";
+import BatchEmailUpload from "../shared/batchEmailUpload";
 
 interface SpaceSettingsDialogProps {
   isOpen: boolean;
@@ -42,6 +43,7 @@ const SpaceSettingsDialog: React.FC<SpaceSettingsDialogProps> = ({
   const [selectedPermission, setSelectedPermission] = useState<'view' | 'edit'>('view');
   const [selectedEmails, setSelectedEmails] = useState<string[]>([]);
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
+  const [emailInputMode, setEmailInputMode] = useState<'single' | 'batch'>('single');
   
   // Message state
   const [successMessage, setSuccessMessage] = useState("");
@@ -95,6 +97,7 @@ const SpaceSettingsDialog: React.FC<SpaceSettingsDialogProps> = ({
       setSelectedPermission('view');
       setSelectedEmails([]);
       setRowSelection({});
+      setEmailInputMode('single');
       setSuccessMessage("");
       setErrorMessage("");
       setActiveTab('general');
@@ -134,6 +137,28 @@ const SpaceSettingsDialog: React.FC<SpaceSettingsDialogProps> = ({
       setErrorMessage(result.error || "Failed to add email");
     }
   }, [emailInput, selectedPermission, addEmailToShares]);
+
+  // Handle batch email addition
+  const handleBatchEmailsAdd = useCallback((emails: string[], permission: 'view' | 'edit') => {
+    let successCount = 0;
+    let failureCount = 0;
+    
+    emails.forEach(email => {
+      const result = addEmailToShares(email, permission);
+      if (result.success) {
+        successCount++;
+      } else {
+        failureCount++;
+      }
+    });
+
+    if (successCount > 0) {
+      setSuccessMessage(`Successfully added ${successCount} emails`);
+    }
+    if (failureCount > 0) {
+      setErrorMessage(`${failureCount} emails could not be added (duplicates or invalid)`);
+    }
+  }, [addEmailToShares]);
 
 
 
@@ -209,6 +234,7 @@ const SpaceSettingsDialog: React.FC<SpaceSettingsDialogProps> = ({
       setSpaceName(currentName);
       setEmailInput("");
       setSelectedEmails([]);
+      setEmailInputMode('single');
       setSuccessMessage("");
       setErrorMessage("");
       // Keep invite links - they should persist across dialog sessions
@@ -218,7 +244,7 @@ const SpaceSettingsDialog: React.FC<SpaceSettingsDialogProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-[700px] max-h-[80vh] overflow-hidden p-4" aria-describedby={undefined}>
+      <DialogContent className="sm:max-w-[750px] max-h-[85vh] overflow-hidden p-4" aria-describedby={undefined}>
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <span>Space Settings</span>
@@ -250,7 +276,7 @@ const SpaceSettingsDialog: React.FC<SpaceSettingsDialogProps> = ({
           </div>
           
           {/* Main Content */}
-          <div className="flex-1 pl-4">
+          <div className="flex-1 pl-4 overflow-y-auto">
             {activeTab === 'general' && (
               <div className="space-y-6">
                 {/* Success/Error Messages */}
@@ -330,38 +356,72 @@ const SpaceSettingsDialog: React.FC<SpaceSettingsDialogProps> = ({
                   onCopyLink={handleCopyInviteLink}
                 />
                 
-                {/* Add Email Input */}
-                <div className="flex items-center gap-2">
-                  <Input
-                    value={emailInput}
-                    onChange={(e) => setEmailInput(e.target.value)}
-                    placeholder="Enter email address"
-                    className="flex-1"
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        e.preventDefault();
-                        handleAddEmail();
-                      }
-                    }}
-                  />
-                  <Select value={selectedPermission} onValueChange={(value: 'view' | 'edit') => setSelectedPermission(value)}>
-                    <SelectTrigger className="w-20">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="view">View</SelectItem>
-                        <SelectItem value="edit" disabled>Edit</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <Button
-                    type="button"
-                    onClick={handleAddEmail}
-                    className="px-3"
-                    disabled={!emailInput.trim() || loading}
-                  >
-                    <Plus className="h-4 w-4 mr-1" />
-                    Add
-                  </Button>
+                {/* Add Email Section with Tabs */}
+                <div className="space-y-3">
+                  {/* Tab Selection */}
+                  <div className="flex border-b">
+                    <button
+                      onClick={() => setEmailInputMode('single')}
+                      className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+                        emailInputMode === 'single'
+                          ? 'border-primary text-primary'
+                          : 'border-transparent text-gray-500 hover:text-gray-700'
+                      }`}
+                    >
+                      Single Email
+                    </button>
+                    <button
+                      onClick={() => setEmailInputMode('batch')}
+                      className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+                        emailInputMode === 'batch'
+                          ? 'border-primary text-primary'
+                          : 'border-transparent text-gray-500 hover:text-gray-700'
+                      }`}
+                    >
+                      Batch Upload
+                    </button>
+                  </div>
+
+                  {/* Tab Content */}
+                  {emailInputMode === 'single' ? (
+                    <div className="flex items-center gap-2">
+                      <Input
+                        value={emailInput}
+                        onChange={(e) => setEmailInput(e.target.value)}
+                        placeholder="Enter email address"
+                        className="flex-1"
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            handleAddEmail();
+                          }
+                        }}
+                      />
+                      <Select value={selectedPermission} onValueChange={(value: 'view' | 'edit') => setSelectedPermission(value)}>
+                        <SelectTrigger className="w-20">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="view">View</SelectItem>
+                          <SelectItem value="edit" disabled>Edit</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <Button
+                        type="button"
+                        onClick={handleAddEmail}
+                        className="px-3"
+                        disabled={!emailInput.trim() || loading}
+                      >
+                        <Plus className="h-4 w-4 mr-1" />
+                        Add
+                      </Button>
+                    </div>
+                  ) : (
+                    <BatchEmailUpload
+                      onEmailsAdd={handleBatchEmailsAdd}
+                      disabled={loading}
+                    />
+                  )}
                 </div>
 
                 {/* Progress Bar */}

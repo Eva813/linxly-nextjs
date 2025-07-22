@@ -35,28 +35,45 @@ const InviteLinksSection: React.FC<InviteLinksProps> = ({
     return new Date() > new Date(expiresAt);
   };
 
-  // Helper function to get expiry status and message (Taiwan timezone)
+  // Helper function to get expiry status and message
   const getExpiryInfo = (expiresAt: string) => {
     const now = new Date();
     const expiry = new Date(expiresAt);
-    const diffMs = expiry.getTime() - now.getTime();
-    const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
-    
-    if (diffMs <= 0) {
-      return { status: 'expired', message: 'Expired', className: 'text-rose-600' };
-    } else if (diffDays <= 3) {
-      return { 
-        status: 'expiring', 
-        message: `Expires in ${diffDays} day${diffDays === 1 ? '' : 's'}`, 
-        className: 'text-amber-600' 
-      };
-    } else {
-      return { 
-        status: 'valid', 
-        message: `Expires in ${diffDays} days`, 
-        className: 'text-gray-500' 
+
+    // Early return for expired links
+    if (expiry.getTime() <= now.getTime()) {
+      return {
+        status: 'expired',
+        message: 'Expired',
+        className: 'text-rose-600'
       };
     }
+
+    // 計算純日期的天數差（不考慮時間）
+    const nowDateOnly = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const expiryDateOnly = new Date(expiry.getFullYear(), expiry.getMonth(), expiry.getDate());
+    const diffMs = expiryDateOnly.getTime() - nowDateOnly.getTime();
+    const diffDays = Math.round(diffMs / (1000 * 60 * 60 * 24));
+
+    const EXPIRING_THRESHOLD = 3;
+
+    // Message mapping for cleaner logic
+    const getMessage = (days: number): string => {
+      const messages: Record<number, string> = {
+        0: 'Expires today',
+        1: 'Expires tomorrow'
+      };
+      return messages[days] || `Expires in ${days} days`;
+    };
+
+    const message = getMessage(diffDays);
+    const isExpiring = diffDays <= EXPIRING_THRESHOLD;
+
+    return {
+      status: isExpiring ? 'expiring' : 'valid',
+      message,
+      className: isExpiring ? 'text-amber-600' : 'text-gray-500'
+    };
   };
 
   // Helper function to render link with expiry info

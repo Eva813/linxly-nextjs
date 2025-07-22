@@ -15,10 +15,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { FaSpinner } from "react-icons/fa";
 import { Plus, Trash2 } from "lucide-react";
 import { RowSelectionState } from "@tanstack/react-table";
-import MessageAlert from "../shared/MessageAlert";
-import ShareRecordsTable from "../shared/ShareRecordsTable";
+import MessageAlert from "../shared/messageAlert";
+import ShareRecordsTable from "../shared/shareRecordsTable";
 import InviteLinksSection from "../shared/inviteLinksSection";
-import ProgressBar from "../shared/ProgressBar";
+import ProgressBar from "../shared/progressBar";
 import BatchEmailUpload from "../shared/batchEmailUpload";
 
 interface SpaceSettingsDialogProps {

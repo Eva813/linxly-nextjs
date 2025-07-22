@@ -22,19 +22,25 @@ function InvitePage() {
   const [joining, setJoining] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
-  const [validationAttempted, setValidationAttempted] = useState(false);
 
   useEffect(() => {
+    if (!shareId) {
+      setLoading(false);
+      setError("No invite ID provided.");
+      return;
+    }
+
     const validateInvite = async () => {
       try {
+        // Reset state for re-validation
         setLoading(true);
         setError(null);
+        setInviteInfo(null);
         
-        // 使用統一的 API 函式
-        const data = await getInviteInfo(shareId);
+        const data = await getInviteInfo(shareId as string);
         
         if (!data.isValid) {
-          throw new Error('Invalid invite');
+          throw new Error('Invalid or expired invite');
         }
         
         setInviteInfo(data);
@@ -47,12 +53,8 @@ function InvitePage() {
       }
     };
 
-    // Only validate once when component mounts with shareId
-    if (shareId && !inviteInfo && !validationAttempted) {
-      setValidationAttempted(true);
-      validateInvite();
-    }
-  }, [shareId, inviteInfo, validationAttempted]); // Add validationAttempted to prevent duplicate calls
+    validateInvite();
+  }, [shareId]);
 
   const acceptInviteHandler = async () => {
     if (!session?.user?.id) {
@@ -91,16 +93,16 @@ function InvitePage() {
     });
   };
 
-  const getCallbackUrl = () => `/invite/${shareId}`;
+  const getInviteCallbackUrl = () => `/invite/${shareId}`;
 
   const handleEmailLogin = () => {
     // 帶上 invite 參數，讓登入頁面知道這是邀請流程
-    router.push(`/login?invite=${shareId}&callbackUrl=${encodeURIComponent(getCallbackUrl())}`);
+    router.push(`/login?invite=${shareId}&callbackUrl=${encodeURIComponent(getInviteCallbackUrl())}`);
   };
 
   const handleSignUp = () => {
     // 帶上 invite 參數，讓註冊頁面知道這是邀請流程
-    router.push(`/sign-up?invite=${shareId}&callbackUrl=${encodeURIComponent(getCallbackUrl())}`);
+    router.push(`/sign-up?invite=${shareId}&callbackUrl=${encodeURIComponent(getInviteCallbackUrl())}`);
   };
 
   if (loading) {

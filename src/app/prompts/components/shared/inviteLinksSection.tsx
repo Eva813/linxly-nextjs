@@ -107,6 +107,34 @@ const InviteLinksSection: React.FC<InviteLinksProps> = ({
       </div>
     );
   };
+
+  // Helper function to render generate button
+  const renderGenerateButton = (permission: 'view' | 'edit') => {
+    const isGenerating = generatingLink === permission;
+    const buttonText = permission === 'view' ? 'Generate View Link' : 'Generate Edit Link';
+    
+    // Edit link generation is currently disabled
+    const isDisabled = isGenerating || permission === 'edit';
+
+    return (
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={() => onGenerateLink(permission)}
+        disabled={isDisabled}
+        className="w-full h-8 text-xs"
+      >
+        {isGenerating ? (
+          <>
+            <FaSpinner className="animate-spin mr-1" />
+            Generating...
+          </>
+        ) : (
+          buttonText
+        )}
+      </Button>
+    );
+  };
   return (
     <div className="border rounded-md p-3 bg-blue-50 border-blue-200">
       <div className="flex items-center justify-between mb-2">
@@ -126,27 +154,7 @@ const InviteLinksSection: React.FC<InviteLinksProps> = ({
             {inviteLinks.view && !isLinkExpired(inviteLinks.view.expiresAt) ? (
               renderLinkWithExpiry('view', inviteLinks.view)
             ) : (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => onGenerateLink('view')}
-                disabled={generatingLink === 'view' || loading}
-                className="w-full h-8 text-xs"
-              >
-                {generatingLink === 'view' ? (
-                  <>
-                    <FaSpinner className="animate-spin mr-1" />
-                    Generating...
-                  </>
-                ) : loading ? (
-                  <>
-                    <FaSpinner className="animate-spin mr-1" />
-                    Loading...
-                  </>
-                ) : (
-                  'Generate View Link'
-                )}
-              </Button>
+              renderGenerateButton('view')
             )}
           </div>
 
@@ -155,28 +163,7 @@ const InviteLinksSection: React.FC<InviteLinksProps> = ({
             {inviteLinks.edit && !isLinkExpired(inviteLinks.edit.expiresAt) ? (
               renderLinkWithExpiry('edit', inviteLinks.edit)
             ) : (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => onGenerateLink('edit')}
-                // {generatingLink === 'edit' || loading}
-                disabled={true}
-                className="w-full h-8 text-xs"
-              >
-                {generatingLink === 'edit' ? (
-                  <>
-                    <FaSpinner className="animate-spin mr-1" />
-                    Generating...
-                  </>
-                ) : loading ? (
-                  <>
-                    <FaSpinner className="animate-spin mr-1" />
-                    Loading...
-                  </>
-                ) : (
-                  'Generate Edit Link'
-                )}
-              </Button>
+              renderGenerateButton('edit')
             )}
           </div>
         </div>

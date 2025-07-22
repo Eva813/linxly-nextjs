@@ -1,6 +1,6 @@
 'use client'
 import Link from "next/link";
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { signup } from "@/api/auth";
@@ -22,7 +22,7 @@ const ERROR_MESSAGES = {
   SIGN_UP_FAILED: "Sign up failed",
 };
 
-export default function SignUp() {
+function SignUpContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { data: session } = useSession();
@@ -215,5 +215,13 @@ export default function SignUp() {
         </Link>
       </p>
     </AuthLayout>
+  );
+}
+
+export default function SignUp() {
+  return (
+    <Suspense fallback={<FullScreenCardSpinner message="Loading..." />}>
+      <SignUpContent />
+    </Suspense>
   );
 }

@@ -1,31 +1,19 @@
-# Folder API 重構總結
+# Folder API 設計與效能優化
 
-## 重構目標
+## 1. 核心問題
 
-本次重構主要解決了以下問題：
-1. **N+1 查詢問題**：`folders/route.ts` 中的效能瓶頸
-2. **程式碼重複**：Lazy Migration 邏輯在兩個檔案中重複
-3. **職責混亂**：讀取和寫入操作混合在同一個函式中
+舊版的 `GET /api/v1/folders` API 存在嚴重的 **N+1 查詢問題**，導致前端在讀取資料夾列表時效能低下。
 
-## 重構成果
+- **N+1 問題**：1 次查詢獲取所有 `folders`，接著為每個 `folder` 執行 1 次查詢來獲取其對應的 `prompts`，總共 `1 + N` 次資料庫讀取。
+- **職責混亂**：資料處理、排序和懶人遷移（Lazy Migration）的邏輯散落在各處，難以維護。
 
-### 1. 建立共用工具函式 (`src/lib/utils/promptMigration.ts`)
+## 2. 優化策略
 
-#### 核心函式：
-- `handleLazyMigration()`: 處理 seqNo 的懶人遷移邏輯
-- `sortPromptsBySeqNo()`: 根據 seqNo 排序 prompts
-- `formatPromptsForResponse()`: 格式化 API 回應資料
-- `groupPromptsByFolderId()`: 將 prompts 按 folderId 分組
+### 2.1. 解決 N+1 問題
 
-#### 優點：
-- **DRY 原則**：消除重複程式碼
-- **單一職責**：每個函式只負責一個特定任務
-- **型別安全**：使用 TypeScript 介面確保資料一致性
-- **錯誤處理**：集中化的錯誤處理邏輯
+我們將查詢邏輯從「循序執行」改為「平行批次處理」，大幅減少了資料庫的讀取次數。
 
-### 2. 最佳化 `folders/route.ts` 
-
-#### 改進前（N+1 問題）：
+#### **改進前（N+1 問題）**
 ```typescript
 // 1 次查詢獲取 folders
 const foldersSnapshot = await query.get();
@@ -39,92 +27,66 @@ const result = await Promise.all(foldersSnapshot.docs.map(async (folderDoc) => {
 }));
 ```
 
-#### 改進後（最佳化查詢）：
+#### **改進後（2 次平行查詢）**
 ```typescript
-// 同時執行 2 次查詢：folders + 所有 prompts
+// 在 src/app/api/v1/folders/route.ts 中
+
+// 1. 權限驗證 (約 1-2 次查詢)
+// ... 檢查使用者對 promptSpace 的存取權限 ...
+
+// 2. 平行獲取主要資料 (2 次查詢)
 const [foldersSnapshot, promptsSnapshot] = await Promise.all([
-  adminDb.collection('folders').where('userId', '==', userId).get(),
-  adminDb.collection('prompts').where('userId', '==', userId).get()
+  adminDb.collection('folders').where('userId', '==', spaceOwnerId).get(),
+  adminDb.collection('prompts').where('userId', '==', spaceOwnerId).get()
 ]);
 
-// 在記憶體中分組和組合資料
+// 3. 在記憶體中進行資料分組和處理
 const promptsMap = groupPromptsByFolderId(promptsSnapshot.docs);
+// ... 後續處理 ...
 ```
 
-#### 效能提升：
-- **查詢次數**：從 `1 + N` 次減少到 `2` 次
-- **延遲降低**：大幅減少網路往返時間
-- **費用節省**：Firestore 讀取次數顯著減少
+#### **效能提升**
+- **查詢次數**：從 `1 + N` 次顯著減少到固定的 `~4` 次（權限驗證 + 主要資料）。
+- **延遲降低**：大幅減少網路往返時間，提升 API 回應速度。
+- **費用節省**：Firestore 讀取成本顯著降低。
 
-### 3. 簡化 `folders/[folderId]/route.ts`
+### 2.2. 建立共用工具函式
 
-#### 改進：
-- 移除重複的 Lazy Migration 邏輯
-- 使用共用的工具函式
-- 改善程式碼可讀性和維護性
+為了提高程式碼的重用性和可維護性，我們將所有與 Prompt 相關的資料處理邏輯集中到 `src/server/utils/promptUtils.ts`。
 
-## 使用範例
+#### **核心函式**
+- `groupPromptsByFolderId()`: 將 `prompts` 陣列轉換為以 `folderId` 為鍵的 Map，方便在記憶體中快速查找。
+- `performLazyMigration()`: 處理 `prompts` 的 `seqNo` 懶人遷移邏輯，確保資料排序的正確性。
+- `formatPromptsForResponse()`: 格式化 API 回應中的 `prompts` 資料結構。
 
-### 獲取所有資料夾（已最佳化）
-```typescript
-// GET /api/v1/folders
-// 現在只需要 2 次資料庫查詢，無論有多少個資料夾
-```
+#### **優點**
+- **DRY 原則**：消除重複程式碼，集中管理資料處理邏輯。
+- **單一職責**：每個函式只負責一個特定任務，易於理解和測試。
+- **型別安全**：利用 TypeScript 確保資料在處理過程中的一致性。
 
-### 獲取單一資料夾
-```typescript
-// GET /api/v1/folders/{folderId}
-// 使用共用的 Lazy Migration 邏輯
-```
+## 3. API 端點說明
 
-## 向後相容性
+### `GET /api/v1/folders`
+- **功能**：根據傳入的 `promptSpaceId`，獲取該空間下所有的資料夾及其包含的 prompts。
+- **優化**：已採用上述的平行查詢策略，解決了 N+1 問題。
+- **權限**：會驗證使用者是否為 `promptSpace` 的擁有者或被分享者。
+
+### `POST /api/v1/folders`
+- **功能**：在指定的 `promptSpaceId` 下建立一個新的資料夾。
+- **權限**：會驗證使用者是否擁有該 `promptSpace` 的編輯權限。
+
+**注意**：原有的 `GET /api/v1/folders/[folderId]` 端點已被移除。前端現在透過一次性獲取所有資料夾的方式來取得單一資料夾的資訊，以簡化流程並提升效能。
+
+## 4. 向後相容性
 
 ✅ **完全向後相容**
-- API 回應格式保持不變
-- 前端程式碼無需修改
-- 資料庫結構無需變更
+- API 的公開合約（Request & Response）保持不變。
+- 前端程式碼無需進行任何修改。
 
-## 效能預估
+## 5. 後續建議
 
-假設一個使用者有 20 個資料夾：
+- **監控與警報**：在生產環境中持續監控此 API 的響應時間和錯誤率。
+- **快取機制**：對於不常變動的 `promptSpace`，可以考慮在 API 層加入快取（如 Redis）以進一步提升效能。
+- **單元測試**：為 `promptUtils.ts` 中的共用函式撰寫單元測試，確保其穩定性。
 
-### 改進前：
-- **資料庫查詢**：21 次（1 + 20）
-- **網路延遲**：~2.1 秒（假設每次查詢 100ms）
-- **Firestore 費用**：21 次讀取
-
-### 改進後：
-- **資料庫查詢**：2 次
-- **網路延遲**：~200ms（2 次並行查詢）
-- **Firestore 費用**：2 次讀取
-
-**改善比例**：
-- 查詢次數：**減少 90.5%**
-- 響應時間：**減少 90%**
-- 成本：**減少 90.5%**
-
-## 程式碼品質提升
-
-1. **可維護性**：集中化的邏輯更容易維護和更新
-2. **可測試性**：獨立的工具函式更容易進行單元測試
-3. **可讀性**：清晰的函式命名和職責分離
-4. **擴展性**：新的功能可以輕鬆重用現有的工具函式
-
-## 後續建議
-
-### 1. 監控和測試
-- 在生產環境中監控 API 響應時間
-- 比較重構前後的效能指標
-- 建立自動化測試來驗證功能正確性
-
-### 2. 進一步最佳化機會
-- 考慮實作快取機制（Redis）
-- 使用 Firestore 的 `orderBy` 查詢來減少記憶體排序
-- 實作分頁機制處理大量資料
-
-### 3. 錯誤處理改進
-- 增加更詳細的錯誤記錄
-- 實作重試機制處理暫時性失敗
-- 增加資料驗證邏輯
-
-這次重構不僅解決了當前的效能問題，也為未來的功能擴展奠定了良好的基礎。
+這次重構不僅解決了當前的效能瓶頸，也為未來的功能擴展（如更複雜的權限管理）奠定了清晰、可維護的程式碼基礎。

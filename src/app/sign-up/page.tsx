@@ -1,11 +1,12 @@
 'use client'
 import Link from "next/link";
-import { useState, useCallback, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { signup } from "@/api/auth";
 import { signIn } from "next-auth/react";
 import { acceptInvite } from "@/api/spaceShares";
+import { validateEmail } from "@/utils/validation";
 
 import { AuthLayout } from "@/components/layout/AuthLayout";
 import { InputField } from "@/components/ui/InputField";
@@ -39,11 +40,6 @@ export default function SignUp() {
   const [showPassword, setShowPassword] = useState(false);
   const [processingInvite, setProcessingInvite] = useState(false);
 
-  // 驗證電子郵件的函式
-  const validateEmail = useCallback((email: string): boolean => {
-    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-    return emailRegex.test(email);
-  }, []);
 
   // 監聽登入狀態，自動處理邀請
   useEffect(() => {
@@ -135,7 +131,7 @@ export default function SignUp() {
     if (error === ERROR_MESSAGES.INVALID_EMAIL && validateEmail(email)) {
       setError("");
     }
-  }, [email, error, validateEmail]);
+  }, [email, error]);
 
   // Loading 覆蓋整個頁面當正在處理邀請時
   if (processingInvite) {

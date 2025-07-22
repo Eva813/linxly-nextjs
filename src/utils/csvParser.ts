@@ -1,4 +1,5 @@
 import Papa from 'papaparse';
+import { validateEmail } from './validation';
 
 export interface ParsedEmail {
   email: string;
@@ -16,11 +17,6 @@ export interface CsvParseResult {
   error?: string;
 }
 
-const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-export function validateEmail(email: string): boolean {
-  return EMAIL_REGEX.test(email.trim());
-}
 
 export function parseCsvFile(file: File): Promise<CsvParseResult> {
   return new Promise((resolve) => {

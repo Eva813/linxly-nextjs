@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { signIn, useSession } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { SocialLoginButton } from "@/components/ui/socialLoginButton";
 import { FaSpinner } from "react-icons/fa";
 import { CheckCircle, AlertCircle, UserPlus, Eye, Edit } from "lucide-react";
 import { getInviteInfo, acceptInvite } from "@/api/spaceShares";
@@ -83,10 +84,22 @@ function InvitePage() {
     }
   };
 
-  const handleSignInAndJoin = () => {
+  const handleGoogleSignIn = () => {
     signIn('google', { 
       callbackUrl: `/invite/${shareId}` 
     });
+  };
+
+  const getCallbackUrl = () => `/invite/${shareId}`;
+
+  const handleEmailLogin = () => {
+    // 帶上 invite 參數，讓登入頁面知道這是邀請流程
+    router.push(`/login?invite=${shareId}&callbackUrl=${encodeURIComponent(getCallbackUrl())}`);
+  };
+
+  const handleSignUp = () => {
+    // 帶上 invite 參數，讓註冊頁面知道這是邀請流程
+    router.push(`/sign-up?invite=${shareId}&callbackUrl=${encodeURIComponent(getCallbackUrl())}`);
   };
 
   if (loading) {
@@ -253,21 +266,44 @@ function InvitePage() {
                 <FaSpinner className="animate-spin text-blue-600" size={24} />
               </div>
             ) : !session?.user ? (
-              <>
+              <div className="space-y-3">
+                {/* Email/Password Login */}
                 <Button 
-                  onClick={handleSignInAndJoin}
+                  onClick={handleEmailLogin}
                   className="w-full"
                   size="lg"
                 >
-                  {inviteInfo.isUniversal ? 'Sign In with Invited Email' : 'Sign In to Join'}
+                  Sign In with Email
                 </Button>
-                <p className="text-xs text-gray-500 text-center">
-                  {inviteInfo.isUniversal
-                    ? 'Sign in with the email address that received this invitation.'
-                    : 'Sign in with your Google account to join this workspace.'
-                  }
-                </p>
-              </>
+
+                {/* Google OAuth Login */}
+                <SocialLoginButton
+                  provider="google"
+                  onClick={handleGoogleSignIn}
+                  isLoading={false}
+                />
+
+                {/* Sign Up Link */}
+                <div className="text-center">
+                  <p className="text-sm text-gray-600">
+                    Don&apos;t have an account?{' '}
+                    <Button
+                      variant="link"
+                      onClick={handleSignUp}
+                      className="p-0 h-auto text-blue-600 hover:underline"
+                    >
+                      Sign up
+                    </Button>
+                  </p>
+                </div>
+
+                {/* Helper Text */}
+                {inviteInfo.isUniversal && (
+                  <p className="text-xs text-gray-500 text-center">
+                    Please sign in with the email address that received this invitation.
+                  </p>
+                )}
+              </div>
             ) : (
               <>
                 <Button 

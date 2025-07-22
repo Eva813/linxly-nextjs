@@ -13,9 +13,8 @@ import { InputField } from "@/components/ui/InputField";
 import { LoadingButton } from "@/components/ui/loadingButton";
 import { ErrorMessage } from "@/components/ui/errorMessage";
 import { SocialLoginButton } from "@/components/ui/socialLoginButton";
-import { Card, CardContent } from "@/components/ui/card";
-import { FaSpinner } from "react-icons/fa";
 import { Eye, EyeOff } from "lucide-react";
+import { FullScreenCardSpinner } from "@/components/fullScreenCardSpinner";
 
 const ERROR_MESSAGES = {
   INVALID_EMAIL: "Invalid email address",
@@ -135,16 +134,7 @@ export default function SignUp() {
 
   // Loading 覆蓋整個頁面當正在處理邀請時
   if (processingInvite) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <Card className="w-full max-w-md">
-          <CardContent className="flex flex-col items-center justify-center py-8">
-            <FaSpinner className="animate-spin text-blue-600 mb-4" size={24} />
-            <p className="text-gray-600">Joining workspace...</p>
-          </CardContent>
-        </Card>
-      </div>
-    );
+    return <FullScreenCardSpinner message="Joining workspace..." />;
   }
 
   const getDescription = () => {

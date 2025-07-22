@@ -29,7 +29,6 @@ export function useLoginForm() {
 
   // 監聽登入狀態，自動處理邀請
   useEffect(() => {
-    // 避免重複處理或無限循環
     if (!session?.user?.id || !inviteShareId || processingInvite) {
       return;
     }

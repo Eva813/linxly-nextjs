@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { adminDb } from '@/server/db/firebase';
+import { generateInviteLink } from '@/server/utils/urlUtils';
 
 export async function POST(
   req: Request,
@@ -96,8 +97,8 @@ export async function POST(
       await shareRef.set(shareData);
     }
 
-    // Generate the invite link
-    const inviteLink = `${process.env.NEXT_PUBLIC_APP_URL}/invite/${shareId}`;
+    // 使用工具函式產生邀請連結
+    const inviteLink = generateInviteLink(req, shareId);
 
     return NextResponse.json({
       inviteLink,

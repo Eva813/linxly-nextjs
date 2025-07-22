@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { adminDb } from '@/server/db/firebase';
+import { getBaseUrl } from '@/server/utils/urlUtils';
 
 // GET /api/v1/prompt-spaces/{spaceId}/invite-links
 // Fetch existing invite links for a space
@@ -41,7 +42,8 @@ export async function GET(
       edit?: { link: string; shareId: string; expiresAt: string };
     } = {};
 
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+    // 使用工具函式動態取得 URL
+    const baseUrl = getBaseUrl(req);
 
     // Process existing links
     existingLinksQuery.docs.forEach(doc => {

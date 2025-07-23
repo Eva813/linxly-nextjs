@@ -34,7 +34,7 @@ const PromptItem: React.FC<PromptItemProps> = React.memo(({
         }`}
       >
         <Link
-          prefetch
+          prefetch={true}
           href={`/prompts/prompt/${prompt.id}`}
           onClick={() => {
             if (isOpen) toggleSidebar();

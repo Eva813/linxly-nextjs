@@ -41,7 +41,7 @@ const FolderItem: React.FC<FolderItemProps> = ({
   return (
     <li className="mb-2">
       <Link
-        prefetch
+        prefetch={true}
         href={`/prompts/folder/${folder.id}`}
         onClick={() => {
           if (isOpen) toggleSidebar();

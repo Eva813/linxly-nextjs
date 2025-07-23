@@ -13,8 +13,11 @@ import PromptSpaceSelector from "./promptSpaceSelector";
 import CreateSpaceModal from "./createSpaceModal";
 
 const Sidebar = () => {
-  const { folders, isLoading, error } = usePromptStore();
-  const { isCreatingFolder, isCreatingPrompt } = useSidebarStore();
+  const folders = usePromptStore(state => state.folders);
+  const isLoading = usePromptStore(state => state.isLoading);
+  const error = usePromptStore(state => state.error);
+  const isCreatingFolder = useSidebarStore(state => state.isCreatingFolder);
+  const isCreatingPrompt = useSidebarStore(state => state.isCreatingPrompt);
   const { handleCreateFolder, handleCreatePrompt } = useSidebarActions();
   const { canEdit } = useEditableState();
   const [isCreateSpaceModalOpen, setIsCreateSpaceModalOpen] = useState(false);

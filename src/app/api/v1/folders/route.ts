@@ -85,17 +85,11 @@ export async function GET(req: Request) {
       // 格式化程式碼片段資料
       const formattedPrompts = formatPromptsForResponse(sortedPrompts);
 
-      const createdAt = folder.createdAt?.toDate?.() || new Date();
-      const updatedAt = folder.updatedAt?.toDate?.() || createdAt;
-
       return {
         id: folderId,
         name: folder.name,
         description: folder.description || '',
-        prompts: formattedPrompts,
-        createdAt: createdAt.toISOString(),
-        updatedAt: updatedAt.toISOString(),
-        promptCount: formattedPrompts.length
+        prompts: formattedPrompts
       };
     }));
 

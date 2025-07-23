@@ -49,35 +49,24 @@ export async function GET(req: Request) {
       }
     }
 
-    // 簡化查詢避免需要複合索引 - 使用 space owner 的 userId
+    // 直接查詢特定 promptSpaceId，減少不必要的資料傳輸
     const [foldersSnapshot, promptsSnapshot] = await Promise.all([
       adminDb
         .collection('folders')
+        .where('promptSpaceId', '==', promptSpaceId)
         .where('userId', '==', spaceOwnerId)
+        .orderBy('createdAt', 'asc')
         .get(),
       adminDb
         .collection('prompts')
+        .where('promptSpaceId', '==', promptSpaceId)
         .where('userId', '==', spaceOwnerId)
         .get()
     ]);
 
-    // 過濾出指定 promptSpaceId 的資料夾並按創建時間排序
-    const filteredFolders = foldersSnapshot.docs
-      .filter(doc => {
-        const data = doc.data();
-        return data.promptSpaceId === promptSpaceId;
-      })
-      .sort((a, b) => {
-        const aCreatedAt = a.data().createdAt?.toDate?.()?.getTime() || 0;
-        const bCreatedAt = b.data().createdAt?.toDate?.()?.getTime() || 0;
-        return aCreatedAt - bCreatedAt; // 舊的在前，新的在後
-      });
-
-    // 過濾出指定 promptSpaceId 的 prompts
-    const filteredPrompts = promptsSnapshot.docs.filter(doc => {
-      const data = doc.data();
-      return data.promptSpaceId === promptSpaceId;
-    });
+    // 資料已經是精準查詢的結果，不需要過濾
+    const filteredFolders = foldersSnapshot.docs;
+    const filteredPrompts = promptsSnapshot.docs;
 
     // 將 prompts 按 folderId 分組
     const promptsMap = groupPromptsByFolderId(filteredPrompts);

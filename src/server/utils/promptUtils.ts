@@ -24,114 +24,6 @@ export function sortPromptsBySeqNo(prompts: PromptData[]): PromptData[] {
   });
 }
 
-/**
- * 檢查是否有 prompt 缺少 seqNo
- */
-export function hasPromptsWithoutSeqNo(prompts: PromptData[]): boolean {
-  return prompts.some(p => p.seqNo === undefined || p.seqNo === null);
-}
-
-/**
- * 正規化 prompt 序列 - 確保所有 prompt 都有正確的 seqNo
- */
-export function normalizePromptSequence(prompts: PromptData[]): PromptData[] {
-  if (!hasPromptsWithoutSeqNo(prompts)) {
-    return sortPromptsBySeqNo(prompts);
-  }
-
-  // 按 createdAt 排序並重新分配 seqNo
-  const sorted = [...prompts].sort((a, b) => {
-    if (!a.createdAt || !b.createdAt) return 0;
-    
-    const getTime = (timestamp: Date | { seconds: number; nanoseconds?: number }) => {
-      if (timestamp instanceof Date) {
-        return timestamp.getTime();
-      }
-      return timestamp.seconds * 1000;
-    };
-    
-    const aTime = getTime(a.createdAt);
-    const bTime = getTime(b.createdAt);
-    return aTime - bTime;
-  });
-
-  // 重新分配 seqNo
-  return sorted.map((prompt, index) => ({
-    ...prompt,
-    seqNo: index + 1
-  }));
-}
-
-/**
- * 統一的 Lazy Migration 函式 - 支援 batch 和 transaction 兩種模式
- */
-export async function performLazyMigration(
-  prompts: PromptData[],
-  options: {
-    mode: 'batch' | 'transaction';
-    transaction?: Transaction;
-    folderId: string;
-    userId: string;
-  }
-): Promise<PromptData[]> {
-  const { mode, transaction, folderId } = options;
-
-  if (!hasPromptsWithoutSeqNo(prompts)) {
-    return sortPromptsBySeqNo(prompts);
-  }
-
-  if (process.env.NODE_ENV === 'development') {
-    console.log(`資料夾 ${folderId} 偵測到缺少 seqNo，開始進行 Lazy Migration (${mode} 模式)`);
-  }
-
-  const normalizedPrompts = normalizePromptSequence(prompts);
-  
-  try {
-    if (mode === 'transaction' && transaction) {
-      // Transaction 模式
-      normalizedPrompts.forEach((prompt, index) => {
-        const originalPrompt = prompts.find(p => p.id === prompt.id);
-        if (originalPrompt && (originalPrompt.seqNo === undefined || originalPrompt.seqNo === null)) {
-          const promptRef = adminDb.collection('prompts').doc(prompt.id);
-          transaction.update(promptRef, {
-            seqNo: index + 1,
-            updatedAt: new Date()
-          });
-        }
-      });
-    } else {
-      // Batch 模式
-      const batch = adminDb.batch();
-      let hasUpdates = false;
-
-      normalizedPrompts.forEach((prompt, index) => {
-        const originalPrompt = prompts.find(p => p.id === prompt.id);
-        if (originalPrompt && (originalPrompt.seqNo === undefined || originalPrompt.seqNo === null)) {
-          const promptRef = adminDb.collection('prompts').doc(prompt.id);
-          batch.update(promptRef, {
-            seqNo: index + 1,
-            updatedAt: new Date()
-          });
-          hasUpdates = true;
-        }
-      });
-
-      if (hasUpdates) {
-        await batch.commit();
-      }
-    }
-
-    if (process.env.NODE_ENV === 'development') {
-      console.log(`Lazy Migration 完成，已更新資料夾 ${folderId} 下 ${normalizedPrompts.length} 筆 prompt 的 seqNo`);
-    }
-    return normalizedPrompts;
-  } catch (error) {
-    if (process.env.NODE_ENV === 'development') {
-      console.error(`Lazy Migration 失敗，資料夾 ${folderId}:`, error);
-    }
-    return sortPromptsBySeqNo(prompts);
-  }
-}
 
 /**
  * 計算插入位置的策略
@@ -144,17 +36,17 @@ export function calculateInsertStrategy(
   affectedPrompts: PromptData[];
   updateOperations: Array<{ promptId: string; newSeqNo: number }>;
 } {
-  const normalizedPrompts = normalizePromptSequence(existingPrompts);
-  const afterIndex = normalizedPrompts.findIndex(p => p.id === afterPromptId);
+  const sortedPrompts = sortPromptsBySeqNo(existingPrompts);
+  const afterIndex = sortedPrompts.findIndex((p: PromptData) => p.id === afterPromptId);
   
   if (afterIndex === -1) {
     throw new Error('afterPromptId not found');
   }
 
-  const insertSeqNo = normalizedPrompts[afterIndex].seqNo! + 1;
-  const affectedPrompts = normalizedPrompts.slice(afterIndex + 1);
+  const insertSeqNo = sortedPrompts[afterIndex].seqNo! + 1;
+  const affectedPrompts = sortedPrompts.slice(afterIndex + 1);
   
-  const updateOperations = affectedPrompts.map(prompt => ({
+  const updateOperations = affectedPrompts.map((prompt: PromptData) => ({
     promptId: prompt.id,
     newSeqNo: prompt.seqNo! + 1
   }));

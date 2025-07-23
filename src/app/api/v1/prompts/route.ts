@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import { adminDb } from '@/server/db/firebase';
 import { 
-  performLazyMigration,
   calculateInsertStrategy,
   executeSeqNoUpdates,
   getMaxSeqNo
@@ -104,12 +103,8 @@ export async function GET(req: Request) {
       };
     });
 
-    // 使用 performLazyMigration 處理排序和遷移
-    const sortedPrompts = await performLazyMigration(prompts, {
-      mode: 'batch',
-      folderId,
-      userId: promptOwnerUserId
-    });
+    // 直接排序 prompts（所有 prompts 現在都有 seqNo）
+    const sortedPrompts = prompts.sort((a, b) => (a.seqNo || 0) - (b.seqNo || 0));
 
     const result = sortedPrompts.map(prompt => ({
       id: prompt.id,

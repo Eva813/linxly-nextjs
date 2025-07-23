@@ -2,7 +2,6 @@ import { NextResponse } from 'next/server';
 import { adminDb } from '@/server/db/firebase';
 import { FieldValue } from 'firebase-admin/firestore';
 import { 
-  performLazyMigration, 
   groupPromptsByFolderId, 
   formatPromptsForResponse 
 } from '@/server/utils/promptUtils';
@@ -62,11 +61,17 @@ export async function GET(req: Request) {
         .get()
     ]);
 
-    // 過濾出指定 promptSpaceId 的資料夾
-    const filteredFolders = foldersSnapshot.docs.filter(doc => {
-      const data = doc.data();
-      return data.promptSpaceId === promptSpaceId;
-    });
+    // 過濾出指定 promptSpaceId 的資料夾並按創建時間排序
+    const filteredFolders = foldersSnapshot.docs
+      .filter(doc => {
+        const data = doc.data();
+        return data.promptSpaceId === promptSpaceId;
+      })
+      .sort((a, b) => {
+        const aCreatedAt = a.data().createdAt?.toDate?.()?.getTime() || 0;
+        const bCreatedAt = b.data().createdAt?.toDate?.()?.getTime() || 0;
+        return aCreatedAt - bCreatedAt; // 舊的在前，新的在後
+      });
 
     // 過濾出指定 promptSpaceId 的 prompts
     const filteredPrompts = promptsSnapshot.docs.filter(doc => {
@@ -85,15 +90,11 @@ export async function GET(req: Request) {
       // 從分組的 Map 中獲取該資料夾的 prompts
       const folderPrompts = promptsMap.get(folderId) || [];
 
-      // 處理 Lazy Migration（如果需要）
-      const processedPrompts = await performLazyMigration(folderPrompts, {
-        mode: 'batch',
-        folderId,
-        userId
-      });
+      // 直接排序 prompts（所有 prompts 現在都有 seqNo）
+      const sortedPrompts = folderPrompts.sort((a, b) => (a.seqNo || 0) - (b.seqNo || 0));
 
       // 格式化程式碼片段資料
-      const formattedPrompts = formatPromptsForResponse(processedPrompts);
+      const formattedPrompts = formatPromptsForResponse(sortedPrompts);
 
       const createdAt = folder.createdAt?.toDate?.() || new Date();
       const updatedAt = folder.updatedAt?.toDate?.() || createdAt;

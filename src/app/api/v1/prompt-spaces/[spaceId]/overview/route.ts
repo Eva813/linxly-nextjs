@@ -74,7 +74,14 @@ export async function GET(
       }
     });
 
-    const foldersWithCounts = foldersSnapshot.docs.map(folderDoc => {
+    // 先排序 folders 再處理
+    const sortedFolders = foldersSnapshot.docs.sort((a, b) => {
+      const aCreatedAt = a.data().createdAt?.toDate?.()?.getTime() || 0;
+      const bCreatedAt = b.data().createdAt?.toDate?.()?.getTime() || 0;
+      return aCreatedAt - bCreatedAt; // 舊的在前，新的在後
+    });
+
+    const foldersWithCounts = sortedFolders.map(folderDoc => {
       const folderData = folderDoc.data();
       const folderId = folderDoc.id;
       const promptCount = promptCountMap.get(folderId) || 0;

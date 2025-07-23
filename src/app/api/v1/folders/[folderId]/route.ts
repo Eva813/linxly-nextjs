@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import { adminDb } from '@/server/db/firebase';
 import { 
-  performLazyMigration, 
   formatPromptsForResponse
 } from '@/server/utils/promptUtils';
 import type { PromptData } from '@/shared/types/prompt';
@@ -58,15 +57,11 @@ export async function GET(
       };
     });
 
-    // 使用共用的 Lazy Migration 邏輯
-    const processedPrompts = await performLazyMigration(prompts, {
-      mode: 'batch',
-      folderId,
-      userId
-    });
+    // 直接排序 prompts（所有 prompts 現在都有 seqNo）
+    const sortedPrompts = prompts.sort((a, b) => (a.seqNo || 0) - (b.seqNo || 0));
 
     // 格式化回應資料
-    const formattedPrompts = formatPromptsForResponse(processedPrompts);
+    const formattedPrompts = formatPromptsForResponse(sortedPrompts);
 
     // 格式化回應資料
     const result = {
@@ -144,15 +139,11 @@ export async function PUT(
       };
     });
 
-    // 使用共用的 Lazy Migration 邏輯
-    const processedPrompts = await performLazyMigration(prompts, {
-      mode: 'batch',
-      folderId,
-      userId
-    });
+    // 直接排序 prompts（所有 prompts 現在都有 seqNo）
+    const sortedPrompts = prompts.sort((a, b) => (a.seqNo || 0) - (b.seqNo || 0));
 
     // 格式化回應資料
-    const formattedPrompts = formatPromptsForResponse(processedPrompts);
+    const formattedPrompts = formatPromptsForResponse(sortedPrompts);
 
     const result = {
       id: folderId,

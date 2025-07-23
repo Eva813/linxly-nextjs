@@ -8,7 +8,7 @@ import { adminDb } from "@/server/db/firebase";
 import bcrypt from "bcryptjs";
 
 const handler = NextAuth({
-  debug: true,
+  debug: process.env.NODE_ENV === 'development',
   secret: process.env.NEXTAUTH_SECRET,
 
   // JWT-only，不會把 session 存到 DB

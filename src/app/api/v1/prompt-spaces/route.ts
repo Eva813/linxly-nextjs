@@ -66,41 +66,90 @@ export async function GET(req: Request) {
       await migrateExistingDataToDefaultSpace(userId, defaultSpaceRef.id);
     }
 
-    // Get shared spaces
+    // Get shared spaces - 優化：避免 N+1 查詢
     const sharedSpacesSnapshot = await adminDb
       .collection('space_shares')
       .where('sharedWithUserId', '==', userId)
       .get();
 
-    const sharedSpaces = [];
-    for (const shareDoc of sharedSpacesSnapshot.docs) {
-      const shareData = shareDoc.data();
-      
-      // Get space details
-      const spaceId = shareData.promptSpaceId;
-      const spaceDoc = await adminDb.collection('prompt_spaces').doc(spaceId).get();
-      if (spaceDoc.exists) {
-        const spaceData = spaceDoc.data() as PromptSpaceData;
-        const createdAt = convertTimestampToDate(spaceData.createdAt);
-        const updatedAt = convertTimestampToDate(spaceData.updatedAt) || createdAt;
+    const sharedSpaces: Array<{
+      space: PromptSpaceApiResponse;
+      permission: string;
+      sharedBy: string;
+      sharedAt: string;
+    }> = [];
+    
+    if (sharedSpacesSnapshot.docs.length > 0) {
+      // 收集所有需要查詢的 spaceIds 和 userIds
+      const spaceIds: string[] = [];
+      const userIds: string[] = [];
+      const shareDataMap = new Map();
 
-        // Get owner details
-        const ownerDoc = await adminDb.collection('users').doc(shareData.ownerUserId).get();
-        const ownerData = ownerDoc.data();
+      sharedSpacesSnapshot.docs.forEach(shareDoc => {
+        const shareData = shareDoc.data();
+        const spaceId = shareData.promptSpaceId;
+        const userId = shareData.ownerUserId;
+        
+        spaceIds.push(spaceId);
+        userIds.push(userId);
+        shareDataMap.set(spaceId, shareData);
+      });
 
-        sharedSpaces.push({
-          space: {
-            id: spaceDoc.id,
-            name: spaceData.name,
-            userId: spaceData.userId,
-            createdAt: createdAt.toISOString(),
-            updatedAt: updatedAt.toISOString()
-          },
-          permission: shareData.permission,
-          sharedBy: ownerData?.name || 'Unknown User',
-          sharedAt: shareData.createdAt?.toDate?.()?.toISOString() || shareData.createdAt
-        });
-      }
+      // 批量查詢所有 spaces 和 users，避免 N+1 查詢
+      const [spacesResults, usersResults] = await Promise.all([
+        // 批量查詢 spaces
+        Promise.all(spaceIds.map(spaceId => 
+          adminDb.collection('prompt_spaces').doc(spaceId).get()
+        )),
+        // 批量查詢 users
+        Promise.all(userIds.map(userId => 
+          adminDb.collection('users').doc(userId).get()
+        ))
+      ]);
+
+      // 建立查詢結果的映射
+      const spacesMap = new Map();
+      const usersMap = new Map();
+
+      spacesResults.forEach((spaceDoc, index) => {
+        if (spaceDoc.exists) {
+          spacesMap.set(spaceIds[index], spaceDoc);
+        }
+      });
+
+      usersResults.forEach((userDoc, index) => {
+        if (userDoc.exists) {
+          usersMap.set(userIds[index], userDoc);
+        }
+      });
+
+      // 組合結果
+      spaceIds.forEach(spaceId => {
+        const spaceDoc = spacesMap.get(spaceId);
+        const shareData = shareDataMap.get(spaceId);
+        
+        if (spaceDoc && shareData) {
+          const spaceData = spaceDoc.data() as PromptSpaceData;
+          const createdAt = convertTimestampToDate(spaceData.createdAt);
+          const updatedAt = convertTimestampToDate(spaceData.updatedAt) || createdAt;
+
+          const ownerDoc = usersMap.get(shareData.ownerUserId);
+          const ownerData = ownerDoc?.data();
+
+          sharedSpaces.push({
+            space: {
+              id: spaceDoc.id,
+              name: spaceData.name,
+              userId: spaceData.userId,
+              createdAt: createdAt.toISOString(),
+              updatedAt: updatedAt.toISOString()
+            },
+            permission: shareData.permission,
+            sharedBy: ownerData?.name || 'Unknown User',
+            sharedAt: shareData.createdAt?.toDate?.()?.toISOString() || shareData.createdAt
+          });
+        }
+      });
     }
 
     return NextResponse.json({ 

@@ -13,8 +13,6 @@ import { useRouter } from "next/navigation";
 export default function FullPageLoading({ children }: { children: React.ReactNode }) {
   const { 
     currentSpaceId, 
-    isOverviewLoading, 
-    getCurrentSpaceOverview,
     setAllSpaces,
     setCurrentSpace,
     loadSpaceOverview,
@@ -26,14 +24,12 @@ export default function FullPageLoading({ children }: { children: React.ReactNod
   // guard ref，確保只呼叫一次
   const hasCalled = useRef(false);
   const router = useRouter();
-  
-  const overview = getCurrentSpaceOverview();
 
 useEffect(() => {
   if (hasCalled.current) return;
   hasCalled.current = true;
 
-  // 初始化 spaces - 直接在這裡實作，不依賴外部函數
+  // 優化：並行初始化 spaces 和相關資料
   const initializeSpaces = async () => {
     try {
       setLoading(true);
@@ -66,14 +62,20 @@ useEffect(() => {
       
       setAllSpaces(ownedSpaces, sharedSpaces);
       
-      // 設定第一個 space 並載入其 overview
+      // 第一個 space 並並行載入 overview 和 folders
       const allSpaces = [...ownedSpaces, ...sharedSpaces.map(s => s.space)];
       if (allSpaces.length > 0) {
         const firstSpaceId = allSpaces[0].id;
         setCurrentSpace(firstSpaceId);
-        await loadSpaceOverview(firstSpaceId);
-        // 同步 prompt store 的 folders 資料
-        await fetchFolders(firstSpaceId);
+        
+        // 並行載入，不等待彼此完成
+        const [overviewPromise, foldersPromise] = [
+          loadSpaceOverview(firstSpaceId),
+          fetchFolders(firstSpaceId)
+        ];
+        
+        // 使用 Promise.allSettled 確保即使其中一個失敗也不影響其他
+        await Promise.allSettled([overviewPromise, foldersPromise]);
       }
       
       setIsInitialized(true);
@@ -94,8 +96,8 @@ useEffect(() => {
   initializeSpaces();
 }, [router, setAllSpaces, setCurrentSpace, loadSpaceOverview, setLoading, setError, fetchFolders]);
 
-// 當 spaces 初始化完成且有 currentSpaceId 時，overview 會自動載入
-const isFullyLoaded = isInitialized && (!currentSpaceId || (overview && !isOverviewLoading));
+
+const isFullyLoaded = isInitialized && currentSpaceId;
 
   if (!isFullyLoaded) {
     return (

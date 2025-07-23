@@ -68,14 +68,10 @@ useEffect(() => {
         const firstSpaceId = allSpaces[0].id;
         setCurrentSpace(firstSpaceId);
         
-        // 並行載入，不等待彼此完成
-        const [overviewPromise, foldersPromise] = [
-          loadSpaceOverview(firstSpaceId),
-          fetchFolders(firstSpaceId)
-        ];
-        
-        // 使用 Promise.allSettled 確保即使其中一個失敗也不影響其他
-        await Promise.allSettled([overviewPromise, foldersPromise]);
+        // 優先載入 folders (用戶最常用)，然後載入 overview
+        await fetchFolders(firstSpaceId);
+        // overview 在背景載入，不阻塞 UI
+        loadSpaceOverview(firstSpaceId).catch(console.error);
       }
       
       setIsInitialized(true);

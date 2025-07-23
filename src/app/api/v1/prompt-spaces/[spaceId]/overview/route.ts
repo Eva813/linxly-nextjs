@@ -52,35 +52,43 @@ export async function GET(
       canManageMembers: userRole === 'owner'
     };
 
-    // 4. 取得 folders 概要（不載入 prompts）
-    const foldersSnapshot = await adminDb
-      .collection('folders')
-      .where('promptSpaceId', '==', spaceId)
-      .get();
-    // 注意：暫時移除 orderBy 以避免需要 Firebase 索引
+    // 4. 並行取得 folders 和所有 prompts，避免 N+1 查詢
+    const [foldersSnapshot, promptsSnapshot] = await Promise.all([
+      adminDb
+        .collection('folders')
+        .where('promptSpaceId', '==', spaceId)
+        .get(),
+      adminDb
+        .collection('prompts')
+        .where('promptSpaceId', '==', spaceId)
+        .get()
+    ]);
 
-    const foldersWithCounts = await Promise.all(
-      foldersSnapshot.docs.map(async (folderDoc) => {
-        const folderData = folderDoc.data();
-        
-        // 取得每個 folder 的 prompt 數量
-        const promptsSnapshot = await adminDb
-          .collection('prompts')
-          .where('folderId', '==', folderDoc.id)
-          .get();
-        
-        const lastUpdated = folderData.updatedAt || folderData.createdAt;
-        
-        return {
-          id: folderDoc.id,
-          name: folderData.name,
-          description: folderData.description,
-          promptCount: promptsSnapshot.docs.length,
-          lastUpdated: lastUpdated?.toDate ? lastUpdated.toDate().toISOString() : new Date().toISOString(),
-          readOnly: !permissions.canEdit // 基於權限設定 readOnly
-        };
-      })
-    );
+    // 建立 folderId 到 prompt 數量的映射，避免重複查詢
+    const promptCountMap = new Map<string, number>();
+    promptsSnapshot.docs.forEach(promptDoc => {
+      const promptData = promptDoc.data();
+      const folderId = promptData.folderId;
+      if (folderId) {
+        promptCountMap.set(folderId, (promptCountMap.get(folderId) || 0) + 1);
+      }
+    });
+
+    const foldersWithCounts = foldersSnapshot.docs.map(folderDoc => {
+      const folderData = folderDoc.data();
+      const folderId = folderDoc.id;
+      const promptCount = promptCountMap.get(folderId) || 0;
+      const lastUpdated = folderData.updatedAt || folderData.createdAt;
+      
+      return {
+        id: folderId,
+        name: folderData.name,
+        description: folderData.description,
+        promptCount,
+        lastUpdated: lastUpdated?.toDate ? lastUpdated.toDate().toISOString() : new Date().toISOString(),
+        readOnly: !permissions.canEdit // 基於權限設定 readOnly
+      };
+    });
 
     // 5. 組合回應
     const response = {

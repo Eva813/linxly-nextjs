@@ -4,8 +4,8 @@ import { useLoadingStore } from '@/stores/loading';
 import { Prompt } from '@/types/prompt';
 
 export function useCurrentPrompt(promptId: string) {
-  const { folders } = usePromptStore();
-  const { setLoading } = useLoadingStore();
+  const folders = usePromptStore(state => state.folders);
+  const setLoading = useLoadingStore(state => state.setLoading);
   const [state, setState] = useState({
     prompt: null as Prompt | null,
     loading: true,

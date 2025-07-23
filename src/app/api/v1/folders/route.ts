@@ -25,19 +25,23 @@ export async function GET(req: Request) {
     let spaceOwnerId = userId; // Assume user is owner first
     
     // Check if user is the owner of the space
-    const spaceDoc = await adminDb.collection('prompt_spaces').doc(promptSpaceId).get();
+    const spaceDoc = await adminDb
+      .collection('prompt_spaces')
+      .doc(promptSpaceId)
+      .get();
     if (spaceDoc.exists) {
       const spaceData = spaceDoc.data();
       if (spaceData?.userId === userId) {
         // User is the owner, use their userId
         spaceOwnerId = userId;
       } else {
-        // User might be a shared user, check if they have access
+        // User might be a shared user, check if they have access (只查詢需要的欄位)
         const shareQuery = await adminDb
           .collection('space_shares')
           .where('promptSpaceId', '==', promptSpaceId)
           .where('sharedWithUserId', '==', userId)
-            .limit(1)
+          .limit(1)
+          .select('promptSpaceId')
           .get();
         
         if (shareQuery.empty) {
@@ -50,17 +54,20 @@ export async function GET(req: Request) {
     }
 
     // 直接查詢特定 promptSpaceId，減少不必要的資料傳輸
+    // 使用 select() 只查詢需要的欄位
     const [foldersSnapshot, promptsSnapshot] = await Promise.all([
       adminDb
         .collection('folders')
         .where('promptSpaceId', '==', promptSpaceId)
         .where('userId', '==', spaceOwnerId)
         .orderBy('createdAt', 'asc')
+        .select('name', 'description', 'createdAt', 'updatedAt')
         .get(),
       adminDb
         .collection('prompts')
         .where('promptSpaceId', '==', promptSpaceId)
         .where('userId', '==', spaceOwnerId)
+        .select('name', 'content', 'shortcut', 'seqNo', 'folderId', 'createdAt')
         .get()
     ]);
 

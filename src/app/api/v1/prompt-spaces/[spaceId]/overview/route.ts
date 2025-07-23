@@ -53,14 +53,17 @@ export async function GET(
     };
 
     // 4. 並行取得 folders 和所有 prompts，避免 N+1 查詢
+    // 使用 select() 只查詢需要的欄位
     const [foldersSnapshot, promptsSnapshot] = await Promise.all([
       adminDb
         .collection('folders')
         .where('promptSpaceId', '==', spaceId)
+        .select('name', 'description', 'createdAt', 'updatedAt')
         .get(),
       adminDb
         .collection('prompts')
         .where('promptSpaceId', '==', spaceId)
+        .select('folderId')
         .get()
     ]);
 

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import dynamic from "next/dynamic";
 import { usePromptSpaceStore } from "@/stores/promptSpace";
 import { usePromptSpaceActions } from "@/hooks/promptSpace";
 import { usePromptStore } from "@/stores/prompt";
@@ -14,9 +15,16 @@ import { Button } from "@/components/ui/button";
 import { ChevronDownIcon, PlusIcon, TrashIcon } from "@radix-ui/react-icons";
 import { Settings } from "lucide-react";
 import { FaSpinner } from "react-icons/fa";
-import DeleteSpaceDialog from "./deleteSpaceDialog";
-import SpaceSettingsDialog from "./spaceSettingsDialog";
 import { useSmartNavigation } from "@/hooks/sidebar/useSmartNavigation";
+
+// 懶載入 Dialog 組件 (只在用戶點擊時才需要)
+const DeleteSpaceDialog = dynamic(() => import("./deleteSpaceDialog"), {
+  ssr: false,
+});
+
+const SpaceSettingsDialog = dynamic(() => import("./spaceSettingsDialog"), {
+  ssr: false,
+});
 
 interface PromptSpaceSelectorProps {
   onCreateSpace: () => void;

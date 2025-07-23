@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import dynamic from "next/dynamic";
 import { usePromptStore } from "@/stores/prompt";
 import { useSidebarStore } from "@/stores/sidebar";
 import { useSidebarActions } from "@/hooks/sidebar";
@@ -10,7 +11,11 @@ import { FaFolderPlus, FaFileMedical, FaSpinner } from "react-icons/fa";
 import SmartLoadingSkeleton from "./components/smartLoadingSkeleton";
 import FolderList from "./folderList";
 import PromptSpaceSelector from "./promptSpaceSelector";
-import CreateSpaceModal from "./createSpaceModal";
+
+// 懶載入 Modal 組件 (只在用戶點擊創建時才需要)
+const CreateSpaceModal = dynamic(() => import("./createSpaceModal"), {
+  ssr: false,
+});
 
 const Sidebar = () => {
   const folders = usePromptStore(state => state.folders);

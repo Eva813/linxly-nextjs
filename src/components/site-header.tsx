@@ -21,8 +21,6 @@ export function SiteHeader() {
   const { toggleSidebar } = useContext(SidebarContext);
 
   const handleLogout = async () => {
-    router.push("/login")
-    
     // 通知 Chrome 擴充功能使用者已登出
     window.postMessage(
       {
@@ -35,8 +33,15 @@ export function SiteHeader() {
       window.location.origin
     )
 
-    // 背景執行 signOut，不阻塞 UI
-    signOut({ redirect: false }).catch(console.error)
+    // 先執行 signOut，完成後再導向
+    try {
+      await signOut({ redirect: false })
+      router.push("/login")
+    } catch (error) {
+      console.error('Logout error:', error)
+      // 即使 signOut 失敗，也要導向登入頁
+      router.push("/login")
+    }
   }
 
   // 過濾需要登入的選項

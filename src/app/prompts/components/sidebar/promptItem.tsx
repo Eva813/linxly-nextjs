@@ -41,10 +41,10 @@ const PromptItem: React.FC<PromptItemProps> = React.memo(({
           }}
           className="flex items-center justify-between flex-1"
         >
-          <span className="max-w-[120px] truncate">{prompt.name}</span>
-          <span className="inline-block px-3 py-0 border-2 border-secondary dark:text-third dark:border-third text-sm leading-5 rounded-full max-w-[120px] truncate">
+          <span className="max-w-[110px] truncate">{prompt.name}</span>
+            <span className="inline-block px-3 py-0 border-2 border-secondary dark:text-third dark:border-third text-sm leading-5 rounded-full max-w-[80px] truncate">
             {prompt.shortcut}
-          </span>
+            </span>
         </Link>
         {canDelete && (
         <DropdownMenu>

@@ -12,7 +12,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-import { ChevronDownIcon, PlusIcon, TrashIcon, StarFilledIcon } from "@radix-ui/react-icons";
+import { ChevronDownIcon, PlusIcon, TrashIcon } from "@radix-ui/react-icons";
 import { Settings } from "lucide-react";
 import { FaSpinner } from "react-icons/fa";
 import { useSmartNavigation } from "@/hooks/sidebar/useSmartNavigation";
@@ -160,12 +160,12 @@ const PromptSpaceSelector: React.FC<PromptSpaceSelectorProps> = ({ onCreateSpace
                     className={`cursor-pointer flex items-center justify-between ${currentSpaceId === space.id ? "bg-accent" : ""
                       } ${index > 0 ? "mt-1" : ""}`}
                   >
-                    <div className="flex items-center gap-2 flex-1">
-                      <span className="flex-1 truncate">{space.name}</span>
+                    <div className="flex items-center gap-2 flex-1 min-w-0">
+                      <span className="truncate">{space.name}</span>
                       {space.defaultSpace && (
-                        <div title="Default workspace">
-                          <StarFilledIcon className="h-3 w-3 text-yellow-500" />
-                        </div>
+                        <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-medium whitespace-nowrap flex-shrink-0">
+                          default
+                        </span>
                       )}
                     </div>
                     {!space.defaultSpace && (

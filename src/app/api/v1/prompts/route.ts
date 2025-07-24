@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { adminDb } from '@/server/db/firebase';
+import { FieldValue } from 'firebase-admin/firestore';
 import { 
   calculateInsertStrategy,
   executeSeqNoUpdates,
@@ -233,7 +234,6 @@ export async function POST(req: Request) {
 
           // 2. 新增新 prompt
           const promptRef = adminDb.collection('prompts').doc();
-          const now = new Date();
           const newPromptData = {
             folderId,
             userId: promptOwnerUserId, // Use folder owner's userId for consistency
@@ -242,8 +242,8 @@ export async function POST(req: Request) {
             shortcut,
             promptSpaceId,
             seqNo: insertSeqNo,
-            createdAt: now,
-            updatedAt: now
+            createdAt: FieldValue.serverTimestamp(),
+            updatedAt: FieldValue.serverTimestamp()
           };
 
           transaction.set(promptRef, newPromptData);
@@ -273,7 +273,6 @@ export async function POST(req: Request) {
     const nextSeqNo = await getMaxSeqNo(folderId, promptOwnerUserId) + 1;
 
     // 新增 prompt 到 prompts 集合
-    const now = new Date();
     const promptData = {
       folderId,
       userId: promptOwnerUserId, // Use folder owner's userId for consistency
@@ -282,8 +281,8 @@ export async function POST(req: Request) {
       shortcut,
       promptSpaceId,
       seqNo: nextSeqNo,
-      createdAt: now,
-      updatedAt: now
+      createdAt: FieldValue.serverTimestamp(),
+      updatedAt: FieldValue.serverTimestamp()
     };
 
     const docRef = await adminDb.collection('prompts').add(promptData);

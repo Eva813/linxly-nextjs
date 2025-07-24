@@ -59,7 +59,7 @@ export async function PUT(
     // Update the space
     await adminDb.collection('prompt_spaces').doc(spaceId).update({
       name: name.trim(),
-      updatedAt: new Date()
+      updatedAt: FieldValue.serverTimestamp()
     });
 
     // Get updated space data

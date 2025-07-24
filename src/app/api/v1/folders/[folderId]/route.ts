@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { adminDb } from '@/server/db/firebase';
+import { FieldValue } from 'firebase-admin/firestore';
 import { 
   formatPromptsForResponse
 } from '@/server/utils/promptUtils';
@@ -114,7 +115,7 @@ export async function PUT(
     await adminDb.collection('folders').doc(folderId).update({
       name,
       description: description || '',
-      updatedAt: new Date()
+      updatedAt: FieldValue.serverTimestamp()
     });
 
     // 獲取該資料夾的所有 prompt 片段

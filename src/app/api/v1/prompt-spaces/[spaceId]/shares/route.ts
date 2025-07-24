@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { adminDb } from '@/server/db/firebase';
+import { FieldValue } from 'firebase-admin/firestore';
 
 // Helper function to check if user is space owner
 const isSpaceOwner = async (userId: string, spaceId: string): Promise<boolean> => {
@@ -206,16 +207,16 @@ export async function POST(
             ownerUserId: string;
             sharedWithEmail: string;
             permission: string;
-            createdAt: Date;
-            updatedAt: Date;
+            createdAt: FirebaseFirestore.FieldValue;
+            updatedAt: FirebaseFirestore.FieldValue;
             sharedWithUserId?: string;
           } = {
             promptSpaceId: spaceId,
             ownerUserId: userId,
             sharedWithEmail: email,
             permission,
-            createdAt: new Date(),
-            updatedAt: new Date()
+            createdAt: FieldValue.serverTimestamp(),
+            updatedAt: FieldValue.serverTimestamp()
           };
 
           // Only add sharedWithUserId if user exists
@@ -336,7 +337,7 @@ export async function PUT(
           const shareDoc = shareQuery.docs[0];
           firestoreBatch.update(shareDoc.ref, {
             permission,
-            updatedAt: new Date()
+            updatedAt: FieldValue.serverTimestamp()
           });
 
           results.updated.push(email);

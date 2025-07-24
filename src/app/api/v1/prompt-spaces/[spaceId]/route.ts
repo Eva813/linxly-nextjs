@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { adminDb } from '@/server/db/firebase';
+import { FieldValue } from 'firebase-admin/firestore';
 import { UpdatePromptSpaceRequest } from '@/shared/types/promptSpace';
 
 export async function PUT(
@@ -69,6 +70,7 @@ export async function PUT(
       id: spaceId,
       name: updatedSpace?.name,
       userId: updatedSpace?.userId,
+      defaultSpace: updatedSpace?.defaultSpace || false,
       createdAt: updatedSpace?.createdAt?.toDate?.()?.toISOString() || updatedSpace?.createdAt,
       updatedAt: updatedSpace?.updatedAt?.toDate?.()?.toISOString() || updatedSpace?.updatedAt
     });
@@ -111,7 +113,7 @@ export async function DELETE(
     }
 
     // Check if this is the default space
-    if (spaceData?.name === 'promptSpace-default') {
+    if (spaceData?.defaultSpace === true) {
       return NextResponse.json({ 
         message: 'Cannot delete default space' 
       }, { status: 400 });
@@ -160,6 +162,90 @@ export async function DELETE(
 
   } catch (error: unknown) {
     console.error("DELETE prompt-space 錯誤:", error);
+    const errorMessage = error instanceof Error ? error.message : 'unknown error';
+    return NextResponse.json(
+      { message: 'server error', error: errorMessage },
+      { status: 500 }
+    );
+  }
+}
+
+export async function PATCH(
+  req: Request,
+  { params }: { params: { spaceId: string } }
+) {
+  try {
+    const userId = req.headers.get('x-user-id');
+    if (!userId) {
+      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+    }
+
+    const { spaceId } = params;
+    if (!spaceId) {
+      return NextResponse.json({ message: 'Space ID is required' }, { status: 400 });
+    }
+
+    const body = await req.json();
+    const { action } = body;
+
+    if (action !== 'setDefault') {
+      return NextResponse.json({ message: 'Invalid action' }, { status: 400 });
+    }
+
+    // Check if the space exists and belongs to the user
+    const spaceDoc = await adminDb.collection('prompt_spaces').doc(spaceId).get();
+    
+    if (!spaceDoc.exists) {
+      return NextResponse.json({ message: 'Space not found' }, { status: 404 });
+    }
+
+    const spaceData = spaceDoc.data();
+    if (spaceData?.userId !== userId) {
+      return NextResponse.json({ message: 'Unauthorized' }, { status: 403 });
+    }
+
+    // 使用批次操作來確保原子性
+    const batch = adminDb.batch();
+
+    // 1. 將用戶的所有其他 space 設為非默認
+    const userSpacesQuery = await adminDb
+      .collection('prompt_spaces')
+      .where('userId', '==', userId)
+      .get();
+
+    userSpacesQuery.docs.forEach(doc => {
+      if (doc.id !== spaceId) {
+        batch.update(doc.ref, {
+          defaultSpace: false,
+          updatedAt: FieldValue.serverTimestamp()
+        });
+      }
+    });
+
+    // 2. 將目標 space 設為默認
+    batch.update(adminDb.collection('prompt_spaces').doc(spaceId), {
+      defaultSpace: true,
+      updatedAt: FieldValue.serverTimestamp()
+    });
+
+    // 執行批次操作
+    await batch.commit();
+
+    // 返回更新後的 space 資料
+    const updatedSpaceDoc = await adminDb.collection('prompt_spaces').doc(spaceId).get();
+    const updatedSpace = updatedSpaceDoc.data();
+
+    return NextResponse.json({
+      id: spaceId,
+      name: updatedSpace?.name,
+      userId: updatedSpace?.userId,
+      defaultSpace: true,
+      createdAt: updatedSpace?.createdAt?.toDate?.()?.toISOString() || updatedSpace?.createdAt,
+      updatedAt: updatedSpace?.updatedAt?.toDate?.()?.toISOString() || updatedSpace?.updatedAt
+    });
+
+  } catch (error: unknown) {
+    console.error("PATCH prompt-space 錯誤:", error);
     const errorMessage = error instanceof Error ? error.message : 'unknown error';
     return NextResponse.json(
       { message: 'server error', error: errorMessage },

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import dynamic from "next/dynamic";
 import { usePromptSpaceStore } from "@/stores/promptSpace";
 import { usePromptSpaceActions } from "@/hooks/promptSpace";
@@ -12,10 +12,11 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-import { ChevronDownIcon, PlusIcon, TrashIcon } from "@radix-ui/react-icons";
+import { ChevronDownIcon, PlusIcon, TrashIcon, StarFilledIcon } from "@radix-ui/react-icons";
 import { Settings } from "lucide-react";
 import { FaSpinner } from "react-icons/fa";
 import { useSmartNavigation } from "@/hooks/sidebar/useSmartNavigation";
+import debounce from "@/lib/utils/debounce";
 
 // 懶載入 Dialog 組件 (只在用戶點擊時才需要)
 const DeleteSpaceDialog = dynamic(() => import("./deleteSpaceDialog"), {
@@ -39,8 +40,18 @@ const PromptSpaceSelector: React.FC<PromptSpaceSelectorProps> = ({ onCreateSpace
     getCurrentSpaceRole,
     isLoading
   } = usePromptSpaceStore();
-  const { deleteSpace, switchToSpace } = usePromptSpaceActions();
+  const { deleteSpace, switchToSpace, setAsDefaultSpace } = usePromptSpaceActions();
   const { navigation } = useSmartNavigation();
+
+  // 防抖設置默認 space（3秒延遲）
+  const debouncedSetDefault = useRef(
+    debounce((...args: unknown[]) => {
+      const spaceId = args[0] as string;
+      setAsDefaultSpace(spaceId).catch(error => {
+        console.error('Failed to auto-set default space:', error);
+      });
+    }, 3000)
+  ).current;
 
 
 
@@ -68,6 +79,9 @@ const PromptSpaceSelector: React.FC<PromptSpaceSelectorProps> = ({ onCreateSpace
       if (freshFolders.length > 0) {
         navigation.navigateToFolder(freshFolders[0].id);
       }
+
+      // 3. 防抖設置為默認 space（3秒後自動設置，如果用戶繼續切換則取消）
+      debouncedSetDefault(spaceId);
     } catch (error) {
       console.error('Error in handleSpaceChange:', error);
     }
@@ -103,6 +117,7 @@ const PromptSpaceSelector: React.FC<PromptSpaceSelectorProps> = ({ onCreateSpace
     setDeleteDialogOpen(false);
     setSpaceToDelete(null);
   };
+
 
   return (
     <div className="mb-4">
@@ -145,14 +160,21 @@ const PromptSpaceSelector: React.FC<PromptSpaceSelectorProps> = ({ onCreateSpace
                     className={`cursor-pointer flex items-center justify-between ${currentSpaceId === space.id ? "bg-accent" : ""
                       } ${index > 0 ? "mt-1" : ""}`}
                   >
-                    <span className="flex-1 truncate">{space.name}</span>
-                    {space.name !== 'promptSpace-default' && (
+                    <div className="flex items-center gap-2 flex-1">
+                      <span className="flex-1 truncate">{space.name}</span>
+                      {space.defaultSpace && (
+                        <div title="Default workspace">
+                          <StarFilledIcon className="h-3 w-3 text-yellow-500" />
+                        </div>
+                      )}
+                    </div>
+                    {!space.defaultSpace && (
                       <Button
                         variant="ghost"
                         size="sm"
                         className="h-6 w-6 p-0 ml-2 hover:bg-red-100 hover:text-red-600"
                         onClick={(e) => handleDeleteClick(e, space)}
-                        title="delete"
+                        title="Delete workspace"
                       >
                         <TrashIcon className="h-3 w-3" />
                       </Button>

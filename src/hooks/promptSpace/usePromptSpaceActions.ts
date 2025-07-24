@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
 import { usePromptSpaceStore } from '@/stores/promptSpace';
 import { usePromptStore } from '@/stores/prompt';
-import { getAllPromptSpaces, createPromptSpace, updatePromptSpace, deletePromptSpace } from '@/api/promptSpace';
+import { getAllPromptSpaces, createPromptSpace, updatePromptSpace, deletePromptSpace, setDefaultSpace } from '@/api/promptSpace';
 
 export const usePromptSpaceActions = () => {
   const {
@@ -29,6 +29,7 @@ export const usePromptSpaceActions = () => {
         id: space.id,
         name: space.name,
         userId: space.userId,
+        defaultSpace: space.defaultSpace || false,
         createdAt: new Date(space.createdAt),
         updatedAt: space.updatedAt ? new Date(space.updatedAt) : undefined
       }));
@@ -39,6 +40,7 @@ export const usePromptSpaceActions = () => {
           id: shared.space.id,
           name: shared.space.name,
           userId: shared.space.userId,
+          defaultSpace: shared.space.defaultSpace || false,
           createdAt: new Date(shared.space.createdAt),
           updatedAt: shared.space.updatedAt ? new Date(shared.space.updatedAt) : undefined
         },
@@ -71,6 +73,7 @@ export const usePromptSpaceActions = () => {
         id: newSpace.id,
         name: newSpace.name,
         userId: newSpace.userId,
+        defaultSpace: newSpace.defaultSpace || false,
         createdAt: new Date(newSpace.createdAt)
       });
 
@@ -156,11 +159,49 @@ export const usePromptSpaceActions = () => {
     }
   };
 
+  const setAsDefaultSpace = useCallback(async (spaceId: string) => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      // 調用 API 設置默認 space
+      await setDefaultSpace(spaceId);
+      
+      // 更新本地狀態：將其他 space 設為非默認，目標 space 設為默認
+      const { ownedSpaces, sharedSpaces } = usePromptSpaceStore.getState();
+      
+      // 更新 owned spaces
+      const updatedOwnedSpaces = ownedSpaces.map(space => ({
+        ...space,
+        defaultSpace: space.id === spaceId
+      }));
+      
+      // 更新 shared spaces（雖然共享空間通常不會是用戶的默認，但保持一致性）
+      const updatedSharedSpaces = sharedSpaces.map(shared => ({
+        ...shared,
+        space: {
+          ...shared.space,
+          defaultSpace: shared.space.id === spaceId
+        }
+      }));
+      
+      setAllSpaces(updatedOwnedSpaces, updatedSharedSpaces);
+      
+    } catch (error) {
+      console.error('Failed to set default space:', error);
+      setError(error instanceof Error ? error.message : 'Unknown error');
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  }, [setLoading, setError, setAllSpaces]);
+
   return {
     fetchSpaces,
     createSpace,
     renameSpace,
     deleteSpace,
-    switchToSpace
+    switchToSpace,
+    setAsDefaultSpace
   };
 };

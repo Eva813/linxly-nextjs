@@ -6,6 +6,7 @@ export interface PromptSpace {
   id: string;
   name: string;
   userId: string;
+  defaultSpace?: boolean;
   createdAt: Date;
   updatedAt?: Date;
 }

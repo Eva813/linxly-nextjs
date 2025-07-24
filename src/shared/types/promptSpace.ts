@@ -7,6 +7,7 @@ export interface PromptSpaceData {
   id: string;
   name: string;
   userId: string;
+  defaultSpace?: boolean;
   createdAt: Date | { seconds: number; nanoseconds?: number };
   updatedAt?: Date | { seconds: number; nanoseconds?: number };
 }
@@ -15,6 +16,7 @@ export interface PromptSpaceApiResponse {
   id: string;
   name: string;
   userId: string;
+  defaultSpace?: boolean;
   createdAt: string;
   updatedAt?: string;
 }

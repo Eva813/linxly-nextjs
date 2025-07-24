@@ -36,6 +36,7 @@ export async function GET(req: Request) {
           id: doc.id,
           name: data.name,
           userId: data.userId,
+          defaultSpace: data.defaultSpace || false,
           createdAt: createdAt.toISOString(),
           updatedAt: updatedAt.toISOString()
         };
@@ -47,6 +48,7 @@ export async function GET(req: Request) {
       const defaultSpaceData = {
         userId: userId,
         name: 'promptSpace-default',
+        defaultSpace: true,
         createdAt: FieldValue.serverTimestamp(),
         updatedAt: FieldValue.serverTimestamp()
       };
@@ -56,6 +58,7 @@ export async function GET(req: Request) {
         id: defaultSpaceRef.id,
         name: 'promptSpace-default',
         userId: userId,
+        defaultSpace: true,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
       };
@@ -64,6 +67,9 @@ export async function GET(req: Request) {
 
       // 將所有現有的 folders 和 prompts 關聯到默認 space
       await migrateExistingDataToDefaultSpace(userId, defaultSpaceRef.id);
+    } else {
+      // 檢查現有用戶是否有默認 space，如沒有則設置第一個為默認
+      await ensureDefaultSpace(userId, ownedSpaces);
     }
 
     // Get shared spaces - 優化：避免 N+1 查詢
@@ -141,6 +147,7 @@ export async function GET(req: Request) {
               id: spaceDoc.id,
               name: spaceData.name,
               userId: spaceData.userId,
+              defaultSpace: spaceData.defaultSpace || false,
               createdAt: createdAt.toISOString(),
               updatedAt: updatedAt.toISOString()
             },
@@ -197,10 +204,17 @@ export async function POST(req: Request) {
       );
     }
 
+    // 檢查用戶是否已有其他 space
+    const userSpacesCount = await adminDb
+      .collection('prompt_spaces')
+      .where('userId', '==', userId)
+      .get();
+
     const now = FieldValue.serverTimestamp();
     const spaceData = {
       userId: userId,
       name: body.name.trim(),
+      defaultSpace: userSpacesCount.empty, // 如果是第一個 space 則設為默認
       createdAt: now,
       updatedAt: now
     };
@@ -211,6 +225,7 @@ export async function POST(req: Request) {
       id: spaceRef.id,
       name: body.name.trim(),
       userId: userId,
+      defaultSpace: userSpacesCount.empty,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     };
@@ -265,6 +280,32 @@ async function migrateExistingDataToDefaultSpace(userId: string, defaultSpaceId:
 
   } catch (error) {
     console.error("Migration error:", error);
+    throw error;
+  }
+}
+
+// 輔助函數：確保用戶有默認 space，如果沒有則設置第一個為默認
+async function ensureDefaultSpace(userId: string, ownedSpaces: PromptSpaceApiResponse[]) {
+  try {
+    // 檢查是否已有默認 space
+    const hasDefaultSpace = ownedSpaces.some(space => space.defaultSpace === true);
+    
+    if (!hasDefaultSpace && ownedSpaces.length > 0) {
+      // 設置第一個 space 為默認 space
+      const firstSpaceId = ownedSpaces[0].id;
+      
+      await adminDb.collection('prompt_spaces').doc(firstSpaceId).update({
+        defaultSpace: true,
+        updatedAt: FieldValue.serverTimestamp()
+      });
+      
+      // 更新本地數據
+      ownedSpaces[0].defaultSpace = true;
+      
+      console.log(`Set first space ${firstSpaceId} as default for user ${userId}`);
+    }
+  } catch (error) {
+    console.error("Error ensuring default space:", error);
     throw error;
   }
 }

@@ -42,6 +42,7 @@ useEffect(() => {
         id: space.id,
         name: space.name,
         userId: space.userId,
+        defaultSpace: space.defaultSpace || false,
         createdAt: new Date(space.createdAt),
         updatedAt: space.updatedAt ? new Date(space.updatedAt) : undefined
       }));
@@ -52,6 +53,7 @@ useEffect(() => {
           id: shared.space.id,
           name: shared.space.name,
           userId: shared.space.userId,
+          defaultSpace: shared.space.defaultSpace || false,
           createdAt: new Date(shared.space.createdAt),
           updatedAt: shared.space.updatedAt ? new Date(shared.space.updatedAt) : undefined
         },
@@ -62,16 +64,19 @@ useEffect(() => {
       
       setAllSpaces(ownedSpaces, sharedSpaces);
       
-      // 第一個 space 並並行載入 overview 和 folders
+      // 優先載入默認 space，如沒有則載入第一個 space
       const allSpaces = [...ownedSpaces, ...sharedSpaces.map(s => s.space)];
       if (allSpaces.length > 0) {
-        const firstSpaceId = allSpaces[0].id;
-        setCurrentSpace(firstSpaceId);
+        // 查找默認 space，如沒有則使用第一個
+        const defaultSpace = allSpaces.find(space => space.defaultSpace === true);
+        const selectedSpaceId = defaultSpace?.id || allSpaces[0].id;
+        
+        setCurrentSpace(selectedSpaceId);
         
         // 優先載入 folders (用戶最常用)，然後載入 overview
-        await fetchFolders(firstSpaceId);
+        await fetchFolders(selectedSpaceId);
         // overview 在背景載入，不阻塞 UI
-        loadSpaceOverview(firstSpaceId).catch(console.error);
+        loadSpaceOverview(selectedSpaceId).catch(console.error);
       }
       
       setIsInitialized(true);

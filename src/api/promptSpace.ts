@@ -41,3 +41,13 @@ export function deletePromptSpace(spaceId: string): Promise<void> {
     method: 'DELETE'
   });
 }
+
+/**
+ * 設置默認 Prompt Space
+ */
+export function setDefaultSpace(spaceId: string): Promise<PromptSpaceApiResponse> {
+  return request<PromptSpaceApiResponse>(`/prompt-spaces/${spaceId}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ action: 'setDefault' })
+  });
+}

@@ -6,11 +6,13 @@ import {
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Button } from "@/components/ui/button"
-import { Bookmark, ChevronDown, ChevronRight, Folder, FolderOpen, Library } from "lucide-react"
-import { useState, useMemo, useCallback } from "react"
+import { Bookmark, ChevronDown, ChevronRight, Folder, FolderOpen, Library, Building2 } from "lucide-react"
+import { useState, useMemo, useCallback, useEffect } from "react"
 import PromptCard from "./promptCard"
 import { usePromptStore } from "@/stores/prompt"
+import { usePromptSpaceStore } from "@/stores/promptSpace"
 import { Prompt } from "@/types/prompt"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 export default function PromptSheet({
   selectedFolder,
@@ -21,8 +23,34 @@ export default function PromptSheet({
   setSelectedFolder: (id: string | null) => void;
   onAddPrompt: (prompt: Prompt) => void;
 }) {
-  const { folders } = usePromptStore()
+  const { folders, fetchFolders } = usePromptStore()
+  const { getAllSpaces, currentSpaceId } = usePromptSpaceStore()
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set())
+  const [selectedSpaceId, setSelectedSpaceId] = useState<string>(currentSpaceId || '')
+
+  // 處理 space 切換
+  const handleSpaceChange = useCallback(async (spaceId: string) => {
+    setSelectedSpaceId(spaceId)
+    setSelectedFolder(null) // 重置 folder 選擇
+    try {
+      await fetchFolders(spaceId)
+    } catch (error) {
+      console.error('Failed to fetch folders for space:', spaceId, error)
+    }
+  }, [fetchFolders, setSelectedFolder])
+
+  // 取得所有可用的 spaces
+  const availableSpaces = useMemo(() => {
+    return getAllSpaces()
+  }, [getAllSpaces])
+
+
+  // 當 currentSpaceId 變化時，同步更新 selectedSpaceId
+  useEffect(() => {
+    if (currentSpaceId && currentSpaceId !== selectedSpaceId) {
+      setSelectedSpaceId(currentSpaceId)
+    }
+  }, [currentSpaceId, selectedSpaceId])
 
   const toggleFolder = useCallback((id: string) => {
     setExpandedFolders((prev) => {
@@ -55,7 +83,27 @@ export default function PromptSheet({
         <SheetHeader>
           <SheetTitle>Prompts</SheetTitle>
         </SheetHeader>
-        <div className="mt-2 space-y-2 flex-1 overflow-hidden flex flex-col">
+        
+        {/* Space 選擇器 */}
+        <div className="mt-4 mb-3">
+          <Select value={selectedSpaceId} onValueChange={handleSpaceChange}>
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Select a space" />
+            </SelectTrigger>
+            <SelectContent>
+              {availableSpaces.map((space) => (
+                <SelectItem key={space.id} value={space.id}>
+                  <div className="flex items-center">
+                    <Building2 className="w-4 h-4 mr-2" />
+                    {space.name}
+                  </div>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        
+        <div className="space-y-2 flex-1 overflow-hidden flex flex-col">
           <div className="flex flex-wrap gap-2">
             <Button
               variant={selectedFolder === null ? "default" : "outline"}

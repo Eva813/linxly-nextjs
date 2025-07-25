@@ -118,6 +118,28 @@ const PromptSpaceSelector: React.FC<PromptSpaceSelectorProps> = ({ onCreateSpace
     setSpaceToDelete(null);
   };
 
+  const renderSpaceAction = (space: { id: string, name: string, defaultSpace?: boolean }) => {
+    if (space.defaultSpace) {
+      return (
+        <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-medium whitespace-nowrap flex-shrink-0 ml-2">
+          default
+        </span>
+      );
+    }
+
+    return (
+      <Button
+        variant="ghost"
+        size="sm"
+        className="h-6 w-6 p-0 ml-2 hover:bg-red-100 hover:text-red-600"
+        onClick={(e) => handleDeleteClick(e, space)}
+        title="Delete workspace"
+      >
+        <TrashIcon className="h-3 w-3" />
+      </Button>
+    );
+  };
+
 
   return (
     <div className="mb-4">
@@ -160,25 +182,10 @@ const PromptSpaceSelector: React.FC<PromptSpaceSelectorProps> = ({ onCreateSpace
                     className={`cursor-pointer flex items-center justify-between ${currentSpaceId === space.id ? "bg-accent" : ""
                       } ${index > 0 ? "mt-1" : ""}`}
                   >
-                    <div className="flex items-center gap-2 flex-1 min-w-0">
+                    <div className="flex items-center flex-1 min-w-0">
                       <span className="truncate">{space.name}</span>
-                      {space.defaultSpace && (
-                        <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-medium whitespace-nowrap flex-shrink-0">
-                          default
-                        </span>
-                      )}
                     </div>
-                    {!space.defaultSpace && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-6 w-6 p-0 ml-2 hover:bg-red-100 hover:text-red-600"
-                        onClick={(e) => handleDeleteClick(e, space)}
-                        title="Delete workspace"
-                      >
-                        <TrashIcon className="h-3 w-3" />
-                      </Button>
-                    )}
+                    {renderSpaceAction(space)}
                   </DropdownMenuItem>
                 ))}
               </>

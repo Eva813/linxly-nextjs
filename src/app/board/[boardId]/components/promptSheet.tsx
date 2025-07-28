@@ -40,7 +40,7 @@ export default function PromptSheet({
     visibleFolders,
     ownedSpaces,
     sharedSpaces,
-    setExpandedFolders,
+    toggleFolderExpansion,
     setSelectedSpaceId,
     setSelectedFolder,
   } = state
@@ -52,13 +52,13 @@ export default function PromptSheet({
   const actions = usePromptSheetActions({
     setSelectedSpaceId,
     setSelectedFolder: currentSetSelectedFolder,
-    setExpandedFolders,
+    toggleFolderExpansion,
     onAddPrompt,
   })
 
   const {
     handleSpaceChange,
-    toggleFolder,
+    toggleFolderExpansion: handleToggleFolder,
     handleFolderSelect,
     handlePromptAdd,
   } = actions
@@ -96,7 +96,7 @@ export default function PromptSheet({
           expandedFolders={expandedFolders}
           visibleFolders={visibleFolders}
           onFolderSelect={handleFolderSelect}
-          onToggleFolder={toggleFolder}
+          onToggleFolder={handleToggleFolder}
           onPromptAdd={handlePromptAdd}
         />
       </SheetContent>

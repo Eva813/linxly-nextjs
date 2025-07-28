@@ -2,7 +2,7 @@
  * PromptSheet 狀態管理 Hook
  * 統一管理 space 選擇、folder 展開狀態和篩選邏輯
  */
-import { useState, useMemo, useEffect, useRef } from 'react'
+import { useState, useMemo, useEffect, useRef, useCallback } from 'react'
 import { usePromptStore } from '@/stores/prompt'
 import { usePromptSpaceStore } from '@/stores/promptSpace'
 
@@ -48,6 +48,19 @@ export function usePromptSheetState() {
     }
   }, [currentSpaceId, ownedSpaces, sharedSpaces])
 
+  // 封裝 Set 操作函數，避免直接暴露 setExpandedFolders
+  const toggleFolderExpansion = useCallback((folderId: string) => {
+    setExpandedFolders(prev => {
+      const newSet = new Set(prev)
+      if (newSet.has(folderId)) {
+        newSet.delete(folderId)
+      } else {
+        newSet.add(folderId)
+      }
+      return newSet
+    })
+  }, [])
+
   return {
     // 狀態
     folders,
@@ -62,7 +75,7 @@ export function usePromptSheetState() {
     sharedSpaces,
     
     // 狀態更新函數
-    setExpandedFolders,
+    toggleFolderExpansion,
     setSelectedSpaceId,
     setSelectedFolder,
   }

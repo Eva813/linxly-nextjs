@@ -9,14 +9,14 @@ import { Prompt } from '@/types/prompt'
 interface UsePromptSheetActionsProps {
   setSelectedSpaceId: (id: string) => void
   setSelectedFolder: (id: string | null) => void
-  setExpandedFolders: React.Dispatch<React.SetStateAction<Set<string>>>
+  toggleFolderExpansion: (folderId: string) => void
   onAddPrompt: (prompt: Prompt) => void
 }
 
 export function usePromptSheetActions({
   setSelectedSpaceId,
   setSelectedFolder,
-  setExpandedFolders,
+  toggleFolderExpansion,
   onAddPrompt,
 }: UsePromptSheetActionsProps) {
   const { fetchFolders } = usePromptStore()
@@ -32,19 +32,6 @@ export function usePromptSheetActions({
     }
   }, [fetchFolders, setSelectedSpaceId, setSelectedFolder])
 
-  // Folder 展開/收合處理
-  const toggleFolder = useCallback((id: string) => {
-    setExpandedFolders((prev) => {
-      const newSet = new Set(prev)
-      if (newSet.has(id)) {
-        newSet.delete(id)
-      } else {
-        newSet.add(id)
-      }
-      return newSet
-    })
-  }, [setExpandedFolders])
-
   // Folder 篩選處理
   const handleFolderSelect = useCallback((folderId: string | null) => {
     setSelectedFolder(folderId)
@@ -57,7 +44,7 @@ export function usePromptSheetActions({
 
   return {
     handleSpaceChange,
-    toggleFolder,
+    toggleFolderExpansion,
     handleFolderSelect,
     handlePromptAdd,
   }

@@ -13,8 +13,8 @@ const FolderItem = dynamic(() => import("./folderItem"), {
 });
 
 const FolderList: React.FC = () => {
-  const { folders } = usePromptStore();
-  const { isCreatingFolder } = useSidebarStore();
+  const folders = usePromptStore(state => state.folders);
+  const isCreatingFolder = useSidebarStore(state => state.isCreatingFolder);
 
   return (
     <ul className="dark:text-gray-200">

@@ -10,7 +10,7 @@ export const siteConfig = {
       href: "/prompts"
     },
     {
-      title: "Workspace",
+      title: "Flow",
       href: "/workspace"
     }
   ],

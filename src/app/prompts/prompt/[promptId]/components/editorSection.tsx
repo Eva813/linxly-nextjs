@@ -6,6 +6,7 @@ import PreviewPrompt from "@/app/prompts/components/previewPrompt";
 import { Mode } from "@/app/prompts/components/editViewButtons";
 import { Editor } from '@tiptap/react';
 import { DropdownEditInfo, TextInputEditInfo } from '@/types/prompt';
+import { useEditableState } from '@/hooks/useEditableState';
 
 type EditInfo = TextInputEditInfo | DropdownEditInfo;
 
@@ -50,9 +51,10 @@ export const EditorSection = ({
   onMobilePanelToggle,
   isExternalUpdate,
 }: EditorSectionProps) => {
+  const { canEdit } = useEditableState();
   if (mode === "preview") {
     return (
-      <div className="border-r border-gray-200">
+      <div className="border-r border-gray-200 min-w-0 overflow-hidden">
         <PreviewPrompt content={content} shortcut={shortcut} />
       </div>
     );
@@ -63,6 +65,7 @@ export const EditorSection = ({
       <section className="flex flex-col lg:pr-4 py-4 lg:border-r lg:border-gray-200 overflow-y-auto">
         <TipTapEditor
           value={content}
+          disabled={!canEdit}
           onChange={onContentChange}
           onEditorReady={(editor) => {
             editorRef.current = editor;
@@ -76,21 +79,23 @@ export const EditorSection = ({
       </section>
 
       {/* 桌面版側邊欄 */}
-      <div className="hidden lg:block">
-        <aside className="min-h-0 overflow-y-auto">
-          {isEditPanelVisible && activeEditInfo ? (
-            <EditPanel editInfo={activeEditInfo} onChange={onTextInputChange} />
-          ) : (
-            <Sidebar
-              onInsertTextFieldClick={onInsertTextFieldClick}
-              onInsertMenuFieldClick={onInsertMenuFieldClick}
-            />
-          )}
-        </aside>
-      </div>
+      {canEdit && (
+        <div className="hidden lg:block">
+          <aside className="min-h-0 overflow-y-auto">
+            {isEditPanelVisible && activeEditInfo ? (
+              <EditPanel editInfo={activeEditInfo} onChange={onTextInputChange} />
+            ) : (
+              <Sidebar
+                onInsertTextFieldClick={onInsertTextFieldClick}
+                onInsertMenuFieldClick={onInsertMenuFieldClick}
+              />
+            )}
+          </aside>
+        </div>
+      )}
       
       {/* 手機版覆蓋面板 */}
-      {(isMobilePanelOpen || isMobilePanelClosing) && (
+      {canEdit && (isMobilePanelOpen || isMobilePanelClosing) && (
         <div className="fixed inset-0 z-50 flex justify-end">
           <div
             className="fixed inset-0 bg-black opacity-50"

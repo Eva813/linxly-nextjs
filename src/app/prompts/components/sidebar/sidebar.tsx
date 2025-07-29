@@ -1,26 +1,41 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
+import dynamic from "next/dynamic";
 import { usePromptStore } from "@/stores/prompt";
 import { useSidebarStore } from "@/stores/sidebar";
 import { useSidebarActions } from "@/hooks/sidebar";
+import { useEditableState } from "@/hooks/useEditableState";
 import { Button } from "@/components/ui/button";
 import { FaFolderPlus, FaFileMedical, FaSpinner } from "react-icons/fa";
-import { Skeleton } from "@/components/ui/skeleton";
+import SmartLoadingSkeleton from "./components/smartLoadingSkeleton";
 import FolderList from "./folderList";
+import PromptSpaceSelector from "./promptSpaceSelector";
+
+// 懶載入 Modal 組件 (只在用戶點擊創建時才需要)
+const CreateSpaceModal = dynamic(() => import("./createSpaceModal"), {
+  ssr: false,
+});
 
 const Sidebar = () => {
-  const { folders, isLoading, error } = usePromptStore();
-  const { isCreatingFolder, isCreatingPrompt } = useSidebarStore();
+  const folders = usePromptStore(state => state.folders);
+  const isLoading = usePromptStore(state => state.isLoading);
+  const error = usePromptStore(state => state.error);
+  const isCreatingFolder = useSidebarStore(state => state.isCreatingFolder);
+  const isCreatingPrompt = useSidebarStore(state => state.isCreatingPrompt);
   const { handleCreateFolder, handleCreatePrompt } = useSidebarActions();
+  const { canEdit } = useEditableState();
+  const [isCreateSpaceModalOpen, setIsCreateSpaceModalOpen] = useState(false);
 
   return (
     <div className="p-4 border-r border-gray-300 h-full flex flex-col">
+      <PromptSpaceSelector onCreateSpace={() => setIsCreateSpaceModalOpen(true)} />
+      
       <div className="grid grid-cols-2 gap-x-4 mb-4 sticky top-0 bg-white dark:bg-gray-900 z-10">
         <Button
           className="h-8 dark:text-third"
           onClick={handleCreateFolder}
-          disabled={isCreatingFolder}
+          disabled={isCreatingFolder || !canEdit}
         >
           {isCreatingFolder ? <FaSpinner className="animate-spin" /> : <FaFolderPlus />}
           Add Folder
@@ -28,7 +43,7 @@ const Sidebar = () => {
         <Button
           className="h-8 dark:text-third"
           onClick={handleCreatePrompt}
-          disabled={isCreatingPrompt}
+          disabled={isCreatingPrompt || !canEdit}
         >
           {isCreatingPrompt ? <FaSpinner className="animate-spin" /> : <FaFileMedical />}
           Add Prompt
@@ -43,15 +58,25 @@ const Sidebar = () => {
         )}
 
         {isLoading && folders.length === 0 ? (
-          <div className="space-y-2">
+          <ul>
             {[1, 2, 3].map((i) => (
-              <Skeleton key={i} className="h-8 w-full rounded-md" />
+              <SmartLoadingSkeleton 
+                key={i} 
+                variant="folder" 
+                isLoading={isLoading}
+                delayMs={200}
+              />
             ))}
-          </div>
+          </ul>
         ) : (
           <FolderList />
         )}
       </div>
+      
+      <CreateSpaceModal 
+        isOpen={isCreateSpaceModalOpen} 
+        onClose={() => setIsCreateSpaceModalOpen(false)} 
+      />
     </div>
   );
 };

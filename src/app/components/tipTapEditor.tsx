@@ -16,6 +16,7 @@ import { FormMenuClickHandler, FormMenuData } from '@/types/prompt'
 interface TipTapEditorProps {
   value: string;
   isRequired?: boolean;
+  disabled?: boolean;
   onChange: (value: string) => void;
   onEditorReady: (editor: Editor) => void;
   onStartEditing?: () => void; // 開始編輯的回調
@@ -33,6 +34,7 @@ interface TipTapEditorProps {
 const TipTapEditor = ({
   value,
   isRequired = false,
+  disabled = false,
   onChange,
   onEditorReady,
   onStartEditing,
@@ -52,6 +54,7 @@ const TipTapEditor = ({
 
   const editor = useEditor({
     content: value,
+    editable: !disabled,
     onUpdate: ({ editor }) => {
       const currentContent = editor.getHTML();
       
@@ -124,8 +127,11 @@ const TipTapEditor = ({
   useEffect(() => {
     if (!editor) return;
     
-    // 如果用戶正在編輯，延遲外部更新
-    if (isUserEditingRef.current) {
+    // 檢查是否為外部更新（例如切換 prompt）
+    const isExternal = isExternalUpdate?.() || false;
+    
+    // 如果用戶正在編輯且不是外部更新，延遲更新
+    if (isUserEditingRef.current && !isExternal) {
       return;
     }
     
@@ -135,8 +141,10 @@ const TipTapEditor = ({
       return;
     }
     
-    // 檢查是否為外部更新（例如初始化載入）
-    const isExternal = isExternalUpdate?.() || false;
+    // 清除用戶編輯狀態，因為現在要更新內容
+    if (isExternal) {
+      isUserEditingRef.current = false;
+    }
     
     // 更新內容參考
     editorContentRef.current = value;
@@ -166,6 +174,22 @@ const TipTapEditor = ({
       }
     }
   }, [value, editor, isExternalUpdate]);
+
+  // 當 editor 實例創建完成時，通過 onEditorReady 傳遞給父組件
+  useEffect(() => {
+    if (editor) {
+      // 初始化時設置 editorContentRef
+      editorContentRef.current = editor.getHTML();
+      onEditorReady(editor);
+    }
+  }, [editor, onEditorReady]);
+
+  // 動態更新編輯器的可編輯狀態
+  useEffect(() => {
+    if (editor && editor.isEditable !== !disabled) {
+      editor.setEditable(!disabled);
+    }
+  }, [disabled, editor]);
   
   // 清理定時器
   useEffect(() => {
@@ -175,16 +199,10 @@ const TipTapEditor = ({
       }
     };
   }, []);
-  // 當 editor 實例創建完成時，通過 onEditorReady 傳遞給父組件
-  useEffect(() => {
-    if (editor) {
-      onEditorReady(editor);
-    }
-  }, [editor, onEditorReady]);
 
   return (
-    <div className="editor-container flex flex-col mb-4">
-      <div className="toolbar flex flex-wrap items-center py-2 px-1">
+    <div className={`editor-container flex flex-col mb-4 ${disabled ? 'disabled' : ''}`}>
+      <div className={`toolbar flex flex-wrap items-center py-2 px-1 ${disabled ? 'pointer-events-none' : ''}`}>
         {/* Font Size */}
         <Popover>
           <PopoverTrigger>

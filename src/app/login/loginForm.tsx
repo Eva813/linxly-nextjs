@@ -11,6 +11,7 @@ import { LoadingOverlay } from '@/components/loadingOverlay';
 import { EmailStep } from './components/emailStep';
 import { PasswordStep } from './components/passwordStep';
 import { useLoginForm } from './hooks/useLoginForm';
+import { FullScreenCardSpinner } from '@/components/fullScreenCardSpinner';
 
 export function LoginContent() {
   const { status } = useSession();
@@ -27,6 +28,8 @@ export function LoginContent() {
     isLoading,
     showPassword,
     setShowPassword,
+    processingInvite,
+    inviteShareId,
     handleNextStep,
     handleSubmit,
     handleGoogleSignIn
@@ -38,12 +41,28 @@ export function LoginContent() {
     }
   }, [searchParams, status, router]);
 
+  // Loading 覆蓋整個頁面當正在處理邀請時
+  if (processingInvite) {
+    return <FullScreenCardSpinner message="Joining workspace..." />;
+  }
+
+  const getDescription = () => {
+    if (inviteShareId) {
+      return step === 1 
+        ? 'Sign in to join the workspace' 
+        : 'Enter your password to join the workspace';
+    }
+    return step === 1 
+      ? 'Enter your email to continue' 
+      : 'Enter your password to login';
+  };
+
   return (
     <>
       <LoadingOverlay isLoading={isLoading} />
       <AuthLayout
         title="Login"
-        description={step === 1 ? 'Enter your email to continue' : 'Enter your password to login'}
+        description={getDescription()}
       >
         <ErrorMessage message={error} />
 

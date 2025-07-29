@@ -1,6 +1,8 @@
 "use client";
 import { usePromptStore } from "@/stores/prompt";
+import { useEditableState } from "@/hooks/useEditableState";
 import { useState, useEffect, useCallback, useMemo } from 'react';
+import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import EditorSkeleton from '@/app/prompts/components/editorSkeleton';
 import { useSaveStore } from '@/stores/loading';
@@ -17,6 +19,7 @@ interface FolderPageProps {
 const FolderPage = ({ params }: FolderPageProps) => {
   const { folderId } = params;
   const { folders, updateFolder } = usePromptStore();
+  const { canEdit } = useEditableState();
   const { setFolderSaving, setFolderSaved, setFolderSaveError, setFolderActive } = useSaveStore();
 
   const currentFolder = folders.find(folder => folder.id === folderId);
@@ -35,7 +38,7 @@ const FolderPage = ({ params }: FolderPageProps) => {
 
   // 直接的儲存函式，帶有完整的狀態管理
   const saveFolder = useCallback(async () => {
-    if (!currentFolder) return;
+    if (!currentFolder || !canEdit) return;
 
     try {
       setFolderSaving(true, folderId);
@@ -47,7 +50,7 @@ const FolderPage = ({ params }: FolderPageProps) => {
       setFolderSaveError(true, folderId);
       console.error("儲存資料夾時發生錯誤:", error);
     }
-  }, [currentFolder, formData, folderId, updateFolder, setFolderSaving, setFolderSaved, setFolderSaveError]);
+  }, [currentFolder, canEdit, formData, folderId, updateFolder, setFolderSaving, setFolderSaved, setFolderSaveError]);
 
   // 建立 debounced 的儲存函式
   const debouncedSave = useMemo(
@@ -88,7 +91,7 @@ const FolderPage = ({ params }: FolderPageProps) => {
   useEffect(() => {
     const hasChanges = !deepEqual(formData, initialValues);
     
-    if (hasChanges && currentFolder) {
+    if (hasChanges && currentFolder && canEdit) {
       setFolderActive(true, folderId);
       debouncedSave();
     } else if (!hasChanges) {
@@ -99,7 +102,7 @@ const FolderPage = ({ params }: FolderPageProps) => {
     return () => {
       debouncedSave.cancel();
     };
-  }, [formData, initialValues, currentFolder, debouncedSave, setFolderActive, folderId]);
+  }, [formData, initialValues, currentFolder, canEdit, debouncedSave, setFolderActive, folderId]);
 
   if (!currentFolder) {
     return <EditorSkeleton />;
@@ -113,19 +116,21 @@ const FolderPage = ({ params }: FolderPageProps) => {
           id={folderId}
           className="absolute -top-1 left-0 z-10"
         />
-        <input
+        <Input
           type="text"
-          className="text-2xl focus:outline-none mb-2 dark:bg-black pt-4"
           value={formData.name}
           onChange={handleNameChange}
+          disabled={!canEdit}
+          className="!text-2xl border-none focus:outline-none focus-visible:ring-0 shadow-none mb-2 dark:bg-black pt-4 px-0"
         />
       </div>
       <Textarea
         value={formData.description}
         rows={4}
-        className='hover:ring-1 hover:ring-gray-400 p-2 rounded mb-2 dark:border-gray-200 resize-y max-h-64'
         onChange={handleDescriptionChange}
         placeholder="input description"
+        disabled={!canEdit}
+        className="hover:ring-1 hover:ring-gray-400 p-2 rounded mb-2 dark:border-gray-200 resize-y max-h-64"
       />
 
     </div>

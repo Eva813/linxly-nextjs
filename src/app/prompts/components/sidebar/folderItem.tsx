@@ -20,6 +20,7 @@ import {
 import { SidebarContext } from '@/providers/clientRootProvider';
 import { useSidebarStore } from "@/stores/sidebar";
 import { useSidebarActions } from "@/hooks/sidebar";
+import { useEditableState } from '@/hooks/useEditableState';
 
 const FolderItem: React.FC<FolderItemProps> = ({
   folder,
@@ -33,13 +34,14 @@ const FolderItem: React.FC<FolderItemProps> = ({
     toggleFolderCollapse 
   } = useSidebarStore();
   const { navigation, handleDeleteFolder } = useSidebarActions();
-  const isActiveFolder = navigation.pathname === `/prompts/folder/${folder.id}`;
+  const { canDelete } = useEditableState();
+  const isActiveFolder = navigation.currentFolderId === folder.id;
   const isCollapsed = collapsedFolderIds.has(folder.id);
 
   return (
     <li className="mb-2">
       <Link
-        prefetch
+        prefetch={true}
         href={`/prompts/folder/${folder.id}`}
         onClick={() => {
           if (isOpen) toggleSidebar();
@@ -73,6 +75,7 @@ const FolderItem: React.FC<FolderItemProps> = ({
         </div>
         <div className="flex items-center">
           {/* DropdownMenu */}
+          {canDelete && (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button
@@ -90,17 +93,20 @@ const FolderItem: React.FC<FolderItemProps> = ({
             </DropdownMenuTrigger>
             {activeFolderMenuId === folder.id && (
               <DropdownMenuContent>
-                <DropdownMenuItem className="dark:hover:bg-light">
-                  <button
-                    onClick={() => handleDeleteFolder(folder.id)}
-                    className="w-full text-left"
-                  >
-                    Delete
-                  </button>
-                </DropdownMenuItem>
+                {canDelete && (
+                  <DropdownMenuItem className="dark:hover:bg-light">
+                    <button
+                      onClick={() => handleDeleteFolder(folder.id)}
+                      className="w-full text-left"
+                    >
+                      Delete
+                    </button>
+                  </DropdownMenuItem>
+                )}
               </DropdownMenuContent>
             )}
           </DropdownMenu>
+          )}
         </div>
       </Link>
       {/* 如果沒有折疊，顯示 children（也就是 prompt 列表） */}

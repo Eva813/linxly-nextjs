@@ -1,0 +1,122 @@
+import { NextResponse } from 'next/server';
+import { adminDb } from '@/server/db/firebase';
+import { getCacheConfig } from '@/config/cache';
+
+// GET /api/v1/invites/{shareId}
+// 處理邀請連結訪問
+export async function GET(
+  req: Request,
+  { params }: { params: { shareId: string } }
+) {
+  try {
+    const { shareId } = params;
+    if (!shareId) {
+      return NextResponse.json({ 
+        isValid: false,
+        error: 'Share ID is required' 
+      }, { status: 400 });
+    }
+
+    // Query share record
+    const shareDoc = await adminDb.collection('space_shares').doc(shareId).get();
+
+    if (!shareDoc.exists) {
+      return NextResponse.json({ 
+        isValid: false,
+        error: 'Invite not found' 
+      }, { status: 404 });
+    }
+
+    const shareData = shareDoc.data();
+    if (!shareData) {
+      return NextResponse.json({ 
+        isValid: false,
+        error: 'Invalid share data' 
+      }, { status: 400 });
+    }
+
+    // Note: If record exists, invite is valid (deleted records are truly deleted)
+
+    // Check expiry - simplified logic
+    if (shareData.expiresAt) {
+      const expiryDate = shareData.expiresAt.toDate ? shareData.expiresAt.toDate() : new Date(shareData.expiresAt);
+      if (new Date() > expiryDate) {
+        return NextResponse.json({
+          isValid: false,
+          error: 'Invite has expired'
+        }, { status: 410 });
+      }
+    }
+
+    // Get space information
+    const spaceId = shareData.promptSpaceId ;
+    if (!spaceId) {
+      return NextResponse.json({
+        isValid: false,
+        error: 'Invalid space ID'
+      }, { status: 400 });
+    }
+
+    // Use parallel queries to improve performance
+    const [spaceDoc] = await Promise.all([
+      adminDb.collection('prompt_spaces').doc(spaceId).get()
+    ]);
+    
+    if (!spaceDoc.exists) {
+      return NextResponse.json({
+        isValid: false,
+        error: 'Associated space not found'
+      }, { status: 404 });
+    }
+    const spaceData = spaceDoc.data();
+
+    // Get owner information - optimized with parallel queries
+    let ownerName = 'Unknown User';
+    const ownerId = spaceData?.userId;
+
+    if (!ownerId) {
+      return NextResponse.json({
+        isValid: false,
+        error: 'Space owner not found'
+      }, { status: 500 });
+    }
+    
+    // Use parallel queries to improve performance
+    const ownerPromise = adminDb.collection('users').doc(ownerId).get();
+    
+    try {
+      const ownerDoc = await ownerPromise;
+      if (ownerDoc.exists) {
+        ownerName = ownerDoc.data()?.name || 'Unknown User';
+      }
+    } catch (error) {
+      console.warn('Failed to fetch owner info:', error);
+      // Continue with default name
+    }
+
+    // Return valid invite info
+    return NextResponse.json({
+      spaceId: spaceId,
+      spaceName: spaceData?.name || 'Unknown Space',
+      ownerName,
+      permission: shareData.permission || 'view',
+      needsRegistration: true,
+      isValid: true,
+      isUniversal: shareData.isUniversal || false,
+      expiresAt: shareData.expiresAt ? shareData.expiresAt.toDate().toISOString() : getCacheConfig().inviteLinkExpiresAt().toISOString(),
+      createdAt: shareData.createdAt ? shareData.createdAt.toDate().toISOString() : new Date().toISOString()
+    });
+
+  } catch (error: unknown) {
+    console.error("GET invite 錯誤:", error);
+    return NextResponse.json(
+      { 
+        isValid: false,
+        error: 'Internal server error',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      },
+      { status: 500 }
+    );
+  }
+}
+

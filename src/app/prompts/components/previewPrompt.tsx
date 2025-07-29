@@ -80,7 +80,7 @@ const PreviewPrompt: React.FC<PreviewPromptProps> = ({ content, shortcut }) => {
   }, [content, renderNode]);
 
   return (
-    <main className="p-4 space-y-4 w-full h-[calc(100vh-160px)] flex flex-col">
+    <div className="p-4 space-y-4 h-[calc(100vh-160px)] flex flex-col">
       {/* 顯示提示 / shortcut */}
       <div className="h-4 bg-gray-200 rounded w-full" />
       <div className="flex items-center">
@@ -91,10 +91,10 @@ const PreviewPrompt: React.FC<PreviewPromptProps> = ({ content, shortcut }) => {
       </div>
 
       {/* 預覽區塊 */}
-      <div className="mt-4 border-2 border-dashed p-4 overflow-y-auto flex-1">
+      <div className="mt-4 border-2 border-dashed p-4 overflow-auto flex-1">
         {rendered}
       </div>
-    </main>
+    </div>
   );
 };
 

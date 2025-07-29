@@ -1,13 +1,13 @@
 import { StateCreator } from 'zustand';
-import { Prompt } from '@/types/prompt';
+import { Prompt, Folder } from '@/types/prompt';
 import { FolderSlice } from './folderSlice';
 import { getPrompts, createPrompt, deletePrompt as apiDeletePrompt, updatePrompt as apiUpdatePrompt } from '@/api/prompts';
 
 export interface PromptSlice {
-  fetchPromptsForFolder: (folderId: string) => Promise<void>;
-  addPromptToFolder: (folderId: string, prompt: Omit<Prompt, 'id'>, afterPromptId?: string) => Promise<Prompt>;
+  fetchPromptsForFolder: (folderId: string, promptSpaceId?: string) => Promise<void>;
+  addPromptToFolder: (folderId: string, prompt: Omit<Prompt, 'id'>, afterPromptId?: string, promptSpaceId?: string) => Promise<Prompt>;
   deletePromptFromFolder: (folderId: string, promptId: string) => Promise<void>;
-  updatePrompt: (promptId: string, updatedPrompt: Partial<Prompt>) => Promise<Prompt>;
+  updatePrompt: (promptId: string, updatedPrompt: Partial<Prompt>, promptSpaceId?: string) => Promise<Prompt>;
 }
 
 // 這裡依賴 FolderSlice，因為 prompts 都儲存在 folders 內
@@ -18,9 +18,9 @@ export const createPromptSlice: StateCreator<
   [],
   PromptSlice
 > = (set, get) => ({
-  fetchPromptsForFolder: async (folderId) => {
+  fetchPromptsForFolder: async (folderId, promptSpaceId) => {
     try {
-      const prompts = await getPrompts(folderId);
+      const prompts = await getPrompts(folderId, promptSpaceId);
       set({
         folders: get().folders.map((folder) =>
           folder.id === folderId
@@ -32,13 +32,20 @@ export const createPromptSlice: StateCreator<
       console.error('Failed to fetch prompts:', error);
     }
   },
-  addPromptToFolder: async (folderId, prompt, afterPromptId) => {
+  addPromptToFolder: async (folderId, prompt, afterPromptId, promptSpaceId) => {
     try {
+      if (!promptSpaceId) {
+        throw new Error('promptSpaceId is required');
+      }
+      
       // 直接使用 API，讓後端處理所有排序邏輯
-      const newPrompt = await createPrompt({ folderId, afterPromptId, ...prompt });
+      const newPrompt = await createPrompt({ folderId, afterPromptId, promptSpaceId, ...prompt });
+
+      // 清除該 space 的快取，確保下次切換時會重新載入最新數據
+      get().clearSpaceCache(promptSpaceId);
 
       // 重新獲取該資料夾的所有 prompts，確保排序正確
-      await get().fetchPromptsForFolder(folderId);
+      await get().fetchPromptsForFolder(folderId, promptSpaceId);
 
       return newPrompt;
     } catch (error) {
@@ -49,8 +56,8 @@ export const createPromptSlice: StateCreator<
   deletePromptFromFolder: async (folderId, promptId) => {
     try {
       await apiDeletePrompt(promptId);
-      set({
-        folders: get().folders.map((folder) =>
+      set((state) => ({
+        folders: state.folders.map((folder) =>
           folder.id === folderId
             ? {
               ...folder,
@@ -60,27 +67,50 @@ export const createPromptSlice: StateCreator<
             }
             : folder
         ),
-      });
+        // 同步更新快取
+        folderCache: Object.keys(state.folderCache).reduce((acc, spaceId) => {
+          acc[spaceId] = {
+            ...state.folderCache[spaceId],
+            folders: state.folderCache[spaceId].folders.map((folder) =>
+              folder.id === folderId
+                ? {
+                  ...folder,
+                  prompts: folder.prompts.filter(
+                    (prompt) => prompt.id !== promptId
+                  ),
+                }
+                : folder
+            ),
+            lastFetched: Date.now()
+          };
+          return acc;
+        }, {} as Record<string, { folders: Folder[]; lastFetched: number }>)
+      }));
     } catch (error) {
       console.error('刪除提示失敗:', error);
       throw error;
     }
   },
-  updatePrompt: async (promptId, updatedPrompt) => {
+  updatePrompt: async (promptId, updatedPrompt, promptSpaceId) => {
     try {
       // 忽略 id 欄位，因為 API 不需要
       const { ...promptDataToUpdate } = updatedPrompt;
 
       const updated = await apiUpdatePrompt(promptId, promptDataToUpdate);
 
-      set({
-        folders: get().folders.map((folder) => ({
+      // 如果提供了 promptSpaceId，清除該 space 的快取確保資料同步
+      if (promptSpaceId) {
+        get().clearSpaceCache(promptSpaceId);
+      }
+
+      set((state) => ({
+        folders: state.folders.map((folder) => ({
           ...folder,
           prompts: folder.prompts.map((prompt) =>
             prompt.id === promptId ? { ...prompt, ...updated } : prompt
           ),
         })),
-      });
+      }));
 
       return updated;
     } catch (error) {

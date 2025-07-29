@@ -1,9 +1,17 @@
 'use client';
 import React from 'react';
+import dynamic from 'next/dynamic';
 import { PromptHeader, EditorSection } from './components';
-import InsertTextFieldDialog from './InsertTextFieldDialog';
-import InsertDropdownMenuDialog from './InsertDropDownMenuDialog';
 import { usePromptPageLogic, useEditorLogic, useViewAndPanel } from './hooks';
+
+// 懶載入 Dialog 組件 (只在用戶點擊插入時才需要)
+const InsertTextFieldDialog = dynamic(() => import('./InsertTextFieldDialog'), {
+  ssr: false,
+});
+
+const InsertDropdownMenuDialog = dynamic(() => import('./InsertDropDownMenuDialog'), {
+  ssr: false,
+});
 
 interface PromptPageProps {
   params: {

@@ -1,9 +1,12 @@
 'use client'
 import Link from "next/link";
-import { useState, useCallback, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useSession } from "next-auth/react";
 import { signup } from "@/api/auth";
 import { signIn } from "next-auth/react";
+import { acceptInvite } from "@/api/spaceShares";
+import { validateEmail } from "@/utils/validation";
 
 import { AuthLayout } from "@/components/layout/AuthLayout";
 import { InputField } from "@/components/ui/InputField";
@@ -11,6 +14,7 @@ import { LoadingButton } from "@/components/ui/loadingButton";
 import { ErrorMessage } from "@/components/ui/errorMessage";
 import { SocialLoginButton } from "@/components/ui/socialLoginButton";
 import { Eye, EyeOff } from "lucide-react";
+import { FullScreenCardSpinner } from "@/components/fullScreenCardSpinner";
 
 const ERROR_MESSAGES = {
   INVALID_EMAIL: "Invalid email address",
@@ -18,8 +22,14 @@ const ERROR_MESSAGES = {
   SIGN_UP_FAILED: "Sign up failed",
 };
 
-export default function SignUp() {
+function SignUpContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const { data: session } = useSession();
+  
+  // 取得邀請參數
+  const inviteShareId = searchParams?.get('invite');
+  
   const [step, setStep] = useState(1); // 追蹤當前步驟
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -27,12 +37,40 @@ export default function SignUp() {
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [processingInvite, setProcessingInvite] = useState(false);
 
-  // 驗證電子郵件的函式
-  const validateEmail = useCallback((email: string): boolean => {
-    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-    return emailRegex.test(email);
-  }, []);
+
+  // 監聽登入狀態，自動處理邀請
+  useEffect(() => {
+    // 避免重複處理或無限循環
+    if (!session?.user?.id || !inviteShareId || processingInvite) {
+      return;
+    }
+
+    const handleAutoAcceptInvite = async () => {
+      try {
+        setProcessingInvite(true);
+        const result = await acceptInvite(inviteShareId, session.user.id);
+        
+        if (result.success) {
+          // 跳轉到工作空間
+          router.push(result.redirectUrl || `/prompts?space=${result.spaceId}`);
+        } else {
+          // 如果邀請接受失敗，回退到正常流程
+          console.error('Auto accept invite failed:', result);
+          router.push("/");
+        }
+      } catch (error) {
+        console.error('Auto accept invite error:', error);
+        // 出錯時回退到正常流程
+        router.push("/");
+      } finally {
+        setProcessingInvite(false);
+      }
+    };
+
+    handleAutoAcceptInvite();
+  }, [session?.user?.id, inviteShareId, processingInvite, router]);
 
   const handleNextStep = (e: React.FormEvent) => {
     e.preventDefault();
@@ -73,7 +111,12 @@ export default function SignUp() {
       if (signInRes?.error) {
         setError(signInRes.error);
       } else {
-        router.push("/");
+        // 註冊登入成功後，如果有邀請參數，useEffect 會自動處理
+        // 如果沒有邀請參數，則正常跳轉首頁
+        if (!inviteShareId) {
+          router.push("/");
+        }
+        // 如果有邀請參數，等待 useEffect 中的邀請處理邏輯
       }
     } catch (err: Error | unknown) {
       const errorMessage = err instanceof Error ? err.message : ERROR_MESSAGES.SIGN_UP_FAILED;
@@ -87,12 +130,28 @@ export default function SignUp() {
     if (error === ERROR_MESSAGES.INVALID_EMAIL && validateEmail(email)) {
       setError("");
     }
-  }, [email, error, validateEmail]);
+  }, [email, error]);
+
+  // Loading 覆蓋整個頁面當正在處理邀請時
+  if (processingInvite) {
+    return <FullScreenCardSpinner message="Joining workspace..." />;
+  }
+
+  const getDescription = () => {
+    if (inviteShareId) {
+      return step === 1 
+        ? "Create your account to join the workspace" 
+        : "Complete your registration to join the workspace";
+    }
+    return step === 1 
+      ? "Enter your name and email to continue" 
+      : "Enter your password to complete registration";
+  };
 
   return (
     <AuthLayout
       title="Sign up"
-      description={step === 1 ? "Enter your name and email to continue" : "Enter your password to complete registration"}
+      description={getDescription()}
     >
       {step === 1 && (
         <form className="space-y-4" onSubmit={handleNextStep} noValidate>
@@ -156,5 +215,13 @@ export default function SignUp() {
         </Link>
       </p>
     </AuthLayout>
+  );
+}
+
+export default function SignUp() {
+  return (
+    <Suspense fallback={<FullScreenCardSpinner message="Loading..." />}>
+      <SignUpContent />
+    </Suspense>
   );
 }

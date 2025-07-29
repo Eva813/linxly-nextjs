@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { adminDb } from '@/server/db/firebase';
+import { FieldValue } from 'firebase-admin/firestore';
 
 export async function GET(
   req: Request,
@@ -83,7 +84,7 @@ export async function PUT(
     }
 
     // 準備更新資料
-    const updateData: { updatedAt: Date; name?: string; content?: string; shortcut?: string } = { updatedAt: new Date() };
+    const updateData: { updatedAt: FirebaseFirestore.FieldValue; name?: string; content?: string; shortcut?: string } = { updatedAt: FieldValue.serverTimestamp() };
     if (name) updateData.name = name;
     if (content !== undefined) updateData.content = content;
     if (shortcut) updateData.shortcut = shortcut;

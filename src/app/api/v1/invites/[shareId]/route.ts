@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { adminDb } from '@/server/db/firebase';
+import { getCacheConfig } from '@/config/cache';
 
 // GET /api/v1/invites/{shareId}
 // 處理邀請連結訪問
@@ -102,7 +103,7 @@ export async function GET(
       needsRegistration: true,
       isValid: true,
       isUniversal: shareData.isUniversal || false,
-      expiresAt: shareData.expiresAt ? shareData.expiresAt.toDate().toISOString() : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+      expiresAt: shareData.expiresAt ? shareData.expiresAt.toDate().toISOString() : getCacheConfig().inviteLinkExpiresAt().toISOString(),
       createdAt: shareData.createdAt ? shareData.createdAt.toDate().toISOString() : new Date().toISOString()
     });
 

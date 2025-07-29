@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { sign } from "jsonwebtoken";
 import { adminDb } from "@/server/db/firebase";
+import { getCacheConfig } from "@/config/cache";
 
 export async function POST(req: Request) {
   // 1) 解析並驗證必要欄位
@@ -67,7 +68,7 @@ export async function POST(req: Request) {
     const jwtToken = sign(
       { sub: user.id, email: user.email },
       process.env.NEXTAUTH_SECRET as string,
-      { expiresIn: "7d" }
+      { expiresIn: getCacheConfig().jwtExpiresIn }
     );
 
     console.log("登入參數：", { email, password });

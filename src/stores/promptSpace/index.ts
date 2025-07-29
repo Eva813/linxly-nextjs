@@ -153,16 +153,33 @@ export const usePromptSpaceStore = create<PromptSpaceStore>()(
       
       loadSpaceOverview: async (spaceId: string) => {
         const { setOverviewLoading, setError, setCurrentSpaceOverview } = get();
-        
+
         try {
           setOverviewLoading(true);
           setError(null);
-          
+
           const overview = await getPromptSpaceOverview(spaceId);
-          
+
           setCurrentSpaceOverview(overview);
         } catch (error) {
-          const errorMessage = error instanceof Error ? error.message : 'Failed to load space overview';
+          let errorMessage = 'Failed to load space overview';
+
+          if (error instanceof Error) {
+            const errorMap = {
+              Network: 'Network error: Please check your internet connection.',
+              Permission: 'Permission error: You do not have access to this space.',
+              'Not Found': 'Error: The requested space was not found.'
+            };
+            
+            const matchedError = Object.keys(errorMap).find(key => 
+              error.message.includes(key)
+            );
+            
+            errorMessage = matchedError 
+              ? errorMap[matchedError as keyof typeof errorMap]
+              : `Unexpected error: ${error.message}`;
+          }
+
           setError(errorMessage);
           console.error('Error loading space overview:', error);
         } finally {

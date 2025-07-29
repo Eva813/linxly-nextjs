@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { adminDb } from '@/server/db/firebase';
 import { generateInviteLink } from '@/server/utils/urlUtils';
+import { getCacheConfig } from '@/config/cache';
 
 export async function POST(
   req: Request,
@@ -59,7 +60,7 @@ export async function POST(
       } else {
         // Existing link is expired, create new one
         const now = new Date();
-        actualExpiresAt = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString();
+        actualExpiresAt = getCacheConfig().inviteLinkExpiresAt(now).toISOString();
 
         const shareRef = adminDb.collection('space_shares').doc();
         shareId = shareRef.id;
@@ -79,7 +80,7 @@ export async function POST(
     } else {
       // Create new universal link
       const now = new Date();
-      actualExpiresAt = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString();
+      actualExpiresAt = getCacheConfig().inviteLinkExpiresAt(now).toISOString();
 
       const shareRef = adminDb.collection('space_shares').doc();
       shareId = shareRef.id;

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { adminDb } from '@/server/db/firebase';
 import { getBaseUrl } from '@/server/utils/urlUtils';
+import { getCacheConfig } from '@/config/cache';
 
 // GET /api/v1/prompt-spaces/{spaceId}/invite-links
 // Fetch existing invite links for a space
@@ -66,7 +67,7 @@ export async function GET(
           shareId,
           expiresAt: data.expiresAt ? 
             (data.expiresAt.toDate ? data.expiresAt.toDate().toISOString() : data.expiresAt) :
-            new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+            getCacheConfig().inviteLinkExpiresAt().toISOString()
         };
       }
     });

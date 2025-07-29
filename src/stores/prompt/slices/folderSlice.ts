@@ -2,6 +2,7 @@
 import { StateCreator } from 'zustand';
 import { Folder } from '@/types/prompt';
 import { getFolders, createFolder, updateFolder, deleteFolder } from '@/api/folders';
+import { getCacheConfig } from '@/config/cache';
 
 export interface FolderSlice {
   folders: Folder[];
@@ -43,11 +44,11 @@ export const createFolderSlice: StateCreator<FolderSlice> = (set, get) => ({
 
       const state = get();
       const now = Date.now();
-      const CACHE_DURATION = 5 * 60 * 1000; // 5分鐘快取
+      const cacheDuration = getCacheConfig().folderCacheDuration;
       
       // 檢查快取
       const cachedData = state.folderCache[promptSpaceId];
-      if (!forceRefresh && cachedData && (now - cachedData.lastFetched) < CACHE_DURATION) {
+      if (!forceRefresh && cachedData && (now - cachedData.lastFetched) < cacheDuration) {
         set({ folders: cachedData.folders, isLoading: false });
         return;
       }

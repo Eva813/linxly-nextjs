@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { adminDb } from '@/server/db/firebase';
 import { FieldValue } from 'firebase-admin/firestore';
+import { getCacheConfig } from '@/config/cache';
 
 export async function POST(
   req: NextRequest,
@@ -39,7 +40,7 @@ export async function POST(
 
     // Check if invite is expired (30 days)
     const createdAt = shareData.createdAt?.toDate() || new Date();
-    const expiryDate = new Date(createdAt.getTime() + (30 * 24 * 60 * 60 * 1000));
+    const expiryDate = getCacheConfig().inviteLinkExpiresAt(createdAt);
     
     if (new Date() > expiryDate) {
       return NextResponse.json({ error: 'Invite has expired' }, { status: 410 });

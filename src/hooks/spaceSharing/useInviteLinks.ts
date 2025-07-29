@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect } from 'react';
 import { createInviteLink, getInviteLinks } from '@/api/spaceShares';
+import { isExpired } from '@/utils/timezone';
 
 interface InviteLink {
   link: string;
@@ -26,12 +27,7 @@ interface UseInviteLinksReturn {
   refreshInviteLinks: () => Promise<void>;
 }
 
-// Helper function to check if link is expired (Taiwan timezone) - outside component to use in useState
-const checkLinkExpiry = (expiresAt: string) => {
-  const nowTaipei = new Date().toLocaleString("en-US", { timeZone: "Asia/Taipei" });
-  const expiryTaipei = new Date(expiresAt).toLocaleString("en-US", { timeZone: "Asia/Taipei" });
-  return new Date(nowTaipei) > new Date(expiryTaipei);
-};
+// Use timezone utility directly - no need for wrapper function
 
 export const useInviteLinks = ({ spaceId, isOpen = false }: UseInviteLinksProps): UseInviteLinksReturn => {
   // Helper function to get localStorage key
@@ -53,8 +49,8 @@ export const useInviteLinks = ({ spaceId, isOpen = false }: UseInviteLinksProps)
       
       const parsed = JSON.parse(stored);
       // Check if we have at least one valid (non-expired) link
-      const hasValidView = parsed.view && !checkLinkExpiry(parsed.view.expiresAt);
-      const hasValidEdit = parsed.edit && !checkLinkExpiry(parsed.edit.expiresAt);
+      const hasValidView = parsed.view && !isExpired(parsed.view.expiresAt);
+      const hasValidEdit = parsed.edit && !isExpired(parsed.edit.expiresAt);
       
       return hasValidView || hasValidEdit;
     } catch {
@@ -72,10 +68,10 @@ export const useInviteLinks = ({ spaceId, isOpen = false }: UseInviteLinksProps)
         const parsed = JSON.parse(stored);
         const validLinks: InviteLinks = {};
         
-        if (parsed.view && !checkLinkExpiry(parsed.view.expiresAt)) {
+        if (parsed.view && !isExpired(parsed.view.expiresAt)) {
           validLinks.view = parsed.view;
         }
-        if (parsed.edit && !checkLinkExpiry(parsed.edit.expiresAt)) {
+        if (parsed.edit && !isExpired(parsed.edit.expiresAt)) {
           validLinks.edit = parsed.edit;
         }
         

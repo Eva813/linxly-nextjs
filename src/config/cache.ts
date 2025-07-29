@@ -3,6 +3,12 @@
  * Centralized management of cache durations for better maintainability
  */
 
+// Application timezone configuration
+export const APP_CONFIG = {
+  // Default timezone - can be overridden by environment variables
+  DEFAULT_TIMEZONE: 'Asia/Taipei',
+} as const;
+
 // Duration constants in milliseconds
 export const CACHE_DURATIONS = {
   // Invite link expiration (30 days)

@@ -151,7 +151,7 @@ function CTABenefits() {
 // 主 CTA 組件
 export default function CTASection() {
   return (
-    <section className="py-20 bg-gradient-to-br from-blue-600 via-blue-700 to-purple-700 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
+    <section className="py-20 bg-gradient-to-br from-primary via-primary to-secondary dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
       <div className="container mx-auto px-4 text-center">
         <CTAHeading />
         <CTAButtons />

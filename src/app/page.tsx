@@ -1,6 +1,48 @@
 import Link from "next/link";
 import PuzzleIcon from "@/components/icons/PuzzleIcon";
 import ManWithPuzzleIcon from "@/components/icons/ManWithPuzzleIcon";
+import HomeFeaturesSection from "@/components/homeFeaturesSection";
+import { 
+  PenTool, 
+  Gem,
+  Zap, 
+  Settings,
+  Keyboard,
+  Workflow
+} from "lucide-react";
+
+const features = [
+  {
+    icon: PenTool,
+    title: "Smart Organization",
+    description: "Organize prompts with tags, categories, and collections. Find any prompt in seconds with powerful search."
+  },
+  {
+    icon: Gem,
+    title: "Team Collaboration",
+    description: "Share prompt spaces with team members, supporting invitation links and permission management. Make team collaboration smoother and knowledge sharing easier."
+  },
+  {
+    icon: Settings,
+    title: "Parameterized Prompts",
+    description: "Create dynamic prompts with custom fields. Supports dropdowns, text inputs, and various parameter types for more flexible and practical prompts."
+  },
+  {
+    icon: Zap,
+    title: "Instant Access",
+    description: "Browser extension and API access. Use your prompts directly in your favorite AI tools with one click."
+  },
+  {
+    icon: Keyboard,
+    title: "Shortcut Support",
+    description: "Set shortcuts for frequently used prompts to speed up your workflow. Quickly access and invoke your most important prompts."
+  },
+  {
+    icon: Workflow,
+    title: "Visual Flow Editor",
+    description: "Drag and drop to build prompt flowcharts, visually manage complex prompt logic. Supports multiple node types and file upload functionality."
+  }
+];
 
 export default function Home() {
 
@@ -13,7 +55,7 @@ export default function Home() {
               Don&apos;t hesitate to try it out
             </span>
             <h1 className="text-4xl md:text-5xl font-extrabold text-gray-900 mb-4 dark:text-gray-100">
-              Amazing <span className="text-mask">Prompt</span> management
+              Organize Your <span className="text-mask">Prompts</span> Like a Pro
             </h1>
             <div className="lines relative w-50 overflow-hidden">
               <div className="animatedLine"></div>
@@ -78,6 +120,8 @@ export default function Home() {
           </div>
         </div>
       </section>
+
+      <HomeFeaturesSection features={features} />
     </div>
   );
 }

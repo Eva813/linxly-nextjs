@@ -12,6 +12,7 @@ import { EmailStep } from './components/emailStep';
 import { PasswordStep } from './components/passwordStep';
 import { useLoginForm } from './hooks/useLoginForm';
 import { FullScreenCardSpinner } from '@/components/fullScreenCardSpinner';
+import Footer from '@/components/footer';
 
 export function LoginContent() {
   const { status } = useSession();
@@ -99,6 +100,7 @@ export function LoginContent() {
           </Link>
         </p>
       </AuthLayout>
+      <Footer />
     </>
   );
 }

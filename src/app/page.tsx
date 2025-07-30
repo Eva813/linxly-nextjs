@@ -2,6 +2,8 @@ import Link from "next/link";
 import PuzzleIcon from "@/components/icons/PuzzleIcon";
 import ManWithPuzzleIcon from "@/components/icons/ManWithPuzzleIcon";
 import HomeFeaturesSection from "@/components/homeFeaturesSection";
+import CTASection from "@/components/ctaSection";
+import Footer from "@/components/footer";
 import { 
   PenTool, 
   Gem,
@@ -122,6 +124,10 @@ export default function Home() {
       </section>
 
       <HomeFeaturesSection features={features} />
+      
+      <CTASection />
+      
+      <Footer />
     </div>
   );
 }

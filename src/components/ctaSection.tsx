@@ -70,12 +70,20 @@ const CTA_CONFIG: CTAConfig = {
 function CTAHeading() {
   return (
     <div className="mb-12">
-      <h2 className="text-4xl md:text-5xl font-bold text-white dark:text-gray-100 mb-6">
+      <h2 
+        className="text-4xl md:text-5xl font-bold text-white dark:text-gray-100 mb-6"
+        data-aos="fade-up"
+        data-aos-delay="100"
+      >
         {CTA_CONFIG.heading.title.split(' ').slice(0, 3).join(' ')}
         <br />
         {CTA_CONFIG.heading.title.split(' ').slice(3).join(' ')}
       </h2>
-      <p className="text-xl text-blue-100 dark:text-gray-300 max-w-2xl mx-auto">
+      <p 
+        className="text-xl text-blue-100 dark:text-gray-300 max-w-2xl mx-auto"
+        data-aos="fade-up"
+        data-aos-delay="200"
+      >
         {CTA_CONFIG.heading.subtitle}
       </p>
     </div>
@@ -102,7 +110,11 @@ function CTAButton({ href, label, variant, icon }: CTAButton) {
 // 按鈕區塊組件
 function CTAButtons() {
   return (
-    <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-12">
+    <div 
+      className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-12"
+      data-aos="fade-in"
+      data-aos-delay="250"
+    >
       {CTA_CONFIG.buttons.map((button) => (
         <CTAButton
           key={button.href}
@@ -135,7 +147,11 @@ function BenefitItem({ icon: Icon, text, iconColor }: BenefitItemProps) {
 // 優勢區塊組件
 function CTABenefits() {
   return (
-    <div className="flex flex-col sm:flex-row gap-6 justify-center items-center text-blue-100 dark:text-gray-300">
+    <div 
+      className="flex flex-col sm:flex-row gap-6 justify-center items-center text-blue-100 dark:text-gray-300"
+      data-aos="fade-in"
+      data-aos-delay="300"
+    >
       {CTA_CONFIG.benefits.map((benefit, index) => (
         <BenefitItem
           key={index}

@@ -5,7 +5,7 @@ import { Check, Zap, Globe, LucideIcon } from "lucide-react";
 type ButtonVariant = 'primary' | 'secondary';
 
 interface CTAHeading {
-  title: string;
+  title: string[];
   subtitle: string;
 }
 
@@ -31,7 +31,7 @@ interface CTAConfig {
 // 配置數據
 const CTA_CONFIG: CTAConfig = {
   heading: {
-    title: "Ready to transform your AI workflow?",
+    title: ["Ready to transform", "your AI workflow?"],
     subtitle: "Join 10,000+ AI professionals who've revolutionized their prompt management with PromptBear.",
   },
   buttons: [
@@ -75,9 +75,12 @@ function CTAHeading() {
         data-aos="fade-up"
         data-aos-delay="100"
       >
-        {CTA_CONFIG.heading.title.split(' ').slice(0, 3).join(' ')}
-        <br />
-        {CTA_CONFIG.heading.title.split(' ').slice(3).join(' ')}
+        {CTA_CONFIG.heading.title.map((line, index) => (
+          <span key={line}>
+            {line}
+            {index < CTA_CONFIG.heading.title.length - 1 && <br />}
+          </span>
+        ))}
       </h2>
       <p 
         className="text-xl text-blue-100 dark:text-gray-300 max-w-2xl mx-auto"

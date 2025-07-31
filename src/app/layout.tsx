@@ -19,25 +19,45 @@ const geistMono = localFont({
 
 export const metadata: Metadata = {
   title: "PromptBear - Organize Your Prompts Like a Pro",
-  description: "Smart prompt management platform with team collaboration, parameterized prompts, and instant access. Organize, share, and optimize your AI prompts efficiently.",
-  keywords: ["prompt management", "AI prompts", "team collaboration", "prompt organization", "AI tools"],
+  description: "Advanced prompt management platform with smart organization, team collaboration, parameterized prompts, visual flow editor, and browser extension. Streamline your AI workflow with powerful search, shortcuts, and instant access.",
+  keywords: [
+    "prompt management", 
+    "AI prompts", 
+    "team collaboration", 
+    "prompt organization", 
+    "AI tools",
+    "browser extension",
+    "visual flow editor",
+    "parameterized prompts",
+    "prompt shortcuts",
+    "AI workflow"
+  ],
   authors: [{ name: "PromptBear Team" }],
   creator: "PromptBear",
   publisher: "PromptBear",
   openGraph: {
     title: "PromptBear - Organize Your Prompts Like a Pro",
-    description: "Smart prompt management platform with team collaboration, parameterized prompts, and instant access.",
+    description: "Advanced prompt management platform with smart organization, team collaboration, parameterized prompts, and visual flow editor. Streamline your AI workflow.",
     type: "website",
     locale: "en_US",
+    siteName: "PromptBear",
   },
   twitter: {
     card: "summary_large_image",
     title: "PromptBear - Organize Your Prompts Like a Pro",
-    description: "Smart prompt management platform with team collaboration, parameterized prompts, and instant access.",
+    description: "Advanced prompt management platform with smart organization, team collaboration, parameterized prompts, and visual flow editor.",
+    creator: "@promptbear",
   },
   robots: {
     index: true,
     follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
   },
 };
 

@@ -126,22 +126,7 @@ const config: Config = {
 				},
 				"slow-bounce": {
 					'0%, 100%': { transform: 'translateY(-25%)', 'animation-timing-function': 'cubic-bezier(0.8, 0, 1, 1)' },
-					'50%': { transform: 'translateY(0)', 'animation-timing-function': 'cubic-bezier(0, 0, 0.2, 1)' },
-					// "0%": {
-					// 	transform: "translateY(0)"
-					// },
-					// "25%": {
-					// 	transform: "translateY(-12px)"
-					// },
-					// "50%": {
-					// 	transform: "translateY(0)"
-					// },
-					// "75%": {
-					// 	transform: "translateY(-6px)"
-					// },
-					// "100%": {
-					// 	transform: "translateY(0)"
-					// }
+					'50%': { transform: 'translateY(0)', 'animation-timing-function': 'cubic-bezier(0, 0, 0.2, 1)' }
 				},
 			},
 			animation: {

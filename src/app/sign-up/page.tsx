@@ -15,6 +15,7 @@ import { ErrorMessage } from "@/components/ui/errorMessage";
 import { SocialLoginButton } from "@/components/ui/socialLoginButton";
 import { Eye, EyeOff } from "lucide-react";
 import { FullScreenCardSpinner } from "@/components/fullScreenCardSpinner";
+import Footer from "@/components/footer";
 
 const ERROR_MESSAGES = {
   INVALID_EMAIL: "Invalid email address",
@@ -149,72 +150,75 @@ function SignUpContent() {
   };
 
   return (
-    <AuthLayout
-      title="Sign up"
-      description={getDescription()}
-    >
-      {step === 1 && (
-        <form className="space-y-4" onSubmit={handleNextStep} noValidate>
-          <InputField
-            id="name"
-            label="Name"
-            type="text"
-            placeholder="John Doe"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-          />
-          <InputField
-            id="email"
-            label="Email"
-            type="email"
-            placeholder="m@example.com"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            aria-invalid={!!error}
-            aria-describedby="email-error"
-          />
-          {error && <ErrorMessage message={error} id="email-error" />}
-          <LoadingButton type="submit" className="w-full dark:text-gray-300" isLoading={isLoading}>
-            Continue with email
-          </LoadingButton>
-        </form>
-      )}
-      {step === 2 && (
-        <form className="space-y-4" onSubmit={handleSubmit}>
-          <InputField
-            id="password"
-            label="Password"
-            type={showPassword ? "text" : "password"}
-            placeholder="Enter your password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            suffix={
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="text-gray-500 hover:text-gray-700"
-              >
-                {showPassword ? <Eye className="w-5 h-5" /> : <EyeOff className="w-5 h-5" />}
-              </button>
-            }
-          />
-          <LoadingButton type="submit" className="w-full" isLoading={isLoading}>
-            Sign up
-          </LoadingButton>
-        </form>
-      )}
-      <SocialLoginButton
-        provider="google"
-        onClick={() => signIn('google', { callbackUrl: '/' })}
-        isLoading={isLoading}
-      />
-      <p className="text-sm text-center text-gray-600">
-        Already have an account?{' '}
-        <Link href="/login" className="text-blue-600 hover:underline">
-          Log in
-        </Link>
-      </p>
-    </AuthLayout>
+    <>
+      <AuthLayout
+        title="Sign up"
+        description={getDescription()}
+      >
+        {step === 1 && (
+          <form className="space-y-4" onSubmit={handleNextStep} noValidate>
+            <InputField
+              id="name"
+              label="Name"
+              type="text"
+              placeholder="John Doe"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+            />
+            <InputField
+              id="email"
+              label="Email"
+              type="email"
+              placeholder="m@example.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              aria-invalid={!!error}
+              aria-describedby="email-error"
+            />
+            {error && <ErrorMessage message={error} id="email-error" />}
+            <LoadingButton type="submit" className="w-full dark:text-gray-300" isLoading={isLoading}>
+              Continue with email
+            </LoadingButton>
+          </form>
+        )}
+        {step === 2 && (
+          <form className="space-y-4" onSubmit={handleSubmit}>
+            <InputField
+              id="password"
+              label="Password"
+              type={showPassword ? "text" : "password"}
+              placeholder="Enter your password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              suffix={
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="text-gray-500 hover:text-gray-700"
+                >
+                  {showPassword ? <Eye className="w-5 h-5" /> : <EyeOff className="w-5 h-5" />}
+                </button>
+              }
+            />
+            <LoadingButton type="submit" className="w-full" isLoading={isLoading}>
+              Sign up
+            </LoadingButton>
+          </form>
+        )}
+        <SocialLoginButton
+          provider="google"
+          onClick={() => signIn('google', { callbackUrl: '/' })}
+          isLoading={isLoading}
+        />
+        <p className="text-sm text-center text-gray-600">
+          Already have an account?{' '}
+          <Link href="/login" className="text-blue-600 hover:underline">
+            Log in
+          </Link>
+        </p>
+      </AuthLayout>
+      <Footer />
+    </>
   );
 }
 

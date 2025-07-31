@@ -1,6 +1,4 @@
 import type { Config } from "tailwindcss";
-import tailwindAnimate from "tailwindcss-animate";
-
 
 const config: Config = {
 	darkMode: ["class"],
@@ -98,10 +96,6 @@ const config: Config = {
 					'0%, 100%': { opacity: '1' },
 					'50%': { opacity: '0.5' },
 				},
-				spin: {
-					'0%': { transform: 'rotate(0deg)' },
-					'100%': { transform: 'rotate(360deg)' },
-				},
 				"swing-left": {
 					"0%": { transform: "rotate(-15deg)" },
 					"50%": { transform: "rotate(-25deg)" },
@@ -130,6 +124,21 @@ const config: Config = {
 					"80%": { width: "100%", opacity: "1" },
 					"100%": { width: "100%", opacity: "0" },
 				},
+				"slow-bounce": {
+					'0%, 100%': { transform: 'translateY(-25%)', 'animation-timing-function': 'cubic-bezier(0.8, 0, 1, 1)' },
+					'50%': { transform: 'translateY(0)', 'animation-timing-function': 'cubic-bezier(0, 0, 0.2, 1)' }
+				},
+			},
+			animation: {
+				highlight: 'highlight 2s ease-out forwards',
+				"pulse-strong": 'pulse-strong 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+				"swing-left": "swing-left 1.5s ease-in-out",
+				"swing-right": "swing-right 1.5s ease-in-out",
+				"slide-in-right": "slide-in-right 0.3s ease-out forwards",
+				"slide-out-right": "slide-out-right 0.3s ease-out forwards",
+				"progress-sm": "progress-sm 0.8s ease-in-out forwards",
+				"progress-md": "progress-md 1.2s ease-in-out forwards",
+				"slow-bounce": "slow-bounce 1.5s ease-in-out infinite",
 			}
 		},
 		variants: {
@@ -138,18 +147,8 @@ const config: Config = {
 				boxShadow: ['focus']
 			}
 		},
-		animation: {
-			highlight: 'highlight 2s ease-out forwards', // 動畫持續時間和效果
-			"pulse-strong": 'pulse-strong 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-			spin: 'spin 1s linear infinite',
-			"swing-left": "swing-left 1.5s ease-in-out",
-			"swing-right": "swing-right 1.5s ease-in-out",
-			"slide-in-right": "slide-in-right 0.3s ease-out forwards",
-			"slide-out-right": "slide-out-right 0.3s ease-out forwards",
-			"progress-sm": "progress-sm 0.8s ease-in-out forwards",
-			"progress-md": "progress-md 1.2 s ease-in-out forwards",
-		}
 	},
-	plugins: [tailwindAnimate],
-};
+	plugins: [],
+} satisfies Config;
+
 export default config;

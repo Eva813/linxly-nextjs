@@ -20,6 +20,7 @@ body {
   font-family: sans-serif;
 }
 
+
 @layer utilities {
   .text-balance {
     text-wrap: balance;
@@ -230,6 +231,7 @@ body {
     background-position: 200%;
   }
 }
+
 
 
 /* loading spinner */

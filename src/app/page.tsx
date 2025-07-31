@@ -1,4 +1,7 @@
+"use client";
+
 import Link from "next/link";
+import { useRef, useCallback } from "react";
 import PuzzleIcon from "@/components/icons/PuzzleIcon";
 import ManWithPuzzleIcon from "@/components/icons/ManWithPuzzleIcon";
 import HomeFeaturesSection from "@/components/homeFeaturesSection";
@@ -10,7 +13,8 @@ import {
   Zap, 
   Settings,
   Keyboard,
-  Workflow
+  Workflow,
+  ChevronDown
 } from "lucide-react";
 
 const features = [
@@ -47,10 +51,18 @@ const features = [
 ];
 
 export default function Home() {
+  const featuresRef = useRef<HTMLDivElement>(null);
+
+  const scrollToFeatures = useCallback(() => {
+    featuresRef.current?.scrollIntoView({ 
+      behavior: 'smooth', 
+      block: 'start' 
+    });
+  }, []);
 
   return (
     <div>
-      <section className="bg-white min-h-[calc(100vh-4rem-1px)] flex items-center  dark:text-gray-100 dark:bg-gray-900 dark:bg-auth-dark-gradient">
+      <section className="bg-white min-h-[calc(100vh-4rem-1px)] flex items-center relative dark:text-gray-100 dark:bg-gray-900 dark:bg-auth-dark-gradient">
         <div className="container mx-auto px-4 text-center flex flex-col md:flex-row items-center md:items-start">
           <div className="md:w-1/2 flex flex-col justify-center h-full">
             <span className="inline-block bg-gray-100 text-gray-800 text-sm font-medium px-3 py-1 rounded-full mb-4 max-w-max text-center mx-auto">
@@ -121,9 +133,20 @@ export default function Home() {
             </svg>
           </div>
         </div>
+        
+        {/* Scroll Down Arrow Button */}
+        <button
+          onClick={scrollToFeatures}
+          className="absolute bottom-8 left-1/2 -ml-6 p-3 rounded-full bg-white dark:bg-gray-800 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-110 animate-slow-bounce"
+          aria-label="Scroll to features section"
+        >
+          <ChevronDown className="w-6 h-6 text-primary dark:text-secondary" />
+        </button>
       </section>
 
-      <HomeFeaturesSection features={features} />
+      <div ref={featuresRef}>
+        <HomeFeaturesSection features={features} />
+      </div>
       
       <CTASection />
       

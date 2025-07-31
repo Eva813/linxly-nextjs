@@ -54,10 +54,14 @@ export default function Home() {
   const featuresRef = useRef<HTMLDivElement>(null);
 
   const scrollToFeatures = useCallback(() => {
-    featuresRef.current?.scrollIntoView({ 
-      behavior: 'smooth', 
-      block: 'start' 
-    });
+    if (featuresRef.current) {
+      const elementTop = featuresRef.current.offsetTop;
+      const offset = 60; // Add 60px padding from top
+      window.scrollTo({
+        top: elementTop - offset,
+        behavior: 'smooth'
+      });
+    }
   }, []);
 
   return (

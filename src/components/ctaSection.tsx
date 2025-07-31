@@ -37,7 +37,7 @@ const CTA_CONFIG: CTAConfig = {
   buttons: [
     {
       href: "/prompts",
-      label: "Start Free Trial",
+      label: "Start Trial",
       variant: "primary",
       icon: "→",
     },
@@ -87,8 +87,8 @@ function CTAButton({ href, label, variant, icon }: CTAButton) {
   const baseClasses = "font-semibold px-8 py-4 rounded-lg transition-colors duration-200 min-w-[200px] text-center";
   
   const variantClasses = {
-    primary: "bg-white text-blue-700 dark:bg-gray-100 dark:text-blue-800 hover:bg-blue-50 dark:hover:bg-gray-200 inline-flex items-center gap-2 justify-center",
-    secondary: "bg-transparent border-2 border-white dark:border-gray-300 text-white dark:text-gray-100 hover:bg-white/10 dark:hover:bg-gray-800/40",
+    primary: "bg-white text-primary dark:bg-light dark:text-blue-800 hover:bg-blue-50 dark:hover:bg-gray-200 inline-flex items-center gap-2 justify-center shadow-2xl hover:shadow-3xl hover:scale-105 transition-all duration-500 ease-out will-change-transform",
+    secondary: "bg-transparent border-2 border-white dark:border-gray-300 text-white dark:text-gray-100 hover:bg-white/10 dark:hover:bg-gray-800/40 transition-all duration-500 ease-out will-change-transform",
   };
 
   return (

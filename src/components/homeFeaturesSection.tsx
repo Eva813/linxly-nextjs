@@ -28,14 +28,14 @@ export default function HomeFeaturesSection({ features }: HomeFeaturesSectionPro
             data-aos="fade-up"
             data-aos-delay="200"
           >
-            From simple storage to advanced collaboration, promptBear has all the features to make your AI workflow more efficient.
+            From simple storage to advanced collaboration, PromptBear has all the features to make your AI workflow more efficient.
           </p>
         </div>
 
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
           {features.map((feature, index) => (
             <div
-              key={index}
+              key={feature.title}
               data-aos="fade-up"
               data-aos-delay={300 + index * 100}
             >

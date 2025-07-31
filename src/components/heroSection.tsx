@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useRef, useCallback, useEffect } from "react";
+import { useEffect } from "react";
 import AOS from 'aos';
 import 'aos/dist/aos.css';
 import PuzzleIcon from "@/components/icons/PuzzleIcon";

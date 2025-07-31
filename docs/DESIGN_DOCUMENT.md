@@ -1,11 +1,11 @@
-# Linxly NextJS - 設計文件
+# PromptBear - 設計文件
 *Design Document for Prompt Management Platform*
 
 ---
 
 ## 1. Overview 概述
 
-Linxly NextJS 是一個現代化的 Prompt 管理平台，為使用者提供創建、分享和協作 AI Prompt 的完整解決方案。本文件描述了平台的高階架構設計、技術決策以及實作方向，重點關注多使用者協作、權限管理和跨時區支援等核心功能。
+PromptBear 是一個現代化的 Prompt 管理平台，為使用者提供創建、分享和協作 AI Prompt 的完整解決方案。本文件描述了平台的高階架構設計、技術決策以及實作方向，重點關注多使用者協作、權限管理和跨時區支援等核心功能。
 
 ## 2. Context 背景說明
 
@@ -118,6 +118,15 @@ Linxly NextJS 是一個現代化的 Prompt 管理平台，為使用者提供創�
 
 ### 資料模型設計
 
+#### Firestore 集合結構
+```
+/users/{userId}
+/promptSpaces/{spaceId}
+/folders/{folderId}
+/prompts/{promptId}
+/spaceShares/{shareId}
+```
+
 ```typescript
 // 核心資料結構
 interface User {
@@ -136,12 +145,15 @@ interface PromptSpace {
   updatedAt?: Date;
 }
 
+// 🚨 CURRENT IMPLEMENTATION (存在擴展性問題)
 interface Folder {
   id: string;
   name: string;
   description?: string;
   promptSpaceId: string;
-  prompts: Prompt[];
+  prompts: Prompt[]; // ⚠️ 問題：可能超過 Firestore 1MB 限制
+  createdAt: Date;
+  updatedAt?: Date;
 }
 
 interface Prompt {
@@ -149,6 +161,27 @@ interface Prompt {
   title: string;
   content: string;
   folderId: string;
+  createdAt: Date;
+  updatedAt?: Date;
+}
+
+// 📋 RECOMMENDED MIGRATION (建議遷移目標)
+interface FolderV2 {
+  id: string;
+  name: string;
+  description?: string;
+  promptSpaceId: string;
+  createdAt: Date;
+  updatedAt?: Date;
+  // 移除 prompts 陣列，改用關聯查詢
+}
+
+interface PromptV2 {
+  id: string;
+  title: string;
+  content: string;
+  folderId: string; // 外鍵關聯到 Folder
+  promptSpaceId: string; // 冗余字段，優化查詢性能
   createdAt: Date;
   updatedAt?: Date;
 }
@@ -162,7 +195,51 @@ interface SpaceShare {
   expiresAt?: Date;
   isUniversal: boolean;
 }
+
+// 查詢範例
+// 獲取特定資料夾的所有 prompts
+const getFolderPrompts = (folderId: string) => {
+  return db.collection('prompts')
+    .where('folderId', '==', folderId)
+    .orderBy('createdAt', 'desc');
+};
+
+// 獲取使用者空間的所有 prompts
+const getSpacePrompts = (promptSpaceId: string) => {
+  return db.collection('prompts')
+    .where('promptSpaceId', '==', promptSpaceId)
+    .orderBy('updatedAt', 'desc');
+};
 ```
+
+#### 資料庫設計原則
+✅ **最佳實踐**
+- 每個集合分離存儲，避免巢狀陣列
+- 使用複合索引優化查詢性能  
+- 冗余關鍵字段減少跨集合查詢
+- 實作軟刪除避免資料遺失
+
+❌ **避免的反模式** (⚠️ 目前專案存在的問題)
+- 在文檔中存儲大型陣列 (如 `prompts: Prompt[]`) - **目前使用中**
+- 深度巢狀的物件結構 (>2層)
+- 頻繁的跨集合關聯查詢
+- 缺少適當的索引策略
+
+#### 🔧 遷移計劃
+**階段 1: 準備工作**
+1. 創建新的 Firestore 索引：`prompts` 集合按 `folderId` 和 `promptSpaceId`
+2. 添加 `promptSpaceId` 欄位到現有 `prompts` 文檔
+3. 實作 V2 API 端點，支援新的查詢模式
+
+**階段 2: 漸進式遷移**
+1. 前端組件逐步切換到 V2 API
+2. 保持 V1 和 V2 API 並存，確保向後相容
+3. 監控查詢性能和資料庫使用量
+
+**階段 3: 清理工作**
+1. 移除 `folder.prompts` 陣列欄位
+2. 移除舊的 V1 API 端點
+3. 清理相關的前端代碼和類型定義
 
 ### 權限系統設計
 

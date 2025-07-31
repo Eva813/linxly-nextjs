@@ -32,7 +32,7 @@ interface CTAConfig {
 const CTA_CONFIG: CTAConfig = {
   heading: {
     title: "Ready to transform your AI workflow?",
-    subtitle: "Join 10,000+ AI professionals who've revolutionized their prompt management with promptBear.",
+    subtitle: "Join 10,000+ AI professionals who've revolutionized their prompt management with PromptBear.",
   },
   buttons: [
     {
@@ -152,9 +152,9 @@ function CTABenefits() {
       data-aos="fade-in"
       data-aos-delay="300"
     >
-      {CTA_CONFIG.benefits.map((benefit, index) => (
+      {CTA_CONFIG.benefits.map((benefit) => (
         <BenefitItem
-          key={index}
+          key={benefit.text}
           icon={benefit.icon}
           text={benefit.text}
           iconColor={benefit.iconColor}

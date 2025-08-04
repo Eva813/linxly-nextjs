@@ -2,7 +2,6 @@ import React from 'react';
 import dynamic from 'next/dynamic';
 import TipTapEditor from '@/app/components/tipTapEditor';
 import Sidebar from '@/app/prompts/prompt/[promptId]/editorSidebar';
-import EditPanel from '../editPanel';
 import LoadingSpinner from '@/app/components/loadingSpinner';
 import { Mode } from "@/app/prompts/components/editViewButtons";
 
@@ -12,6 +11,16 @@ const PreviewPrompt = dynamic(() => import("@/app/prompts/components/previewProm
   loading: () => (
     <div className="flex items-center justify-center h-full">
       <LoadingSpinner />
+    </div>
+  )
+});
+
+// 動態載入 EditPanel 組件，只在點擊編輯節點時載入
+const EditPanel = dynamic(() => import('../editPanel'), {
+  ssr: false,
+  loading: () => (
+    <div className="flex items-center justify-center p-4">
+      <LoadingSpinner size="w-6 h-6" />
     </div>
   )
 });

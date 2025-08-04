@@ -6,18 +6,19 @@ import { FiChevronDown } from "react-icons/fi";
 
 interface FormMenuMultiSelectProps {
   options: string[];
-  defaultValue: string[];
+  value: string[];
+  onChange: (value: string[]) => void;
   name?: string;
   customKey: string;
 }
 
 const FormMenuMultiSelect: React.FC<FormMenuMultiSelectProps> = ({
   options,
-  defaultValue,
+  value,
+  onChange,
   name,
   customKey,
 }) => {
-  const [selected, setSelected] = useState<string[]>(defaultValue);
   const [open, setOpen] = useState<boolean>(false);
   const [dropdownStyle, setDropdownStyle] = useState<React.CSSProperties>({});
   const triggerRef = useRef<HTMLButtonElement>(null);
@@ -60,11 +61,10 @@ const FormMenuMultiSelect: React.FC<FormMenuMultiSelectProps> = ({
   }, [open]);
 
   const toggleOption = (opt: string) => {
-    setSelected((prev) =>
-      prev.includes(opt)
-        ? prev.filter((v) => v !== opt)
-        : [...prev, opt]
-    );
+    const newSelected = value.includes(opt)
+      ? value.filter((v) => v !== opt)
+      : [...value, opt];
+    onChange(newSelected);
   };
 
   return (
@@ -78,7 +78,7 @@ const FormMenuMultiSelect: React.FC<FormMenuMultiSelectProps> = ({
           className="w-40 py-1 px-3 border border-gray-300 rounded bg-light text-left relative pr-8"
         >
           <span className="truncate block">
-            {selected.join(", ") || "choose"}
+            {value.join(", ") || "choose"}
           </span>
           <FiChevronDown
             className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-600"
@@ -103,7 +103,7 @@ const FormMenuMultiSelect: React.FC<FormMenuMultiSelectProps> = ({
               >
                 <input
                   type="checkbox"
-                  checked={selected.includes(opt)}
+                  checked={value.includes(opt)}
                   onChange={() => toggleOption(opt)}
                   className="accent-blue-500"
                 />

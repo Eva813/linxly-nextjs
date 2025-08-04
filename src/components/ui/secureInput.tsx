@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useCallback, useState } from 'react';
+import React, { useRef, useEffect, useCallback } from 'react';
 
 export interface SecureInputStyleConfig {
   paddingLeft?: string;
@@ -300,29 +300,22 @@ const SecureInput: React.FC<SecureInputProps> = ({
   onBlur
 }) => {
   const ref = useRef<SecureInputElement>(null);
-  const [internalValue, setInternalValue] = useState(value);
 
   // 根據 variant 選擇樣式配置
   const finalStyleConfig = styleConfig ||
     (variant === 'shortcut' ? SHORTCUT_STYLES : DEFAULT_STYLES);
 
-  // 當外部 value 變化時，更新內部值
+  // 當外部 value 變化時，同步到 custom element
   useEffect(() => {
-    if (value !== internalValue) {
-      setInternalValue(value);
-      const element = ref.current;
-      if (element && element.getValue() !== value) {
-        element.setValue(value);
-      }
+    const element = ref.current;
+    if (element && element.getValue() !== value) {
+      element.setValue(value);
     }
-  }, [value, internalValue]);
+  }, [value]);
 
   // 處理內部值變化
   const handleSecureInputChange = useCallback((e: CustomEvent<{ value: string }>) => {
     const newValue = e.detail.value;
-    
-    // 更新內部狀態
-    setInternalValue(newValue);
 
     // 建立相容的 React ChangeEvent
     const syntheticEvent = {

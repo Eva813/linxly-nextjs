@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useMemo, useCallback } from "react";
 import { parseHtml } from "@/lib/utils/parseHtml";
 import { renderCustomElement } from "./renderers/renderCustomElement";
 
@@ -13,7 +13,6 @@ const VOID_TAGS = new Set([
 ]);
 
 const PreviewPrompt: React.FC<PreviewPromptProps> = ({ content, shortcut }) => {
-  const [rendered, setRendered] = useState<React.ReactNode[] | null>(null);
   // 遞迴渲染 DOM ➝ React 元素
   const renderNode = useCallback((node: ChildNode, key: string): React.ReactNode => {
     if (node.nodeType === Node.TEXT_NODE) {
@@ -68,15 +67,13 @@ const PreviewPrompt: React.FC<PreviewPromptProps> = ({ content, shortcut }) => {
     return null;
   }, []);
 
-  useEffect(() => {
+  const renderedContent = useMemo(() => {
     const root = parseHtml(content);
-    if (!root) return;
+    if (!root) return null;
 
-    const children = Array.from(root.childNodes).map((child, i) =>
+    return Array.from(root.childNodes).map((child, i) =>
       renderNode(child, `root-${i}`)
     );
-
-    setRendered(children);
   }, [content, renderNode]);
 
   return (
@@ -92,7 +89,7 @@ const PreviewPrompt: React.FC<PreviewPromptProps> = ({ content, shortcut }) => {
 
       {/* 預覽區塊 */}
       <div className="mt-4 border-2 border-dashed p-4 overflow-auto flex-1">
-        {rendered}
+        {renderedContent}
       </div>
     </div>
   );

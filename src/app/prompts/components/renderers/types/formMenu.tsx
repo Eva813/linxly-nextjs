@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import FormMenuMultiSelect from "@/app/prompts/components/renderers/FormMenuMultiSelect";
 
 export function renderFormMenu(attrs: Record<string, string>, key: string) {
@@ -24,15 +24,22 @@ export function renderFormMenu(attrs: Record<string, string>, key: string) {
       : Boolean(attrs.multiple);
 
   if (isMultiple) {
-    return (
-      <FormMenuMultiSelect
-        key={key}
-        customKey={key}
-        name={name}
-        defaultValue={defaultValue}
-        options={options}
-      />
-    );
+    // 創建一個包含狀態管理的組件
+    const MultiSelectWithState = () => {
+      const [selectedValue, setSelectedValue] = useState<string[]>(defaultValue);
+      
+      return (
+        <FormMenuMultiSelect
+          customKey={key}
+          name={name}
+          value={selectedValue}
+          onChange={setSelectedValue}
+          options={options}
+        />
+      );
+    };
+
+    return <MultiSelectWithState key={key} />;
   }
 
   return (

@@ -4,20 +4,36 @@ import { BooleanField } from '@/app/prompts/components/booleanField'
 import { OptionsField } from '@/app/prompts/components/optionsField'
 import { formMenuSpec } from '@/lib/specs/formMenuSpec'
 import { FieldGroupProps } from '@/types/fieldGropProps'
-import { organizeFormInput, createOptionsChangeHandler } from '@/lib/utils'
+import { organizeFormInput } from '@/lib/utils'
 import { usePromptStore } from '@/stores/prompt/index'
 
 export const FormMenuFields = ({ editInfo, onChange }: FieldGroupProps) => {
   const organizedFields = organizeFormInput(editInfo, formMenuSpec);
-  // const handleOptionsChange = createOptionsChangeHandler(editInfo, onChange);
-  // 使用 useCallback 包裝 handleOptionsChange 函式
-  const handleOptionsChange = useCallback((options: { values: string[]; defaultValue: string | string[] }) => {
-    // 呼叫 createOptionsChangeHandler 建立的函式處理邏輯
-    const handler = createOptionsChangeHandler(editInfo, onChange);
-    handler(options);
-  }, [editInfo, onChange]);
-
   const focusKey = usePromptStore((state) => state.focusKey);
+  
+  // 先定義 multipleValue
+  const multipleValue = useMemo(() => {
+    // 確保 organizedFields.multiple.value 有值且能轉換為布林值
+    if (organizedFields.multiple?.value === undefined || organizedFields.multiple?.value === null) {
+      return false;
+    }
+
+    return typeof organizedFields.multiple.value === 'string'
+      ? organizedFields.multiple.value === 'true'
+      : Boolean(organizedFields.multiple.value);
+  }, [organizedFields.multiple]);
+
+  // 分離選項和選擇的變更處理器
+  const handleOptionsChange = useCallback((newOptions: string[]) => {
+    onChange({ options: newOptions });
+  }, [onChange]);
+
+  const handleSelectionChange = useCallback((newSelection: string[]) => {
+    const updatedDefault = multipleValue 
+      ? newSelection 
+      : (newSelection[0] || '');
+    onChange({ default: updatedDefault });
+  }, [onChange, multipleValue]);
   // 目前在 formmnue 的編輯，只有 name 欄位需要 focus
   const nameRef = useRef<HTMLInputElement>(null);
 
@@ -42,16 +58,38 @@ export const FormMenuFields = ({ editInfo, onChange }: FieldGroupProps) => {
   }, [fieldKey, inputRefs]);
 
 
-  const multipleValue = useMemo(() => {
-    // 確保 organizedFields.multiple.value 有值且能轉換為布林值
-    if (organizedFields.multiple?.value === undefined || organizedFields.multiple?.value === null) {
-      return false;
+  /**
+   * 計算當前選中的選項值
+   * 將 editInfo.default 統一轉換為字串陣列格式，供 OptionsField 使用
+   * 
+   * 處理邏輯：
+   * 1. 多選模式 (multipleValue = true)：
+   *    - 陣列輸入：過濾空值後直接使用 ["opt1", "opt2"]
+   *    - 字串輸入：包裝成陣列 "opt1" → ["opt1"]
+   * 
+   * 2. 單選模式 (multipleValue = false)：
+   *    - 陣列輸入：只取第一個有效值 ["opt1", "opt2"] → ["opt1"]
+   *    - 字串輸入：包裝成陣列 "opt1" → ["opt1"]
+   * 
+   * 3. 空值處理：null/undefined → []
+   */
+  const selectedValues = useMemo(() => {
+    const defaultValue = editInfo.default;
+    
+    if (multipleValue) {
+      // 多選模式：支援多個選項被選中
+      if (Array.isArray(defaultValue)) {
+        return defaultValue.filter(Boolean); // 移除 null/undefined/""
+      }
+      return defaultValue ? [String(defaultValue)] : [];
+    } else {
+      // 單選模式：最多只能選中一個選項
+      if (Array.isArray(defaultValue)) {
+        return defaultValue.length > 0 ? [String(defaultValue[0])] : [];
+      }
+      return defaultValue ? [String(defaultValue)] : [];
     }
-
-    return typeof organizedFields.multiple.value === 'string'
-      ? organizedFields.multiple.value === 'true'
-      : Boolean(organizedFields.multiple.value);
-  }, [organizedFields.multiple]);
+  }, [editInfo.default, multipleValue]);
 
   return (
     <>
@@ -60,11 +98,12 @@ export const FormMenuFields = ({ editInfo, onChange }: FieldGroupProps) => {
         title="options"
         description={organizedFields.options?.description || "Options"}
         multiple={multipleValue}
-        values={Array.isArray(editInfo.options) ? editInfo.options : []}
-        defaultValue={editInfo.default}
+        options={Array.isArray(editInfo.options) ? editInfo.options : []}
+        selectedValues={selectedValues}
+        onOptionsChange={handleOptionsChange}
+        onSelectionChange={handleSelectionChange}
         highlight={fieldKey === 'options'}
         focusPosition={position}
-        onChange={handleOptionsChange}
       />
       {/* 基本屬性欄位 */}
       {Object.entries(organizedFields)

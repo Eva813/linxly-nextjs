@@ -4,7 +4,8 @@ import { NodeViewWrapper, NodeViewProps } from '@tiptap/react'
 import { DynamicChip } from './dynamicChip'
 import { FormMenuClickHandler } from '@/types/prompt'
 import { usePromptStore } from '@/stores/prompt/index'
-import { MdMenuOpen } from "react-icons/md";
+import { MdMenuOpen } from "react-icons/md"
+import { parseBooleanValue, parseStringValue } from "@/lib/utils/parseValue";
 
 type FormMenuViewProps = NodeViewProps & {
   extension: {
@@ -26,9 +27,9 @@ export default function FormMenuView(props: FormMenuViewProps) {
     );
   }, [promptData.attributes]);
   // 取得重要欄位資料
-  const name = attrMap.get('name') ?? '';
+  const name = parseStringValue(attrMap.get('name'));
   const defaultValue = attrMap.get('default') ?? '';
-  const multiple = Boolean(attrMap.get('multiple'));
+  const multiple = parseBooleanValue(attrMap.get('multiple'));
   const optionAttr = attrMap.get('options');
   // 將 defaultValue 處理成陣列形式（for 傳入 EditPanel）
   const resolvedDefaultValue = useMemo(() => {

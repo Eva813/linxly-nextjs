@@ -53,5 +53,5 @@ export function buildFormData<T extends FormSpec>(
     icon_url: null,
     hasMatchingTokens: false,
     attributes,
-  }
+  };
 }

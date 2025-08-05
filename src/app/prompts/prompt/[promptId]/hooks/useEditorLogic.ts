@@ -64,6 +64,11 @@ export const useEditorLogic = () => {
     options: string[];
     multiple: boolean;
   }) => {
+    // 防止重複初始化：在編輯同一節點時避免重新初始化狀態
+    if (dropdownEditInfo && dropdownEditInfo.pos === pos && isEditPanelVisible) {
+      return;
+    }
+    
     setTextInputEditInfo(null);
     setDropdownEditInfo({
       type: "formmenu",
@@ -74,7 +79,7 @@ export const useEditorLogic = () => {
       multiple,
     });
     setIsEditPanelVisible(true);
-  }, []);
+  }, [dropdownEditInfo, isEditPanelVisible]);
 
   // 編輯器點擊
   const handleEditorClick = useCallback(() => {
@@ -173,26 +178,33 @@ export const useEditorLogic = () => {
         ...dropdownEditInfo,
         ...updates,
       };
-      setDropdownEditInfo(updatedEditInfo);
+      
+      // 使用函數式狀態更新避免 React 閉包問題
+      setDropdownEditInfo(currentEditInfo => {
+        if (!currentEditInfo) return null;
+        return {
+          ...currentEditInfo,
+          ...updates,
+        };
+      });
       
       const { pos } = dropdownEditInfo;
       const { doc } = editor.state;
       const nodeSelection = NodeSelection.create(doc, pos);
       editor.view.dispatch(editor.state.tr.setSelection(nodeSelection));
       
-      Object.entries(updates).forEach(([key, newValue]) => {
-        editor
-          .chain()
-          .updateAttributes("formmenu", {
-            promptData: buildFormData(formMenuSpec, 'formmenu', {
-              name: key === "name" ? newValue as string : updatedEditInfo.name,
-              options: key === "options" ? newValue : updatedEditInfo.options,
-              multiple: updatedEditInfo.multiple,
-              default: key === "default" ? newValue : updatedEditInfo.default,
-            }),
-          })
-          .run();
-      });
+      // 一次性批量更新，避免競態條件
+      editor
+        .chain()
+        .updateAttributes("formmenu", {
+          promptData: buildFormData(formMenuSpec, 'formmenu', {
+            name: updatedEditInfo.name,
+            options: updatedEditInfo.options,
+            multiple: updatedEditInfo.multiple,
+            default: updatedEditInfo.default,
+          }),
+        })
+        .run();
     }
     
     // 返回新內容

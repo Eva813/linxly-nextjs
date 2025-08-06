@@ -16,19 +16,24 @@ interface UsePromptPageLogicProps {
   promptId: string;
 }
 
-// 將快捷鍵驗證邏輯提取為函式
+// 輸入清理函數 - 移除潛在危險字元並標準化輸入（保留 / 用於快捷指令）
+const sanitizeShortcut = (input: string): string => {
+  return input
+    .trim()
+    .replace(/[<>"'`\\]/g, '') // 移除潛在危險字元，但保留 / 用於快捷指令
+    .replace(/\s+/g, ' ')
+    .slice(0, 50); // 限制長度
+};
+
 const validateShortcut = (
   newShortcut: string,
-  allPrompts: Array<{ id: string; shortcut?: string }>,
-  currentPromptId: string
+  otherPrompts: Array<{ id: string; shortcut?: string }>,
 ): { isValid: boolean; error?: ShortcutError } => {
-  const trimmedShortcut = newShortcut.trim();
+  const trimmedShortcut = sanitizeShortcut(newShortcut);
 
   if (!trimmedShortcut) {
     return { isValid: true };
   }
-
-  const otherPrompts = allPrompts.filter(p => p.id !== currentPromptId);
 
   for (const prompt of otherPrompts) {
     const existingShortcut = prompt.shortcut ?? "";
@@ -69,28 +74,35 @@ export const usePromptPageLogic = ({ promptId }: UsePromptPageLogicProps) => {
   const { setSaving, setSaved, setSaveError, setActive } = useSaveStore();
   const { canEdit } = useEditableState();
 
-  // 表單狀態
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState(() => ({
     name: "",
     shortcut: "",
     content: ""
-  });
+  }));
 
   const [shortcutError, setShortcutError] = useState<ShortcutError | null>(null);
-  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
   // 儲存初始值用於比較 - 這個值只在 currentPrompt 變化時更新
-  const [initialValues, setInitialValues] = useState({
+  const [initialValues, setInitialValues] = useState(() => ({
     name: "",
     shortcut: "",
     content: ""
-  });
+  }));
 
   // 只用一個 ref 來追蹤是否正在進行 API 操作，避免在 API 回應期間重複觸發
   const isApiOperationRef = useRef(false);
 
-  // 取得所有提示詞用於驗證
-  const allPrompts = folders.flatMap(folder => folder.prompts);
+  // 使用 useMemo 優化 allPrompts 計算，只在 folders 變化時重新計算
+  const allPrompts = useMemo(() => 
+    folders.flatMap(folder => folder.prompts), 
+    [folders]
+  );
+
+  // 預先篩選非目前 prompt 的其他 prompts，避免在驗證時重複篩選
+  const otherPrompts = useMemo(() => 
+    allPrompts.filter(p => p.id !== promptId),
+    [allPrompts, promptId]
+  );
 
   // 穩定的儲存函式
   const savePrompt = useCallback(async (dataToSave: typeof formData) => {
@@ -108,7 +120,6 @@ export const usePromptPageLogic = ({ promptId }: UsePromptPageLogicProps) => {
 
       setSaved(promptId);
       setInitialValues(dataToSave);
-      setHasUnsavedChanges(false);
     } catch (error) {
       setSaveError(true, promptId);
       console.error("儲存時發生錯誤:", error);
@@ -125,47 +136,38 @@ export const usePromptPageLogic = ({ promptId }: UsePromptPageLogicProps) => {
     return debounce(saveFunction as (...args: unknown[]) => void, 800);
   }, [savePrompt]);
 
-  // 統一的表單更新函式
+  // 移除 derived state，改用 useMemo 計算
+  const hasUnsavedChanges = useMemo(() => 
+    !deepEqual(formData, initialValues),
+    [formData, initialValues]
+  );
+
+  // 穩定的表單更新函式 - 移除不必要的依賴
   const updateFormField = useCallback((field: keyof typeof formData, value: string) => {
-    const newData = { ...formData, [field]: value };
-    const hasChanges = !deepEqual(newData, initialValues);
+    setFormData(prev => ({ ...prev, [field]: value }));
+  }, []); // 空依賴數組，因為 setFormData 是穩定的
 
-    // 更新狀態
-    setFormData(newData);
-    setHasUnsavedChanges(hasChanges);
 
-    if (hasChanges && currentPrompt && !isApiOperationRef.current && canEdit) {
-        setActive(true, promptId);
-        debouncedSave(newData);
-    } else if (!hasChanges) {
-        setActive(false, promptId);
-    }
-
-    // 特殊處理快捷鍵驗證
-    if (field === 'shortcut') {
-        const trimmedValue = value.trim();
-        if (!trimmedValue) {
-            setShortcutError(null);
-            return;
-        }
-
-        const validation = validateShortcut(trimmedValue, allPrompts, promptId);
-        if (validation.isValid) {
-            setShortcutError(null);
-        } else {
-            setShortcutError(validation.error || null);
-        }
-    }
-}, [allPrompts, promptId, initialValues, currentPrompt, setActive, debouncedSave, formData, canEdit]);
-
-  // 表單處理器
+  // 表單處理
   const handleNameChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     updateFormField('name', e.target.value);
   }, [updateFormField]);
 
   const handleShortcutChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    updateFormField('shortcut', e.target.value);
-  }, [updateFormField]);
+    const value = e.target.value;
+    const sanitizedValue = sanitizeShortcut(value);
+    
+    // 先更新表單欄位
+    updateFormField('shortcut', sanitizedValue);
+    
+    // 然後進行驗證
+    if (!sanitizedValue) {
+      setShortcutError(null);
+    } else {
+      const validation = validateShortcut(sanitizedValue, otherPrompts);
+      setShortcutError(validation.isValid ? null : validation.error || null);
+    }
+  }, [updateFormField, otherPrompts]);
 
   const updateContent = useCallback((newContent: string) => {
     updateFormField('content', newContent);
@@ -184,17 +186,25 @@ export const usePromptPageLogic = ({ promptId }: UsePromptPageLogicProps) => {
   // 分離的初始化邏輯，避免循環依賴
   useEffect(() => {
     if (currentInitialData && !isApiOperationRef.current) {
-      // 使用函式更新來避免依賴 formData
       setFormData(prevFormData => {
         if (!deepEqual(prevFormData, currentInitialData)) {
           setInitialValues(currentInitialData);
-          setHasUnsavedChanges(false);
           return currentInitialData;
         }
         return prevFormData;
       });
     }
-  }, [currentInitialData, setInitialValues, setHasUnsavedChanges]);
+  }, [currentInitialData]);
+
+  // 自動儲存邏輯 - 獨立的 effect
+  useEffect(() => {
+    if (hasUnsavedChanges && currentPrompt && !isApiOperationRef.current && canEdit) {
+      setActive(true, promptId);
+      debouncedSave(formData);
+    } else if (!hasUnsavedChanges) {
+      setActive(false, promptId);
+    }
+  }, [hasUnsavedChanges, currentPrompt, canEdit, promptId, formData, debouncedSave, setActive]);
 
   useEffect(() => {
     return () => {

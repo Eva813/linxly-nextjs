@@ -1,5 +1,5 @@
 'use client';
-import React, { useCallback } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import dynamic from 'next/dynamic';
 import { Editor } from '@tiptap/react';
 import { PromptHeader, EditorSection } from './components';
@@ -63,19 +63,16 @@ const PromptPage = ({ params }: PromptPageProps) => {
     toggleMobilePanel,
   } = useViewAndPanel();
 
-  // 事件處理器 - 簡單函數引用即可，不需 useCallback
-  const handleEditorReady = (editor: Editor) => {
+  // 事件處理器 - 使用 useCallback 穩定化
+  const handleEditorReady = useCallback((editor: Editor) => {
     editorRef.current = editor;
-  };
+  }, [editorRef]);
 
-  // 對話框關閉函數
-  const handleTextDialogClose = useCallback(() => {
-    setIsTextDialogOpen(false);
-  }, [setIsTextDialogOpen]);
-
-  const handleDropdownDialogClose = useCallback(() => {
-    setIsDropdownDialogOpen(false);
-  }, [setIsDropdownDialogOpen]);
+  // 對話框關閉函數 - 使用 useMemo 穩定化
+  const dialogHandlers = useMemo(() => ({
+    handleTextDialogClose: () => setIsTextDialogOpen(false),
+    handleDropdownDialogClose: () => setIsDropdownDialogOpen(false),
+  }), [setIsTextDialogOpen, setIsDropdownDialogOpen]);
 
   // 文本輸入變更處理器
   const handleTextInputChangeWrapper = useCallback((updates: { [key: string]: string | string[] | boolean | null }) => {
@@ -133,7 +130,7 @@ const PromptPage = ({ params }: PromptPageProps) => {
 
       <InsertTextFieldDialog
         isOpen={isTextDialogOpen}
-        onClose={handleTextDialogClose}
+        onClose={dialogHandlers.handleTextDialogClose}
         onInsert={handleTextFieldInsertWrapper}
         defaultLabel={textInputEditInfo?.name || ""}
         defaultdefault={textInputEditInfo?.default || ""}
@@ -141,7 +138,7 @@ const PromptPage = ({ params }: PromptPageProps) => {
       
       <InsertDropdownMenuDialog
         isOpen={isDropdownDialogOpen}
-        onClose={handleDropdownDialogClose}
+        onClose={dialogHandlers.handleDropdownDialogClose}
         onInsert={handleDropdownInsertWrapper}
         defaultName={dropdownEditInfo?.name}
         defaultOptionValues={dropdownEditInfo?.options}

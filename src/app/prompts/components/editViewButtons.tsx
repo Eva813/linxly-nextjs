@@ -1,5 +1,6 @@
 
 
+import React from "react";
 import { FaEdit, FaEye } from "react-icons/fa";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 
@@ -10,7 +11,7 @@ interface Props {
   onModeChange: (mode: Mode) => void;
 }
 
-export default function EditPreviewButtons({ mode, onModeChange }: Props) {
+const EditPreviewButtons = React.memo(({ mode, onModeChange }: Props) => {
   return (
     <div className="flex pr-4 justify-end">
       <ToggleGroup
@@ -39,5 +40,9 @@ export default function EditPreviewButtons({ mode, onModeChange }: Props) {
       </ToggleGroup>
     </div>
   );
-}
+});
+
+EditPreviewButtons.displayName = 'EditPreviewButtons';
+
+export default EditPreviewButtons;
 

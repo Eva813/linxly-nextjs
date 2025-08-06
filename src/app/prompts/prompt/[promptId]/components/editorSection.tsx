@@ -51,7 +51,7 @@ interface EditorSectionProps {
   isExternalUpdate?: () => boolean;
 }
 
-export const EditorSection = ({
+export const EditorSection = React.memo(({
   mode,
   content,
   shortcut,
@@ -137,4 +137,6 @@ export const EditorSection = ({
       )}
     </>
   );
-};
+});
+
+EditorSection.displayName = 'EditorSection';

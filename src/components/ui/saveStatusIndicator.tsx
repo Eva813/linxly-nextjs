@@ -9,7 +9,7 @@ interface SaveStatusIndicatorProps {
   id?: string; // 新增 id 屬性，優先於 params
 }
 
-const SaveStatusIndicator: React.FC<SaveStatusIndicatorProps> = ({ 
+const SaveStatusIndicator: React.FC<SaveStatusIndicatorProps> = React.memo(({ 
   className = '', 
   type = 'prompt',
   id 
@@ -122,6 +122,8 @@ const SaveStatusIndicator: React.FC<SaveStatusIndicatorProps> = ({
       {content}
     </div>
   );
-};
+});
+
+SaveStatusIndicator.displayName = 'SaveStatusIndicator';
 
 export default SaveStatusIndicator;

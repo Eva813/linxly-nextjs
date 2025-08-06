@@ -364,4 +364,7 @@ You **should** periodically use `@next/bundle-analyzer` to inspect the applicati
     *   **React DevTools Profiler:** When encountering performance issues during development, use the Profiler to analyze component render times and counts.
     *   **Lighthouse:** Periodically run Lighthouse audits on critical pages to monitor Core Web Vitals.
 
+### nextjs best practices
+ 參考檔案：@~/.claude/nextBestpractice.md
+  請在處理 Next.js 相關問題時參考此檔案。
 

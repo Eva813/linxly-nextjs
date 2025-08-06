@@ -181,3 +181,9 @@ You **should** periodically use `@next/bundle-analyzer` to inspect the applicati
   - 增加不必要的 複雜度
   - 降低 開發效率
   - 影響 代碼可讀性
+
+useEffect 適合「副作用」，例如：
+監聽/清理事件（resize、scroll）
+資料請求（fetch）
+與外部系統、API、全域物件互動
+UI 行為、狀態流（state control），優先用事件處理器，這樣維護性最高。

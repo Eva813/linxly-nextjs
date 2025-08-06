@@ -1,5 +1,5 @@
 'use client';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, memo } from 'react';
 import { Dialog, DialogContent, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -19,7 +19,7 @@ interface InsertDropdownMenuDialogProps {
   selectedValue?: string | string[]; // 預設選中的值
 }
 
-export default function InsertDropdownMenuDialog({
+function InsertDropdownMenuDialog({
   isOpen,
   onClose,
   onInsert
@@ -42,37 +42,51 @@ export default function InsertDropdownMenuDialog({
     }, [isOpen]);
   
 
-  const handleAddValue = () => {
-    setValues([...values, `Choice ${values.length + 1}`]);
-  };
+  // 使用 useCallback 穩定事件處理器
+  const handleAddValue = useCallback(() => {
+    setValues(prev => [...prev, `Choice ${prev.length + 1}`]);
+  }, []);
 
-  const handleRemoveValue = (index: number) => {
-    setValues(values.filter((_, i) => i !== index));
-  };
+  const handleRemoveValue = useCallback((index: number) => {
+    setValues(prev => prev.filter((_, i) => i !== index));
+  }, []);
 
-  const handleChangeValue = (index: number, newValue: string) => {
-    const updatedValues = [...values];
-    updatedValues[index] = newValue;
-    setValues(updatedValues);
-  };
+  const handleChangeValue = useCallback((index: number, newValue: string) => {
+    setValues(prev => {
+      const updatedValues = [...prev];
+      updatedValues[index] = newValue;
+      return updatedValues;
+    });
+  }, []);
 
-  const handleSelectSingle = (value: string) => {
+  const handleSelectSingle = useCallback((value: string) => {
     setSelectedValues(value);
-  };
+  }, []);
 
-    const handleToggleMultiple = (value: string) => {
-    if (Array.isArray(selectedValues)) {
-      setSelectedValues(
-        selectedValues.includes(value)
-          ? selectedValues.filter((v) => v !== value)
-          : [...selectedValues, value]
-      );
-    }
-  };
-  const handleInsert = () => {
+  const handleToggleMultiple = useCallback((value: string) => {
+    setSelectedValues(prev => {
+      if (Array.isArray(prev)) {
+        return prev.includes(value)
+          ? prev.filter((v) => v !== value)
+          : [...prev, value];
+      }
+      return prev;
+    });
+  }, []);
+
+  const handleInsert = useCallback(() => {
     onInsert(name, values, selectedValues, multiple);
     onClose();
-  };
+  }, [onInsert, onClose, name, values, selectedValues, multiple]);
+
+  const handleNameChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setName(e.target.value);
+  }, []);
+
+  const handleMultipleToggle = useCallback((checked: boolean) => {
+    setMultiple(checked);
+    setSelectedValues(checked ? [] : '');
+  }, []);
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -134,17 +148,14 @@ export default function InsertDropdownMenuDialog({
             {/* Name Input */}
             <div>
               <label className="block text-sm font-medium mb-1">Name (optional)</label>
-              <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Enter a field name..." />
+              <Input value={name} onChange={handleNameChange} placeholder="Enter a field name..." />
             </div>
 
             {/* Multiple Switch */}
             <div className="flex items-center space-x-2">
               <Switch
                 checked={multiple}
-                onCheckedChange={(checked) => {
-                  setMultiple(checked);
-                  setSelectedValues(checked ? [] : ""); // 切換時重置選擇
-                }}
+                onCheckedChange={handleMultipleToggle}
               />
               <span className="text-sm font-medium">Multiple (optional)</span>
             </div>
@@ -160,3 +171,5 @@ export default function InsertDropdownMenuDialog({
     </Dialog>
   );
 }
+
+export default memo(InsertDropdownMenuDialog);

@@ -1,5 +1,5 @@
 'use client';
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback, memo } from 'react'
 import { Dialog, DialogContent, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
@@ -13,7 +13,7 @@ interface InsertTextFieldDialogProps {
   defaultdefault?: string
 }
 
-export default function InsertTextFieldDialog({ isOpen, onClose, onInsert, defaultLabel = '',
+function InsertTextFieldDialog({ isOpen, onClose, onInsert, defaultLabel = '',
   defaultdefault = '', }: InsertTextFieldDialogProps) {
   const [label, setLabel] = useState(defaultLabel)
   const [defaultValue, setdefault] = useState('')
@@ -26,9 +26,19 @@ export default function InsertTextFieldDialog({ isOpen, onClose, onInsert, defau
     }
   }, [isOpen, defaultLabel, defaultdefault])
 
-  const handleInsert = () => {
+  // 使用 useCallback 穩定事件處理器，依賴於當前的 state 值
+  const handleInsert = useCallback(() => {
     onInsert(label, defaultValue)
-  }
+  }, [onInsert, label, defaultValue])
+
+  // 穩定的輸入變更處理器
+  const handleLabelChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setLabel(e.target.value)
+  }, [])
+
+  const handleDefaultChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setdefault(e.target.value)
+  }, [])
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -40,11 +50,11 @@ export default function InsertTextFieldDialog({ isOpen, onClose, onInsert, defau
         <div className="space-y-4">
           <div>
             <label className="block text-sm font-medium mb-1">Name</label>
-            <Input value={label} onChange={(e) => setLabel(e.target.value)} placeholder="Enter a label..." />
+            <Input value={label} onChange={handleLabelChange} placeholder="Enter a label..." />
           </div>
           <div>
             <label className="block text-sm font-medium mb-1">Default (optional)</label>
-            <Input value={defaultValue} onChange={(e) => setdefault(e.target.value)} placeholder="Default value..." />
+            <Input value={defaultValue} onChange={handleDefaultChange} placeholder="Default value..." />
           </div>
         </div>
         <DialogFooter>
@@ -55,3 +65,5 @@ export default function InsertTextFieldDialog({ isOpen, onClose, onInsert, defau
     </Dialog>
   )
 }
+
+export default memo(InsertTextFieldDialog)

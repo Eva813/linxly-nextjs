@@ -1,15 +1,13 @@
 'use client';
 
+import React, { memo, useCallback } from 'react';
 import { useEditor, EditorContent, Editor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import TextStyle from '@tiptap/extension-text-style';
 import TextAlign from '@tiptap/extension-text-align';
 import { FontSize } from './fontSizeExtension';
 import { useState, useEffect, useRef } from 'react';
-import { Button } from "@/components/ui/button"
-import { FaBold, FaItalic, FaList, FaListOl, FaAlignCenter, FaAlignLeft, FaAlignRight } from "react-icons/fa6";
-import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover"
-import { ImFontSize } from "react-icons/im";
+import TipTapToolbar from './tipTapToolbar';
 import { FormTextNode } from './tipTapCustomNode/FormTextNode'
 import { FormMenuNode } from './tipTapCustomNode/FormMenuNode'
 import { FormMenuClickHandler, FormMenuData } from '@/types/prompt'
@@ -31,7 +29,7 @@ interface TipTapEditorProps {
   // 檢查是否為外部更新
   isExternalUpdate?: () => boolean;
 }
-const TipTapEditor = ({
+const TipTapEditor = memo(({
   value,
   isRequired = false,
   disabled = false,
@@ -45,12 +43,16 @@ const TipTapEditor = ({
 }: TipTapEditorProps) => {
   const [hasError, setHasError] = useState(false);
   const [currentFontSize, setCurrentFontSize] = useState('');
-  const fontSizes = ['12', '14', '16', '18', '20', '24'];
   
   // 追蹤編輯器內容，避免循環更新
   const editorContentRef = useRef<string>("");
   const isUserEditingRef = useRef(false);
   const resetEditingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // 穩定化 isExternalUpdate 函數引用
+  const stableIsExternalUpdate = useCallback(() => {
+    return isExternalUpdate?.() || false;
+  }, [isExternalUpdate]);
 
   const editor = useEditor({
     content: value,
@@ -114,21 +116,21 @@ const TipTapEditor = ({
     setHasError(!content);
   };
 
-  const setFontSize = (size: string) => {
+  const setFontSize = useCallback((size: string) => {
     setCurrentFontSize(size);
     editor?.chain().focus().setFontSize(size).run();
-  };
+  }, [editor]);
 
-  const unsetFontSize = () => {
+  const unsetFontSize = useCallback(() => {
     setCurrentFontSize('');
     editor?.chain().focus().unsetFontSize().run();
-  };
+  }, [editor]);
 
   useEffect(() => {
     if (!editor) return;
     
     // 檢查是否為外部更新（例如切換 prompt）
-    const isExternal = isExternalUpdate?.() || false;
+    const isExternal = stableIsExternalUpdate();
     
     // 如果用戶正在編輯且不是外部更新，延遲更新
     if (isUserEditingRef.current && !isExternal) {
@@ -173,7 +175,7 @@ const TipTapEditor = ({
         }, 0);
       }
     }
-  }, [value, editor, isExternalUpdate]);
+  }, [value, editor, stableIsExternalUpdate]);
 
   // 當 editor 實例創建完成時，通過 onEditorReady 傳遞給父組件
   useEffect(() => {
@@ -202,86 +204,13 @@ const TipTapEditor = ({
 
   return (
     <div className={`editor-container flex flex-col mb-4 ${disabled ? 'disabled' : ''}`}>
-      <div className={`toolbar flex flex-wrap items-center py-2 px-1 ${disabled ? 'pointer-events-none' : ''}`}>
-        {/* Font Size */}
-        <Popover>
-          <PopoverTrigger>
-            <div className='mx-1 px-2'>
-              <ImFontSize />
-            </div>
-          </PopoverTrigger>
-          <PopoverContent className="w-35 flex flex-col gap-2 p-2">
-            <Button onClick={unsetFontSize}>Default</Button>
-            {fontSizes.map((size) => (
-              <Button
-                key={size}
-                onClick={() => setFontSize(`${size}px`)}
-                variant={currentFontSize === `${size}px` ? 'default' : 'ghost'}
-              >
-                {size}
-              </Button>
-            ))}
-          </PopoverContent>
-        </Popover>
-
-        {/* Bold */}
-        <Button
-          className='mx-1 px-2'
-          variant={editor?.isActive('bold') ? 'default' : 'ghost'}
-          onClick={() => editor?.chain().focus().toggleBold().run()}
-        >
-          <FaBold />
-        </Button>
-
-        {/* Italic */}
-        <Button
-          className='mx-1 px-2'
-          variant={editor?.isActive('italic') ? 'default' : 'ghost'}
-          onClick={() => editor?.chain().focus().toggleItalic().run()}
-        >
-          <FaItalic />
-        </Button>
-
-        {/* Bullet List */}
-        <Button
-          className='mx-1 px-2'
-          variant={editor?.isActive('bulletList') ? 'default' : 'ghost'}
-          onClick={() => editor?.chain().focus().toggleBulletList().run()}
-        >
-          <FaList />
-        </Button>
-
-        {/* Ordered List */}
-        <Button
-          className='mx-1 px-2'
-          variant={editor?.isActive('orderedList') ? 'default' : 'ghost'}
-          onClick={() => editor?.chain().focus().toggleOrderedList().run()}
-        >
-          <FaListOl />
-        </Button>
-
-        {/* Text Align */}
-        <Button
-          className='mx-1 px-2'
-          variant={editor?.isActive({ textAlign: 'left' }) ? 'default' : 'ghost'}
-          onClick={() => editor?.chain().focus().setTextAlign('left').run()}
-        >
-          <FaAlignLeft />
-        </Button>
-        <Button
-          className='mx-1 px-2'
-          variant={editor?.isActive({ textAlign: 'center' }) ? 'default' : 'ghost'}
-          onClick={() => editor?.chain().focus().setTextAlign('center').run()}
-        >
-          <FaAlignCenter />
-        </Button>
-        <Button
-          variant={editor?.isActive({ textAlign: 'right' }) ? 'default' : 'ghost'}
-          onClick={() => editor?.chain().focus().setTextAlign('right').run()}
-        >
-          <FaAlignRight />
-        </Button>
-      </div>
+      <TipTapToolbar
+        editor={editor}
+        disabled={disabled}
+        currentFontSize={currentFontSize}
+        onSetFontSize={setFontSize}
+        onUnsetFontSize={unsetFontSize}
+      />
 
       <EditorContent
         editor={editor}
@@ -291,6 +220,8 @@ const TipTapEditor = ({
       {hasError && <div className="text-red-500 text-sm">This field is required.</div>}
     </div>
   );
-};
+});
+
+TipTapEditor.displayName = 'TipTapEditor';
 
 export default TipTapEditor;

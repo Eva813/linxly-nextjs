@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import dynamic from 'next/dynamic';
 import TipTapEditor from '@/app/components/tipTapEditor';
 import Sidebar from '@/app/prompts/prompt/[promptId]/editorSidebar';
@@ -72,6 +72,11 @@ export const EditorSection = ({
   isExternalUpdate,
 }: EditorSectionProps) => {
   const { canEdit } = useEditableState();
+
+  const handleEditorReady = useCallback((editor: Editor) => {
+    editorRef.current = editor;
+    onEditorReady(editor);
+  }, [onEditorReady, editorRef]);
   if (mode === "preview") {
     return (
       <div className="border-r border-gray-200 min-w-0 overflow-hidden">
@@ -87,10 +92,7 @@ export const EditorSection = ({
           value={content}
           disabled={!canEdit}
           onChange={onContentChange}
-          onEditorReady={(editor) => {
-            editorRef.current = editor;
-            onEditorReady(editor);
-          }}
+          onEditorReady={handleEditorReady}
           onFormTextNodeClick={onFormTextNodeClick}
           onFormMenuNodeClick={onFormMenuNodeClick}
           onEditorClick={onEditorClick}

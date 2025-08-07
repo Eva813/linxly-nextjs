@@ -1,6 +1,6 @@
 
 
-import React from "react";
+import React, { useCallback } from "react";
 import { FaEdit, FaEye } from "react-icons/fa";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 
@@ -12,12 +12,19 @@ interface Props {
 }
 
 const EditPreviewButtons = React.memo(({ mode, onModeChange }: Props) => {
+  // 穩定化回調函數避免創建匿名函數
+  const handleValueChange = useCallback((value: string | undefined) => {
+    if (value) {
+      onModeChange(value as Mode);
+    }
+  }, [onModeChange]);
+
   return (
     <div className="flex pr-4 justify-end">
       <ToggleGroup
         type="single"
         value={mode}
-        onValueChange={(v) => onModeChange(v as Mode)}
+        onValueChange={handleValueChange}
         className="inline-flex gap-0 rounded-md divide-x border border-gray-300 h-12 dark:border-light"
       >
         <ToggleGroupItem

@@ -2,9 +2,12 @@ import React from "react";
 import { renderFormText } from "./types/formText";
 import { renderFormMenu } from "./types/formMenu";
 
+// 定義 attrs 的可能值類型
+type AttrValue = string | string[] | boolean | number;
+
 const typeToRenderer: Record<
   string,
-  (attrs: Record<string, string>, key: string) => React.ReactNode
+  (attrs: Record<string, AttrValue>, key: string) => React.ReactNode
 > = {
   formtext: renderFormText,
   formmenu: renderFormMenu,
@@ -12,7 +15,7 @@ const typeToRenderer: Record<
 
 type PromptAttribute = {
   name: string;
-  value: string;
+  value: AttrValue;
 };
 
 type Prompt = {
@@ -26,7 +29,7 @@ export function renderCustomElement(el: HTMLElement, key: string): React.ReactNo
 
   try {
     const parsed = JSON.parse(prompt) as Prompt;
-    const attrs = parsed.attributes.reduce((acc: Record<string, string>, attr) => {
+    const attrs = parsed.attributes.reduce((acc: Record<string, AttrValue>, attr) => {
       acc[attr.name] = attr.value;
       return acc;
     }, {});

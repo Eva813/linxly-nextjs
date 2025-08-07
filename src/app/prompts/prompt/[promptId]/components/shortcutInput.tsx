@@ -14,7 +14,7 @@ interface ShortcutError {
 interface ShortcutInputProps {
   shortcut: string;
   shortcutError: ShortcutError | null;
-  onShortcutChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onShortcutChange: (value: string) => void; // 簡化為直接接收字符串值
   onClearShortcutError: () => void;
 }
 

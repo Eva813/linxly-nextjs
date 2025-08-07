@@ -20,16 +20,17 @@ const TextInputField = React.forwardRef<HTMLInputElement, TextInputFieldProps>(
     const containerRef = useForceRerender(highlight, focusPosition);
 
     // 使用 debounced input hook 來減少父組件重新渲染
-    const { localValue, handleLocalChange } = useLocalInputWithDebounce({
+    const { localValue, handleLocalChange, clearDebounce } = useLocalInputWithDebounce({
       initialValue: String(value),
-      onValueChange: (e) => {
-        onChange(title, e.target.value);
+      onValueChange: (newValue) => {
+        onChange(title, newValue);
       },
       delay: 800
     });
 
     // 處理清除按鈕 - 需要立即清空，不使用 debounce
     const handleClear = () => {
+      clearDebounce();
       onChange(title, null);
     };
 

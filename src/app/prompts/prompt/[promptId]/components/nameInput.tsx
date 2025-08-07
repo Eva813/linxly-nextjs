@@ -7,7 +7,7 @@ import { useLocalInputWithDebounce } from '@/hooks/useLocalInputWithDebounce';
 
 interface NameInputProps {
   name: string;
-  onNameChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onNameChange: (value: string) => void; // 簡化為直接接收字符串值
 }
 
 const NameInputComponent = ({

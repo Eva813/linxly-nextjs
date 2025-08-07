@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
 import dynamic from "next/dynamic";
 import { usePromptStore } from "@/stores/prompt";
 import { useSidebarStore } from "@/stores/sidebar";
@@ -17,7 +17,8 @@ const CreateSpaceModal = dynamic(() => import("./createSpaceModal"), {
   ssr: false,
 });
 
-const Sidebar = () => {
+const SidebarComponent = () => {
+  // 選擇性訂閱 Zustand store，只訂閱需要的狀態
   const folders = usePromptStore(state => state.folders);
   const isLoading = usePromptStore(state => state.isLoading);
   const error = usePromptStore(state => state.error);
@@ -27,15 +28,28 @@ const Sidebar = () => {
   const { canEdit } = useEditableState();
   const [isCreateSpaceModalOpen, setIsCreateSpaceModalOpen] = useState(false);
 
+  // 穩定化回調函數
+  const handleCreateSpaceModalOpen = useCallback(() => {
+    setIsCreateSpaceModalOpen(true);
+  }, []);
+
+  const handleCreateSpaceModalClose = useCallback(() => {
+    setIsCreateSpaceModalOpen(false);
+  }, []);
+
+  // 簡單布林計算不需要 useMemo，直接計算即可
+  const isAddFolderDisabled = isCreatingFolder || !canEdit;
+  const isAddPromptDisabled = isCreatingPrompt || !canEdit;
+
   return (
     <div className="p-4 border-r border-gray-300 h-full flex flex-col">
-      <PromptSpaceSelector onCreateSpace={() => setIsCreateSpaceModalOpen(true)} />
+      <PromptSpaceSelector onCreateSpace={handleCreateSpaceModalOpen} />
       
       <div className="grid grid-cols-2 gap-x-4 mb-4 sticky top-0 bg-white dark:bg-gray-900 z-10">
         <Button
           className="h-8 dark:text-third"
           onClick={handleCreateFolder}
-          disabled={isCreatingFolder || !canEdit}
+          disabled={isAddFolderDisabled}
         >
           {isCreatingFolder ? <FaSpinner className="animate-spin" /> : <FaFolderPlus />}
           Add Folder
@@ -43,7 +57,7 @@ const Sidebar = () => {
         <Button
           className="h-8 dark:text-third"
           onClick={handleCreatePrompt}
-          disabled={isCreatingPrompt || !canEdit}
+          disabled={isAddPromptDisabled}
         >
           {isCreatingPrompt ? <FaSpinner className="animate-spin" /> : <FaFileMedical />}
           Add Prompt
@@ -75,10 +89,12 @@ const Sidebar = () => {
       
       <CreateSpaceModal 
         isOpen={isCreateSpaceModalOpen} 
-        onClose={() => setIsCreateSpaceModalOpen(false)} 
+        onClose={handleCreateSpaceModalClose} 
       />
     </div>
   );
 };
+
+const Sidebar = React.memo(SidebarComponent);
 
 export default Sidebar;

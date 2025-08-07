@@ -149,12 +149,11 @@ export const usePromptPageLogic = ({ promptId }: UsePromptPageLogicProps) => {
 
 
   // 表單處理
-  const handleNameChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    updateFormField('name', e.target.value);
+  const handleNameChange = useCallback((value: string) => {
+    updateFormField('name', value);
   }, [updateFormField]);
 
-  const handleShortcutChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
+  const handleShortcutChange = useCallback((value: string) => {
     const sanitizedValue = sanitizeShortcut(value);
     
     // 先更新表單欄位

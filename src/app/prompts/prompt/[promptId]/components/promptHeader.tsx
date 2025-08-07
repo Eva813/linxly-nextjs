@@ -15,8 +15,8 @@ interface PromptHeaderProps {
   shortcut: string;
   shortcutError: ShortcutError | null;
   mode: Mode;
-  onNameChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  onShortcutChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onNameChange: (value: string) => void;
+  onShortcutChange: (value: string) => void;
   onModeChange: (mode: Mode) => void;
   onClearShortcutError: () => void;
   onToggleMobilePanel: () => void;

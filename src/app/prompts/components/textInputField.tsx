@@ -2,6 +2,7 @@ import React from 'react';
 import { Check, X } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { useForceRerender } from '@/lib/useForceRepaint';
+import { useLocalInputWithDebounce } from '@/hooks/useLocalInputWithDebounce';
 
 
 interface TextInputFieldProps {
@@ -18,6 +19,20 @@ const TextInputField = React.forwardRef<HTMLInputElement, TextInputFieldProps>(
   ({ title, description, value, onChange, highlight, focusPosition }, ref) => {
     const containerRef = useForceRerender(highlight, focusPosition);
 
+    // 使用 debounced input hook 來減少父組件重新渲染
+    const { localValue, handleLocalChange } = useLocalInputWithDebounce({
+      initialValue: String(value),
+      onValueChange: (e) => {
+        onChange(title, e.target.value);
+      },
+      delay: 800
+    });
+
+    // 處理清除按鈕 - 需要立即清空，不使用 debounce
+    const handleClear = () => {
+      onChange(title, null);
+    };
+
     return (
       <div
         ref={containerRef}
@@ -30,12 +45,12 @@ const TextInputField = React.forwardRef<HTMLInputElement, TextInputFieldProps>(
             <Check className="h-5 w-5 text-gray-500" />
             <span className="font-medium text-gray-800">{title}</span>
           </div>
-          {value !== '' && (
+          {localValue !== '' && (
             <button
               type="button"
               aria-label="Close"
               className="text-gray-500 hover:text-gray-700"
-              onClick={() => onChange(title, null)}
+              onClick={handleClear}
             >
               <X className="h-4 w-4" />
             </button>
@@ -45,11 +60,9 @@ const TextInputField = React.forwardRef<HTMLInputElement, TextInputFieldProps>(
         <Input
           ref={ref}
           id={`input-${title}`}
-          value={value}
+          value={localValue}
           className="h-9"
-          onChange={(e) => {
-            onChange(title, e.target.value);
-          }}
+          onChange={handleLocalChange}
         />
       </div>
     );

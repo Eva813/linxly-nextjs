@@ -1,12 +1,16 @@
-import React, { useRef, useEffect, useMemo } from 'react'
+import React, { useRef, useEffect, useMemo, memo, useCallback } from 'react'
 import TextInputField from '@/app/prompts/components/textInputField'
 import { formTextSpec } from '@/lib/specs/formTextSpec'
 import { FieldGroupProps } from '@/types/fieldGropProps'
 import { organizeFormInput } from '@/lib/utils'
 import { usePromptStore } from '@/stores/prompt/index'
 
-export const FormTextFields = ({ editInfo, onChange }: FieldGroupProps) => {
-  const organizedFields = organizeFormInput(editInfo, formTextSpec);
+const FormTextFieldsComponent = ({ editInfo, onChange }: FieldGroupProps) => {
+  // 使用 useMemo 緩存 organizeFormInput 的結果，避免重複計算
+  const organizedFields = useMemo(() => 
+    organizeFormInput(editInfo, formTextSpec), 
+    [editInfo]
+  );
 
   const nameRef = useRef<HTMLInputElement>(null);
   const defaultRef = useRef<HTMLInputElement>(null);
@@ -14,7 +18,12 @@ export const FormTextFields = ({ editInfo, onChange }: FieldGroupProps) => {
   const inputRefs = useMemo(() => ({
     name: nameRef,
     default: defaultRef,
-  } as { [key: string]: React.RefObject<HTMLInputElement> }), [nameRef, defaultRef]);
+  } as { [key: string]: React.RefObject<HTMLInputElement> }), []);
+
+  // 穩定的 onChange 處理器
+  const handleFieldChange = useCallback((key: string, newValue: string | null) => {
+    onChange({ [key]: newValue });
+  }, [onChange]);
 
   const focusKey = usePromptStore((state) => state.focusKey);
 
@@ -45,11 +54,11 @@ export const FormTextFields = ({ editInfo, onChange }: FieldGroupProps) => {
           value={field.value}
           highlight={fieldKey === key}
           focusPosition={position}
-          onChange={(_, newValue) => {
-            onChange({ [key]: newValue });
-          }}
+          onChange={handleFieldChange}
         />
       ))}
     </>
   );
 };
+
+export const FormTextFields = memo(FormTextFieldsComponent);

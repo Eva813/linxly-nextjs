@@ -4,6 +4,7 @@ import ShortcutErrorAlert from "@/app/prompts/components/shortcutErrorAlert";
 import SecureInput from '@/components/ui/secureInput';
 import { TryItOutButton } from './tryItOutButton';
 import { useEditableState } from '@/hooks/useEditableState';
+import { useLocalInputWithDebounce } from '@/hooks/useLocalInputWithDebounce';
 
 interface ShortcutError {
   conflictingShortcut: string;
@@ -17,26 +18,33 @@ interface ShortcutInputProps {
   onClearShortcutError: () => void;
 }
 
-export const ShortcutInput = React.memo(({
+const ShortcutInputComponent = ({
   shortcut,
   shortcutError,
   onShortcutChange,
   onClearShortcutError,
 }: ShortcutInputProps) => {
   const { canEdit } = useEditableState();
+  
+  // 使用自定義 hook 處理本地狀態和 debounce 邏輯
+  const { localValue: localShortcut, handleLocalChange: handleLocalShortcutChange } = useLocalInputWithDebounce({
+    initialValue: shortcut,
+    onValueChange: onShortcutChange,
+    delay: 800
+  });
 
   return (
     <div className="relative">
       <div className="relative">
         <SecureInput
           placeholder="Add a shortcut..."
-          value={shortcut}
-          onChange={onShortcutChange}
+          value={localShortcut}
+          onChange={handleLocalShortcutChange}
           variant="shortcut"
           disabled={!canEdit}
         />
         <FaKeyboard className="absolute left-[10px] top-1/2 h-4 w-4 text-muted-foreground -translate-y-1/2" />
-        <TryItOutButton shortcut={shortcut} />
+        <TryItOutButton shortcut={localShortcut} />
       </div>
       {shortcutError && (
         <ShortcutErrorAlert
@@ -46,6 +54,8 @@ export const ShortcutInput = React.memo(({
       )}
     </div>
   );
-});
+};
+
+export const ShortcutInput = React.memo(ShortcutInputComponent);
 
 ShortcutInput.displayName = 'ShortcutInput';

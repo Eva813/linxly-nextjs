@@ -47,9 +47,17 @@ export const useLocalInputWithDebounce = ({
     }
   }, []);
 
+  // 手動設置本地值的方法（用於立即更新場景如清空）
+  const setLocalValueDirectly = useCallback((newValue: string) => {
+    setLocalValue(newValue);
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+    }
+  }, []);
+
   // 清理定時器和標記組件狀態
   useEffect(() => {
-    isMountedRef.current = true; // 標記組件已掛載
+    isMountedRef.current = true;
     return () => {
       isMountedRef.current = false; // 標記組件卸載
       if (timeoutRef.current) {
@@ -61,6 +69,7 @@ export const useLocalInputWithDebounce = ({
   return {
     localValue,
     handleLocalChange,
-    clearDebounce // 提供清除方法供組件使用
+    clearDebounce, // 提供清除方法供組件使用
+    setLocalValueDirectly // 提供立即設置本地值的方法
   };
 };

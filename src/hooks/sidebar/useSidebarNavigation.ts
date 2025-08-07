@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
 import { useRouter, useParams, usePathname } from 'next/navigation';
 
 /**
@@ -37,7 +37,8 @@ export const useSidebarNavigation = () => {
     return (params.promptId as string) === promptId;
   }, [params.promptId]);
 
-  return {
+  // 穩定化返回的物件，只有當依賴變化時才重新創建
+  return useMemo(() => ({
     pathname,
     currentFolderId: (params.folderId as string) || null,
     currentPromptId: (params.promptId as string) || null,
@@ -47,5 +48,15 @@ export const useSidebarNavigation = () => {
     navigateToPrompts,
     isCurrentFolder,
     isCurrentPrompt,
-  };
+  }), [
+    pathname,
+    params.folderId,
+    params.promptId,
+    navigateToPath,
+    navigateToFolder,
+    navigateToPrompt,
+    navigateToPrompts,
+    isCurrentFolder,
+    isCurrentPrompt,
+  ]);
 };

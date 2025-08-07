@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useRef, useEffect } from 'react';
 import { useSidebarStore } from '@/stores/sidebar';
 import { usePromptStore } from '@/stores/prompt';
 import { usePromptSpaceStore } from '@/stores/promptSpace';
@@ -36,17 +36,32 @@ export const useSidebarActions = () => {
   } = usePromptStore();
   const { currentSpaceId } = usePromptSpaceStore();
 
-  // 決定新增提示時的目標資料夾
+  // 使用 ref 來保存最新的值，避免 useCallback 依賴問題
+  const foldersRef = useRef(folders);
+  const currentSpaceIdRef = useRef(currentSpaceId);
+
+  // 更新 ref 值
+  useEffect(() => {
+    foldersRef.current = folders;
+  }, [folders]);
+
+  useEffect(() => {
+    currentSpaceIdRef.current = currentSpaceId;
+  }, [currentSpaceId]);
+
+  // 決定新增提示時的目標資料夾 - 使用 ref 獲取最新值
   const determineTargetFolder = useCallback((
     currentFolderId?: string,
     currentPromptId?: string
   ): string | null => {
+    const currentFolders = foldersRef.current; // 從 ref 獲取最新值
+    
     if (currentFolderId) {
       return currentFolderId;
     }
 
     if (currentPromptId) {
-      const containerFolder = folders.find(folder =>
+      const containerFolder = currentFolders.find(folder =>
         folder.prompts?.some(prompt => prompt.id === currentPromptId)
       );
       if (containerFolder) {
@@ -54,15 +69,16 @@ export const useSidebarActions = () => {
       }
     }
 
-    return folders.length > 0 ? folders[0].id : null;
-  }, [folders]);
+    return currentFolders.length > 0 ? currentFolders[0].id : null;
+  }, []); // 不需要任何依賴
 
   /**
    * 處理新增資料夾的完整流程
    * 包含建立資料夾和自動導航
    */
   const handleCreateFolder = useCallback(async () => {
-    if (!currentSpaceId) {
+    const spaceId = currentSpaceIdRef.current; // 從 ref 獲取當前值
+    if (!spaceId) {
       console.error('No current space selected');
       return;
     }
@@ -70,7 +86,7 @@ export const useSidebarActions = () => {
     setFolderCreationLoading(true);
     
     try {
-      const newFolder = await addFolder(DEFAULT_FOLDER_DATA, currentSpaceId);
+      const newFolder = await addFolder(DEFAULT_FOLDER_DATA, spaceId);
       
       navigation.navigateToFolder(newFolder.id);
       
@@ -80,7 +96,7 @@ export const useSidebarActions = () => {
     } finally {
       setFolderCreationLoading(false);
     }
-  }, [addFolder, navigation, closeAllMenus, setFolderCreationLoading, currentSpaceId]);
+  }, [addFolder, navigation, closeAllMenus, setFolderCreationLoading]); // 穩定的依賴
 
   /**
    * 處理刪除資料夾的完整流程
@@ -95,9 +111,10 @@ export const useSidebarActions = () => {
       
       // 如果刪除的是當前正在查看的資料夾，需要導航到其他地方
       if (navigation.isCurrentFolder(folderId)) {
-        if (folders.length > 0) {
+        const currentFolders = foldersRef.current; // 從 ref 獲取最新的 folders
+        if (currentFolders.length > 0) {
           // 導航到第一個剩餘資料夾
-          navigation.navigateToFolder(folders[0].id);
+          navigation.navigateToFolder(currentFolders[0].id);
         } else {
           // 沒有資料夾時導航到提示總覽頁面
           navigation.navigateToPrompts();
@@ -106,14 +123,15 @@ export const useSidebarActions = () => {
     } catch (error) {
       console.error('處理刪除資料夾失敗:', error);
     }
-  }, [deleteFolder, navigation, setActiveFolderMenu, folders]);
+  }, [deleteFolder, navigation, setActiveFolderMenu]); // 移除 folders 依賴
 
   /**
    * 處理新增提示的完整流程
    * 包含智能目標資料夾選擇和自動導航
    */
   const handleCreatePrompt = useCallback(async () => {
-    if (folders.length === 0) {
+    const currentFolders = foldersRef.current; // 從 ref 獲取當前值
+    if (currentFolders.length === 0) {
       console.warn('無可用資料夾，無法新增提示');
       return;
     }
@@ -131,7 +149,8 @@ export const useSidebarActions = () => {
     setPromptCreationLoading(true, targetFolderId, navigation.currentPromptId || null);
 
     try {
-      if (!currentSpaceId) {
+      const spaceId = currentSpaceIdRef.current; // 從 ref 獲取當前值
+      if (!spaceId) {
         console.error('No current space selected');
         return;
       }
@@ -140,7 +159,7 @@ export const useSidebarActions = () => {
         targetFolderId,
         DEFAULT_PROMPT_DATA,
         navigation.currentPromptId || undefined,
-        currentSpaceId
+        spaceId
       );
       
       // 新增成功後自動導航到新提示
@@ -153,7 +172,7 @@ export const useSidebarActions = () => {
     } finally {
       setPromptCreationLoading(false);
     }
-  }, [folders, determineTargetFolder, navigation, setPromptCreationLoading, addPromptToFolder, closeAllMenus, currentSpaceId]);
+  }, [determineTargetFolder, navigation, setPromptCreationLoading, addPromptToFolder, closeAllMenus]); // 穩定的依賴
 
   /**
    * 處理刪除提示的完整流程
@@ -180,10 +199,11 @@ export const useSidebarActions = () => {
    * 獲取當前資料夾資訊
    */
   const getCurrentFolder = useCallback(() => {
+    const currentFolders = foldersRef.current; // 從 ref 獲取最新值
     return navigation.currentFolderId 
-      ? folders.find(f => f.id === navigation.currentFolderId) || null
+      ? currentFolders.find(f => f.id === navigation.currentFolderId) || null
       : null;
-  }, [navigation.currentFolderId, folders]);
+  }, [navigation.currentFolderId]); // 只依賴 currentFolderId
 
   return {
     // === 業務邏輯操作 ===

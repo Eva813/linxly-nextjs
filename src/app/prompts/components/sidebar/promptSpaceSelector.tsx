@@ -85,14 +85,6 @@ const PromptSpaceSelector: React.FC<PromptSpaceSelectorProps> = ({ onCreateSpace
       currentFolderIds.length !== prevFolderIds.length ||
       currentFolderIds.some((id, index) => id !== prevFolderIds[index])
     );
-    
-    console.log('useEffect triggered:', {
-      pendingSpaceId,
-      currentSpaceId: currentSpaceIdValue,
-      foldersLength: folders.length,
-      firstFolderId: folders[0]?.id,
-      foldersChanged
-    });
 
     if (pendingSpaceId && 
         folders.length > 0 && 
@@ -101,10 +93,8 @@ const PromptSpaceSelector: React.FC<PromptSpaceSelectorProps> = ({ onCreateSpace
       
       // folders 內容發生變化且 space 匹配，進行導航
       const targetPath = `/prompts/folder/${folders[0].id}`;
-      console.log('Navigating to folder:', folders[0].id, 'from space:', currentSpaceIdValue);
       routerValue.push(targetPath);
       pendingNavigationRef.current = null; // 清除待處理的導航
-      console.log('Navigation executed, pending cleared');
     }
     
     // 更新 prevFoldersRef
@@ -142,19 +132,14 @@ const PromptSpaceSelector: React.FC<PromptSpaceSelectorProps> = ({ onCreateSpace
       // 避免重複切換到相同的 space
       if (currentSpaceId === spaceId) return;
       
-      console.log('handleSpaceChange called:', { spaceId, currentSpaceId });
-      
       // 1. 設置待處理的導航標記
       pendingNavigationRef.current = spaceId;
-      console.log('Set pending navigation:', spaceId);
       
       // 2. 切換 space 並載入數據 - switchToSpace 會更新所有相關狀態
       await switchToSpace(spaceId);
-      console.log('switchToSpace completed');
 
       // 3. 不在這裡立即導航，讓 useEffect 處理
       // 因為 React 狀態更新是異步的，此時的 folders 可能還是舊的
-      console.log('Waiting for useEffect to handle navigation...');
       
       // 4. 防抖設置為默認 space（3秒後自動設置，如果用戶繼續切換則取消）
       debouncedSetDefault(spaceId);

@@ -12,8 +12,6 @@ interface ActionButtonsProps {
   canEdit: boolean;
 }
 
-const BUTTON_CLASSNAME = "h-8 dark:text-third";
-
 // 抽取為獨立的 memo 組件，確保 props 完全穩定時不會重新渲染
 const ActionButtons: React.FC<ActionButtonsProps> = React.memo(({
   onCreateFolder,
@@ -36,7 +34,7 @@ const ActionButtons: React.FC<ActionButtonsProps> = React.memo(({
   return (
     <div className="grid grid-cols-2 gap-x-4 mb-4 sticky top-0 bg-white dark:bg-gray-900 z-10">
       <Button
-        className={BUTTON_CLASSNAME}
+        className="h-8 dark:text-third"
         onClick={onCreateFolder}
         disabled={isAddFolderDisabled}
       >
@@ -44,7 +42,7 @@ const ActionButtons: React.FC<ActionButtonsProps> = React.memo(({
         Add Folder
       </Button>
       <Button
-        className={BUTTON_CLASSNAME}
+        className="h-8 dark:text-third"
         onClick={onCreatePrompt}
         disabled={isAddPromptDisabled}
       >

@@ -56,24 +56,39 @@ const PromptSpaceSelector: React.FC<PromptSpaceSelectorProps> = ({ onCreateSpace
     }, 3000)
   ).current;
 
-    // 用於追蹤是否需要在 folders 更新後進行導航
+  // 用於追蹤是否需要在 folders 更新後進行導航
   const pendingNavigationRef = useRef<string | null>(null);
   
   // 追蹤上一次的 folders，用來檢測 folders 真正的變化
   const prevFoldersRef = useRef<string[]>(folders.map(f => f.id));
+  
+  // 使用 ref 來穩定 currentSpaceId 和 router 的引用，避免 useEffect 依賴問題
+  const currentSpaceIdRef = useRef(currentSpaceId);
+  const routerRef = useRef(router);
+  
+  // 更新 refs
+  useEffect(() => {
+    currentSpaceIdRef.current = currentSpaceId;
+    routerRef.current = router;
+  }, [currentSpaceId, router]);
 
-  // 監聽 folders 變化，當切換 space 後自動導航
+  // 只監聽 folders 的變化，使用 ref 來處理其他值
   useEffect(() => {
     const pendingSpaceId = pendingNavigationRef.current;
     const currentFolderIds = folders.map(f => f.id);
     const prevFolderIds = prevFoldersRef.current;
+    const currentSpaceIdValue = currentSpaceIdRef.current;
+    const routerValue = routerRef.current;
     
-    // 檢查 folders 是否真正發生了變化 (不只是順序，而是實際內容)
-    const foldersChanged = JSON.stringify(currentFolderIds.sort()) !== JSON.stringify(prevFolderIds.sort());
+    // 根據最佳實踐：使用更高效的陣列比較，避免 JSON.stringify
+    const foldersChanged = (
+      currentFolderIds.length !== prevFolderIds.length ||
+      currentFolderIds.some((id, index) => id !== prevFolderIds[index])
+    );
     
     console.log('useEffect triggered:', {
       pendingSpaceId,
-      currentSpaceId,
+      currentSpaceId: currentSpaceIdValue,
       foldersLength: folders.length,
       firstFolderId: folders[0]?.id,
       foldersChanged
@@ -81,13 +96,13 @@ const PromptSpaceSelector: React.FC<PromptSpaceSelectorProps> = ({ onCreateSpace
 
     if (pendingSpaceId && 
         folders.length > 0 && 
-        pendingSpaceId === currentSpaceId &&
+        pendingSpaceId === currentSpaceIdValue &&
         foldersChanged) {
       
       // folders 內容發生變化且 space 匹配，進行導航
       const targetPath = `/prompts/folder/${folders[0].id}`;
-      console.log('Navigating to folder:', folders[0].id, 'from space:', currentSpaceId);
-      router.push(targetPath);
+      console.log('Navigating to folder:', folders[0].id, 'from space:', currentSpaceIdValue);
+      routerValue.push(targetPath);
       pendingNavigationRef.current = null; // 清除待處理的導航
       console.log('Navigation executed, pending cleared');
     }
@@ -95,7 +110,7 @@ const PromptSpaceSelector: React.FC<PromptSpaceSelectorProps> = ({ onCreateSpace
     // 更新 prevFoldersRef
     prevFoldersRef.current = currentFolderIds;
     
-  }, [folders, currentSpaceId, router]);
+  }, [folders]); // 根據最佳實踐：只依賴真正需要監聽的狀態
 
   // 組件卸載時清理
   useEffect(() => {

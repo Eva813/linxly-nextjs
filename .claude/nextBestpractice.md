@@ -61,6 +61,7 @@ const redStyle = { color: 'red' };
 <MyComponent style={redStyle} />
 ```
 
+ 靜態 CSS className，確實沒有必要提取成常量
 ---
 
 ### **Chapter 2: State Management Strategy**

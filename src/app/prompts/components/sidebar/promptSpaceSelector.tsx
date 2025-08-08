@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useCallback, useEffect, useMemo } from "react";
+import React, { useRef, useCallback, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import { usePromptSpaceStore } from "@/stores/promptSpace";
@@ -9,14 +9,16 @@ import { usePromptSpaceActions } from "@/hooks/promptSpace";
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-import { ChevronDownIcon, PlusIcon, TrashIcon } from "@radix-ui/react-icons";
+import { ChevronDownIcon, PlusIcon } from "@radix-ui/react-icons";
 import { Settings } from "lucide-react";
 import { FaSpinner } from "react-icons/fa";
 import debounce from "@/lib/utils/debounce";
+import SpaceMenuItem from "./spaceMenuItem";
+import { useSpaceDialogs } from "./hooks/useSpaceDialogs";
+import type { PromptSpaceSelectorProps } from "./types/promptSpaceSelector.types";
 
 // 懶載入 Dialog 組件 (只在用戶點擊時才需要)
 const DeleteSpaceDialog = dynamic(() => import("./deleteSpaceDialog"), {
@@ -25,110 +27,9 @@ const DeleteSpaceDialog = dynamic(() => import("./deleteSpaceDialog"), {
 
 const SpaceSettingsDialog = dynamic(() => import("./spaceSettingsDialog"), {
   ssr: false,
+  loading: () => null,
 });
 
-interface PromptSpaceSelectorProps {
-  onCreateSpace: () => void;
-}
-
-interface SpaceMenuItemProps {
-  space: {
-    id: string;
-    name: string;
-    defaultSpace?: boolean;
-  };
-  isCurrentSpace: boolean;
-  onSpaceClick: (spaceId: string) => void;
-  onDeleteClick?: (e: React.MouseEvent, space: { id: string; name: string }) => void;
-  index: number;
-  permission?: 'view' | 'edit';
-}
-
-// Memo 化的 SpaceMenuItem 元件，減少不必要的重新渲染
-const SpaceMenuItem = React.memo<SpaceMenuItemProps>(({ space, isCurrentSpace, onSpaceClick, onDeleteClick, index, permission }) => {
-  // 使用 useCallback 穩定化事件處理函數，並加入錯誤處理
-  const handleClick = useCallback(() => {
-    try {
-      onSpaceClick(space.id);
-    } catch (error) {
-      console.error('Failed to switch workspace:', error);
-      // 這裡可以加入 toast 通知或其他使用者回饋機制
-    }
-  }, [onSpaceClick, space.id]);
-
-  const handleDeleteClick = useCallback((e: React.MouseEvent) => {
-    try {
-      e.stopPropagation(); // 防止觸發父元件的點擊事件
-      if (onDeleteClick) {
-        onDeleteClick(e, space);
-      }
-    } catch (error) {
-      console.error('Failed to delete workspace:', error);
-      // 這裡可以加入 toast 通知或其他使用者回饋機制
-    }
-  }, [onDeleteClick, space]);
-
-  // 使用 useMemo 計算動態 className
-  const itemClassName = useMemo(() => {
-    const baseClasses = "cursor-pointer flex items-center justify-between";
-    const activeClass = isCurrentSpace ? "bg-accent" : "";
-    const spacingClass = index > 0 ? "mt-1" : "";
-    return `${baseClasses} ${activeClass} ${spacingClass}`.trim();
-  }, [isCurrentSpace, index]);
-
-  // 使用 useMemo 優化 renderSpaceAction，避免每次渲染都重新創建
-  const spaceAction = useMemo(() => {
-    if (space.defaultSpace) {
-      return (
-        <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-medium whitespace-nowrap flex-shrink-0 ml-2">
-          default
-        </span>
-      );
-    }
-
-    if (onDeleteClick) {
-      return (
-        <Button
-          variant="ghost"
-          size="sm"
-          className="h-6 w-6 p-0 ml-2 hover:bg-red-100 hover:text-red-600"
-          onClick={handleDeleteClick}
-          title="Delete workspace"
-          aria-label={`Delete workspace ${space.name}`}
-        >
-          <TrashIcon className="h-3 w-3" />
-        </Button>
-      );
-    }
-
-    return null;
-  }, [space.defaultSpace, space.name, onDeleteClick, handleDeleteClick]);
-
-  return (
-    <DropdownMenuItem
-      key={space.id}
-      onClick={handleClick}
-      className={itemClassName}
-      aria-label={`Switch to workspace ${space.name}${permission ? ` (${permission} access)` : ''}`}
-      role="menuitem"
-    >
-      <div className="flex items-center flex-1 min-w-0">
-        <span className="truncate">{space.name}</span>
-        {permission && (
-          <span 
-            className="text-xs text-muted-foreground bg-gray-100 px-1 py-0.5 rounded ml-2"
-            aria-label={`Access level: ${permission}`}
-          >
-            {permission}
-          </span>
-        )}
-      </div>
-      {spaceAction}
-    </DropdownMenuItem>
-  );
-});
-
-SpaceMenuItem.displayName = "SpaceMenuItem";
 
 const PromptSpaceSelector: React.FC<PromptSpaceSelectorProps> = ({ onCreateSpace }) => {
   const router = useRouter();
@@ -142,6 +43,18 @@ const PromptSpaceSelector: React.FC<PromptSpaceSelectorProps> = ({ onCreateSpace
   } = usePromptSpaceStore();
   const { deleteSpace, switchToSpace, setAsDefaultSpace } = usePromptSpaceActions();
   
+  // 使用 custom hook 管理 dialog 狀態
+  const {
+    deleteDialogOpen,
+    spaceToDelete,
+    isDeleting,
+    setIsDeleting,
+    openDeleteDialog,
+    closeDeleteDialog,
+    settingsDialogOpen,
+    openSettingsDialog,
+    closeSettingsDialog,
+  } = useSpaceDialogs();
 
   // 防抖設置默認 space（3秒延遲）
   const debouncedSetDefault = useRef(
@@ -193,12 +106,13 @@ const PromptSpaceSelector: React.FC<PromptSpaceSelectorProps> = ({ onCreateSpace
 
   const currentSpace = getCurrentSpace();
   const currentSpaceRole = getCurrentSpaceRole();
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [spaceToDelete, setSpaceToDelete] = useState<{ id: string, name: string } | null>(null);
-  const [isDeleting, setIsDeleting] = useState(false);
 
-  const [settingsDialogOpen, setSettingsDialogOpen] = useState(false);
-  const [spaceToEdit, setSpaceToEdit] = useState<{ id: string, name: string } | null>(null);
+  // 計算 spaceToEdit 值，避免 Derived State anti-pattern
+  const spaceToEdit = useMemo(() => 
+    settingsDialogOpen && currentSpace 
+      ? { id: currentSpace.id, name: currentSpace.name }
+      : null
+  , [settingsDialogOpen, currentSpace]);
 
   // Spaces are already initialized by fullPageLoading, no need to fetch again
 
@@ -222,9 +136,8 @@ const PromptSpaceSelector: React.FC<PromptSpaceSelectorProps> = ({ onCreateSpace
 
   const handleDeleteClick = useCallback((e: React.MouseEvent, space: { id: string, name: string }) => {
     e.stopPropagation();
-    setSpaceToDelete(space);
-    setDeleteDialogOpen(true);
-  }, []);
+    openDeleteDialog(space);
+  }, [openDeleteDialog]);
 
   const handleDeleteConfirm = useCallback(async () => {
     if (!spaceToDelete) return;
@@ -232,31 +145,27 @@ const PromptSpaceSelector: React.FC<PromptSpaceSelectorProps> = ({ onCreateSpace
     try {
       setIsDeleting(true);
       await deleteSpace(spaceToDelete.id);
-      setDeleteDialogOpen(false);
-      setSpaceToDelete(null);
+      closeDeleteDialog();
     } catch (error) {
       console.error('Failed to delete space:', error);
     } finally {
       setIsDeleting(false);
     }
-  }, [spaceToDelete, deleteSpace]);
+  }, [spaceToDelete, deleteSpace, setIsDeleting, closeDeleteDialog]);
 
   const handleDeleteCancel = useCallback(() => {
-    setDeleteDialogOpen(false);
-    setSpaceToDelete(null);
-  }, []);
+    closeDeleteDialog();
+  }, [closeDeleteDialog]);
 
   const handleSettingsClose = useCallback(() => {
-    setSettingsDialogOpen(false);
-    setSpaceToEdit(null);
-  }, []);
+    closeSettingsDialog();
+  }, [closeSettingsDialog]);
 
   const handleSettingsClick = useCallback(() => {
-    if (currentSpace) {
-      setSpaceToEdit({ id: currentSpace.id, name: currentSpace.name });
-      setSettingsDialogOpen(true);
+    if (currentSpace?.id) {
+      openSettingsDialog();
     }
-  }, [currentSpace]);
+  }, [currentSpace?.id, openSettingsDialog]); // 只依賴 id，避免物件引用變化造成不必要的重新創建
 
   // 使用 useCallback 穩定化事件處理函數，避免子元件不必要的重新渲染，並加入錯誤處理
   const memoizedHandleSpaceChange = useCallback(async (spaceId: string) => {

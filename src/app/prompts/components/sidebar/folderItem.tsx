@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useContext } from "react";
+import React, { useContext, useCallback, useMemo } from "react";
 import Link from "next/link";
 import { BsThreeDotsVertical } from "react-icons/bs";
 import {
@@ -22,7 +22,7 @@ import { useSidebarStore } from "@/stores/sidebar";
 import { useSidebarActions } from "@/hooks/sidebar";
 import { useEditableState } from '@/hooks/useEditableState';
 
-const FolderItem: React.FC<FolderItemProps> = ({
+const FolderItemComponent: React.FC<FolderItemProps> = ({
   folder,
   children,
 }) => {
@@ -35,29 +35,58 @@ const FolderItem: React.FC<FolderItemProps> = ({
   } = useSidebarStore();
   const { navigation, handleDeleteFolder } = useSidebarActions();
   const { canDelete } = useEditableState();
-  const isActiveFolder = navigation.currentFolderId === folder.id;
-  const isCollapsed = collapsedFolderIds.has(folder.id);
+  
+  const isActiveFolder = useMemo(() => 
+    navigation.currentFolderId === folder.id, 
+    [navigation.currentFolderId, folder.id]
+  );
+  
+  const isCollapsed = useMemo(() => 
+    collapsedFolderIds.has(folder.id), 
+    [collapsedFolderIds, folder.id]
+  );
+  
+  const handleLinkClick = useCallback(() => {
+    if (isOpen) toggleSidebar();
+  }, [isOpen, toggleSidebar]);
+  
+  const handleToggleCollapse = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    toggleFolderCollapse(folder.id);
+  }, [folder.id, toggleFolderCollapse]);
+  
+  const handleMenuClick = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setActiveFolderMenu(
+      activeFolderMenuId === folder.id ? null : folder.id
+    );
+  }, [activeFolderMenuId, folder.id, setActiveFolderMenu]);
+  
+  const handleDeleteClick = useCallback(() => {
+    handleDeleteFolder(folder.id);
+  }, [folder.id, handleDeleteFolder]);
+  
+  const linkClassName = useMemo(() => 
+    `px-2 py-1 w-full block rounded font-extrabold hover:bg-light dark:hover:text-third flex items-center justify-between text-lg ${
+      isActiveFolder ? "bg-light text-primary dark:text-third" : ""
+    }`,
+    [isActiveFolder]
+  );
 
   return (
     <li className="mb-2">
       <Link
         prefetch={true}
         href={`/prompts/folder/${folder.id}`}
-        onClick={() => {
-          if (isOpen) toggleSidebar();
-        }}
-        className={`px-2 py-1 w-full block rounded font-extrabold hover:bg-light dark:hover:text-third flex items-center justify-between text-lg ${
-          isActiveFolder ? "bg-light text-primary dark:text-third" : ""
-        }`}
+        onClick={handleLinkClick}
+        className={linkClassName}
       >
         <div className="flex items-center">
-          {/* 折疊/展開按鈕 移到資料夾圖示左側 */}
+          {/* 折疊/展開按鈕 */}
           <button
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              toggleFolderCollapse(folder.id);
-            }}
+            onClick={handleToggleCollapse}
             className="focus:outline-none p-1 hover:bg-gray-light dark:hover:bg-light rounded"
           >
             {isCollapsed ? (
@@ -79,13 +108,7 @@ const FolderItem: React.FC<FolderItemProps> = ({
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  setActiveFolderMenu(
-                    activeFolderMenuId === folder.id ? null : folder.id
-                  );
-                }}
+                onClick={handleMenuClick}
                 className="focus:outline-none hover:bg-gray-200 dark:hover:bg-light p-1 rounded"
               >
                 <BsThreeDotsVertical className="text-gray-400" />
@@ -96,7 +119,7 @@ const FolderItem: React.FC<FolderItemProps> = ({
                 {canDelete && (
                   <DropdownMenuItem className="dark:hover:bg-light">
                     <button
-                      onClick={() => handleDeleteFolder(folder.id)}
+                      onClick={handleDeleteClick}
                       className="w-full text-left"
                     >
                       Delete
@@ -114,5 +137,7 @@ const FolderItem: React.FC<FolderItemProps> = ({
     </li>
   );
 };
+
+const FolderItem = React.memo(FolderItemComponent);
 
 export default FolderItem;

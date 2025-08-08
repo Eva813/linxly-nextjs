@@ -1,6 +1,7 @@
 'use client';
-import React from 'react';
+import React, { useCallback, useMemo } from 'react';
 import dynamic from 'next/dynamic';
+import { Editor } from '@tiptap/react';
 import { PromptHeader, EditorSection } from './components';
 import { usePromptPageLogic, useEditorLogic, useViewAndPanel } from './hooks';
 
@@ -62,6 +63,35 @@ const PromptPage = ({ params }: PromptPageProps) => {
     toggleMobilePanel,
   } = useViewAndPanel();
 
+  // 事件處理器 - 使用 useCallback 穩定化
+  const handleEditorReady = useCallback((editor: Editor) => {
+    editorRef.current = editor;
+  }, [editorRef]);
+
+  // 對話框關閉函數 - 使用 useMemo 穩定化
+  const dialogHandlers = useMemo(() => ({
+    handleTextDialogClose: () => setIsTextDialogOpen(false),
+    handleDropdownDialogClose: () => setIsDropdownDialogOpen(false),
+  }), [setIsTextDialogOpen, setIsDropdownDialogOpen]);
+
+  // 文本輸入變更處理器
+  const handleTextInputChangeWrapper = useCallback((updates: { [key: string]: string | string[] | boolean | null }) => {
+    const newContent = handleTextInputChange(updates);
+    if (newContent) updateContent(newContent);
+  }, [handleTextInputChange, updateContent]);
+
+  // 文本欄位插入處理器
+  const handleTextFieldInsertWrapper = useCallback((name: string, defaultValue: string) => {
+    const newContent = handleTextFieldInsert(name, defaultValue);
+    if (newContent) updateContent(newContent);
+  }, [handleTextFieldInsert, updateContent]);
+
+  // 下拉選單插入處理器
+  const handleDropdownInsertWrapper = useCallback((name: string, values: string[], selectedValues: string | string[], multiple: boolean) => {
+    const newContent = handleDropDownMenuInsert(name, values, selectedValues, multiple);
+    if (newContent) updateContent(newContent);
+  }, [handleDropDownMenuInsert, updateContent]);
+
   return (
     <div className="flex flex-col h-full">
       <PromptHeader
@@ -87,40 +117,29 @@ const PromptPage = ({ params }: PromptPageProps) => {
           isMobilePanelOpen={isMobilePanelOpen}
           isMobilePanelClosing={isMobilePanelClosing}
           onContentChange={updateContent}
-          onEditorReady={(editor) => {
-            editorRef.current = editor;
-          }}
+          onEditorReady={handleEditorReady}
           onFormTextNodeClick={handleFormTextNodeClick}
           onFormMenuNodeClick={handleFormMenuNodeClick}
           onEditorClick={handleEditorClick}
           onInsertTextFieldClick={handleInsertTextFieldClick}
           onInsertMenuFieldClick={handleInsertMenuFieldClick}
-          onTextInputChange={(updates) => {
-            const newContent = handleTextInputChange(updates);
-            if (newContent) updateContent(newContent);
-          }}
+          onTextInputChange={handleTextInputChangeWrapper}
           onMobilePanelToggle={toggleMobilePanel}
         />
       </main>
 
       <InsertTextFieldDialog
         isOpen={isTextDialogOpen}
-        onClose={() => setIsTextDialogOpen(false)}
-        onInsert={(name, defaultValue) => {
-          const newContent = handleTextFieldInsert(name, defaultValue);
-          if (newContent) updateContent(newContent);
-        }}
+        onClose={dialogHandlers.handleTextDialogClose}
+        onInsert={handleTextFieldInsertWrapper}
         defaultLabel={textInputEditInfo?.name || ""}
         defaultdefault={textInputEditInfo?.default || ""}
       />
       
       <InsertDropdownMenuDialog
         isOpen={isDropdownDialogOpen}
-        onClose={() => setIsDropdownDialogOpen(false)}
-        onInsert={(name, values, selectedValues, multiple) => {
-          const newContent = handleDropDownMenuInsert(name, values, selectedValues, multiple);
-          if (newContent) updateContent(newContent);
-        }}
+        onClose={dialogHandlers.handleDropdownDialogClose}
+        onInsert={handleDropdownInsertWrapper}
         defaultName={dropdownEditInfo?.name}
         defaultOptionValues={dropdownEditInfo?.options}
         defaultMultiple={dropdownEditInfo?.multiple}

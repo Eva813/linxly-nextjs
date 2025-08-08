@@ -1,22 +1,24 @@
 "use client";
 
-import React, { useState, useRef } from "react";
+import React, { useRef, useCallback, useEffect, useMemo } from "react";
+import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import { usePromptSpaceStore } from "@/stores/promptSpace";
-import { usePromptSpaceActions } from "@/hooks/promptSpace";
 import { usePromptStore } from "@/stores/prompt";
+import { usePromptSpaceActions } from "@/hooks/promptSpace";
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-import { ChevronDownIcon, PlusIcon, TrashIcon } from "@radix-ui/react-icons";
+import { ChevronDownIcon, PlusIcon } from "@radix-ui/react-icons";
 import { Settings } from "lucide-react";
 import { FaSpinner } from "react-icons/fa";
-import { useSmartNavigation } from "@/hooks/sidebar/useSmartNavigation";
 import debounce from "@/lib/utils/debounce";
+import SpaceMenuItem from "./spaceMenuItem";
+import { useSpaceDialogs } from "./hooks/useSpaceDialogs";
+import type { PromptSpaceSelectorProps } from "./types/promptSpaceSelector.types";
 
 // 懶載入 Dialog 組件 (只在用戶點擊時才需要)
 const DeleteSpaceDialog = dynamic(() => import("./deleteSpaceDialog"), {
@@ -25,13 +27,12 @@ const DeleteSpaceDialog = dynamic(() => import("./deleteSpaceDialog"), {
 
 const SpaceSettingsDialog = dynamic(() => import("./spaceSettingsDialog"), {
   ssr: false,
+  loading: () => null,
 });
 
-interface PromptSpaceSelectorProps {
-  onCreateSpace: () => void;
-}
 
 const PromptSpaceSelector: React.FC<PromptSpaceSelectorProps> = ({ onCreateSpace }) => {
+  const router = useRouter();
   const {
     ownedSpaces,
     sharedSpaces,
@@ -41,7 +42,19 @@ const PromptSpaceSelector: React.FC<PromptSpaceSelectorProps> = ({ onCreateSpace
     isLoading
   } = usePromptSpaceStore();
   const { deleteSpace, switchToSpace, setAsDefaultSpace } = usePromptSpaceActions();
-  const { navigation } = useSmartNavigation();
+  
+  // 使用 custom hook 管理 dialog 狀態
+  const {
+    deleteDialogOpen,
+    spaceToDelete,
+    isDeleting,
+    setIsDeleting,
+    openDeleteDialog,
+    closeDeleteDialog,
+    settingsDialogOpen,
+    openSettingsDialog,
+    closeSettingsDialog,
+  } = useSpaceDialogs();
 
   // 防抖設置默認 space（3秒延遲）
   const debouncedSetDefault = useRef(
@@ -53,20 +66,57 @@ const PromptSpaceSelector: React.FC<PromptSpaceSelectorProps> = ({ onCreateSpace
     }, 3000)
   ).current;
 
+  
+  // 使用 ref 來穩定 currentSpaceId 和 router 的引用，避免 useEffect 依賴問題
+  const currentSpaceIdRef = useRef(currentSpaceId);
+  const routerRef = useRef(router);
+  
+  useEffect(() => {
+    currentSpaceIdRef.current = currentSpaceId;
+    routerRef.current = router;
+  }, [currentSpaceId, router]);
+
+  // 使用 callback 方式處理導航，避免直接訂閱 folders 狀態
+  const handleNavigationAfterSwitch = useCallback(async () => {
+    try {
+      // 等待一小段時間確保 switchToSpace 完成
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      // 獲取最新的 folders 狀態
+      const currentFolders = usePromptStore.getState().folders;
+      
+      if (currentFolders.length > 0) {
+        const targetPath = `/prompts/folder/${currentFolders[0].id}`;
+        routerRef.current.push(targetPath);
+      }
+    } catch (error) {
+      console.error('Navigation after switch failed:', error);
+    }
+  }, []);
+
+  // 組件卸載時清理
+  useEffect(() => {
+    return () => {
+      // 清理 debounced 函式
+      debouncedSetDefault.cancel?.();
+    };
+  }, [debouncedSetDefault]);
+
 
 
   const currentSpace = getCurrentSpace();
   const currentSpaceRole = getCurrentSpaceRole();
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [spaceToDelete, setSpaceToDelete] = useState<{ id: string, name: string } | null>(null);
-  const [isDeleting, setIsDeleting] = useState(false);
 
-  const [settingsDialogOpen, setSettingsDialogOpen] = useState(false);
-  const [spaceToEdit, setSpaceToEdit] = useState<{ id: string, name: string } | null>(null);
+  // 計算 spaceToEdit 值，避免 Derived State anti-pattern
+  const spaceToEdit = useMemo(() => 
+    settingsDialogOpen && currentSpace 
+      ? { id: currentSpace.id, name: currentSpace.name }
+      : null
+  , [settingsDialogOpen, currentSpace]);
 
   // Spaces are already initialized by fullPageLoading, no need to fetch again
 
-  const handleSpaceChange = async (spaceId: string) => {
+  const handleSpaceChange = useCallback(async (spaceId: string) => {
     try {
       // 避免重複切換到相同的 space
       if (currentSpaceId === spaceId) return;
@@ -74,71 +124,89 @@ const PromptSpaceSelector: React.FC<PromptSpaceSelectorProps> = ({ onCreateSpace
       // 1. 切換 space 並載入數據 - switchToSpace 會更新所有相關狀態
       await switchToSpace(spaceId);
 
-      // 2. 導航到第一個 folder - 確保從最新狀態取得 folders
-      const freshFolders = usePromptStore.getState().folders;
-      if (freshFolders.length > 0) {
-        navigation.navigateToFolder(freshFolders[0].id);
-      }
-
+      // 2. 切換完成後進行導航
+      await handleNavigationAfterSwitch();
+      
       // 3. 防抖設置為默認 space（3秒後自動設置，如果用戶繼續切換則取消）
       debouncedSetDefault(spaceId);
     } catch (error) {
       console.error('Error in handleSpaceChange:', error);
     }
-  };
+  }, [currentSpaceId, switchToSpace, debouncedSetDefault, handleNavigationAfterSwitch]);
 
-  const handleSettingsClose = () => {
-    setSettingsDialogOpen(false);
-    setSpaceToEdit(null);
-  };
-
-  const handleDeleteClick = (e: React.MouseEvent, space: { id: string, name: string }) => {
+  const handleDeleteClick = useCallback((e: React.MouseEvent, space: { id: string, name: string }) => {
     e.stopPropagation();
-    setSpaceToDelete(space);
-    setDeleteDialogOpen(true);
-  };
+    openDeleteDialog(space);
+  }, [openDeleteDialog]);
 
-  const handleDeleteConfirm = async () => {
+  const handleDeleteConfirm = useCallback(async () => {
     if (!spaceToDelete) return;
 
     try {
       setIsDeleting(true);
       await deleteSpace(spaceToDelete.id);
-      setDeleteDialogOpen(false);
-      setSpaceToDelete(null);
+      closeDeleteDialog();
     } catch (error) {
       console.error('Failed to delete space:', error);
     } finally {
       setIsDeleting(false);
     }
-  };
+  }, [spaceToDelete, deleteSpace, setIsDeleting, closeDeleteDialog]);
 
-  const handleDeleteCancel = () => {
-    setDeleteDialogOpen(false);
-    setSpaceToDelete(null);
-  };
+  const handleDeleteCancel = useCallback(() => {
+    closeDeleteDialog();
+  }, [closeDeleteDialog]);
 
-  const renderSpaceAction = (space: { id: string, name: string, defaultSpace?: boolean }) => {
-    if (space.defaultSpace) {
+  const handleSettingsClose = useCallback(() => {
+    closeSettingsDialog();
+  }, [closeSettingsDialog]);
+
+  const handleSettingsClick = useCallback(() => {
+    if (currentSpace?.id) {
+      openSettingsDialog();
+    }
+  }, [currentSpace?.id, openSettingsDialog]); // 只依賴 id，避免物件引用變化造成不必要的重新創建
+
+  // 使用 useCallback 穩定化事件處理函數，避免子元件不必要的重新渲染，並加入錯誤處理
+  const memoizedHandleSpaceChange = useCallback(async (spaceId: string) => {
+    try {
+      await handleSpaceChange(spaceId);
+    } catch (error) {
+      console.error('Failed to change workspace:', error);
+      // 這裡可以加入使用者友善的錯誤提示
+    }
+  }, [handleSpaceChange]);
+
+  const memoizedHandleDeleteClick = useCallback((e: React.MouseEvent, space: { id: string; name: string }) => {
+    try {
+      handleDeleteClick(e, space);
+    } catch (error) {
+      console.error('Failed to initiate workspace deletion:', error);
+      // 這裡可以加入使用者友善的錯誤提示
+    }
+  }, [handleDeleteClick]);
+
+  const triggerContent = useMemo(() => {
+    if (isLoading) {
       return (
-        <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-medium whitespace-nowrap flex-shrink-0 ml-2">
-          default
-        </span>
+        <div className="flex items-center gap-2">
+          <FaSpinner className="animate-spin h-3 w-3" />
+          <span className="truncate">
+            {currentSpace?.name || "Loading..."}
+          </span>
+        </div>
       );
     }
 
     return (
-      <Button
-        variant="ghost"
-        size="sm"
-        className="h-6 w-6 p-0 ml-2 hover:bg-red-100 hover:text-red-600"
-        onClick={(e) => handleDeleteClick(e, space)}
-        title="Delete workspace"
-      >
-        <TrashIcon className="h-3 w-3" />
-      </Button>
+      <>
+        <span className="truncate">
+          {currentSpace?.name || "Select a workspace"}
+        </span>
+        <ChevronDownIcon className="h-4 w-4" />
+      </>
     );
-  };
+  }, [isLoading, currentSpace?.name]);
 
 
   return (
@@ -151,24 +219,15 @@ const PromptSpaceSelector: React.FC<PromptSpaceSelectorProps> = ({ onCreateSpace
               className="flex-1 justify-between h-8 text-sm"
               disabled={isLoading}
             >
-              {isLoading ? (
-                <div className="flex items-center gap-2">
-                  <FaSpinner className="animate-spin h-3 w-3" />
-                  <span className="truncate">
-                    {currentSpace?.name || "Loading..."}
-                  </span>
-                </div>
-              ) : (
-                <>
-                  <span className="truncate">
-                    {currentSpace?.name || "Select a workspace"}
-                  </span>
-                  <ChevronDownIcon className="h-4 w-4" />
-                </>
-              )}
+              {triggerContent}
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="start" className="w-56 p-2 mt-2">
+          <DropdownMenuContent 
+            align="start" 
+            className="w-56 p-2 mt-2"
+            role="menu"
+            aria-label="Workspace selector menu"
+          >
             {/* Owned Spaces */}
             {ownedSpaces.length > 0 && (
               <>
@@ -176,17 +235,14 @@ const PromptSpaceSelector: React.FC<PromptSpaceSelectorProps> = ({ onCreateSpace
                   My Workspaces
                 </div>
                 {ownedSpaces.map((space, index) => (
-                  <DropdownMenuItem
+                  <SpaceMenuItem
                     key={space.id}
-                    onClick={() => handleSpaceChange(space.id)}
-                    className={`cursor-pointer flex items-center justify-between ${currentSpaceId === space.id ? "bg-accent" : ""
-                      } ${index > 0 ? "mt-1" : ""}`}
-                  >
-                    <div className="flex items-center flex-1 min-w-0">
-                      <span className="truncate">{space.name}</span>
-                    </div>
-                    {renderSpaceAction(space)}
-                  </DropdownMenuItem>
+                    space={space}
+                    isCurrentSpace={currentSpaceId === space.id}
+                    onSpaceClick={memoizedHandleSpaceChange}
+                    onDeleteClick={memoizedHandleDeleteClick}
+                    index={index}
+                  />
                 ))}
               </>
             )}
@@ -199,19 +255,14 @@ const PromptSpaceSelector: React.FC<PromptSpaceSelectorProps> = ({ onCreateSpace
                   Shared with Me
                 </div>
                 {sharedSpaces.map((shared, index) => (
-                  <DropdownMenuItem
+                  <SpaceMenuItem
                     key={shared.space.id}
-                    onClick={() => handleSpaceChange(shared.space.id)}
-                    className={`cursor-pointer flex items-center justify-between ${currentSpaceId === shared.space.id ? "bg-accent" : ""
-                      } ${index > 0 ? "mt-1" : ""}`}
-                  >
-                    <div className="flex-1 flex items-center gap-2">
-                      <span className="flex-1 truncate">{shared.space.name}</span>
-                      <span className="text-xs text-muted-foreground bg-gray-100 px-1 py-0.5 rounded">
-                        {shared.permission}
-                      </span>
-                    </div>
-                  </DropdownMenuItem>
+                    space={shared.space}
+                    isCurrentSpace={currentSpaceId === shared.space.id}
+                    onSpaceClick={memoizedHandleSpaceChange}
+                    index={index}
+                    permission={shared.permission}
+                  />
                 ))}
               </>
             )}
@@ -221,12 +272,7 @@ const PromptSpaceSelector: React.FC<PromptSpaceSelectorProps> = ({ onCreateSpace
         <Button
           variant="outline"
           size="sm"
-          onClick={() => {
-            if (currentSpace) {
-              setSpaceToEdit({ id: currentSpace.id, name: currentSpace.name });
-              setSettingsDialogOpen(true);
-            }
-          }}
+          onClick={handleSettingsClick}
           className="h-8 w-8 p-0"
           disabled={isLoading || !currentSpace || currentSpaceRole === 'view'}
           title={currentSpaceRole === 'view' ? 'View-only access' : 'Configure Current Workspace'}

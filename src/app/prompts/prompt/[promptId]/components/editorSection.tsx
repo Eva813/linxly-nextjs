@@ -1,28 +1,35 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import dynamic from 'next/dynamic';
 import TipTapEditor from '@/app/components/tipTapEditor';
 import Sidebar from '@/app/prompts/prompt/[promptId]/editorSidebar';
 import LoadingSpinner from '@/app/components/loadingSpinner';
 import { Mode } from "@/app/prompts/components/editViewButtons";
 
+// 預定義 Loading 組件避免匿名函數
+const PreviewPromptLoading = () => (
+  <div className="flex items-center justify-center h-full">
+    <LoadingSpinner />
+  </div>
+);
+PreviewPromptLoading.displayName = 'PreviewPromptLoading';
+
+const EditPanelLoading = () => (
+  <div className="flex items-center justify-center p-4">
+    <LoadingSpinner size="w-6 h-6" />
+  </div>
+);
+EditPanelLoading.displayName = 'EditPanelLoading';
+
 // 動態載入 PreviewPrompt 組件，只在預覽模式時載入
 const PreviewPrompt = dynamic(() => import("@/app/prompts/components/previewPrompt"), {
   ssr: false,
-  loading: () => (
-    <div className="flex items-center justify-center h-full">
-      <LoadingSpinner />
-    </div>
-  )
+  loading: PreviewPromptLoading
 });
 
 // 動態載入 EditPanel 組件，只在點擊編輯節點時載入
 const EditPanel = dynamic(() => import('../editPanel'), {
   ssr: false,
-  loading: () => (
-    <div className="flex items-center justify-center p-4">
-      <LoadingSpinner size="w-6 h-6" />
-    </div>
-  )
+  loading: EditPanelLoading
 });
 import { Editor } from '@tiptap/react';
 import { DropdownEditInfo, TextInputEditInfo } from '@/types/prompt';
@@ -51,7 +58,7 @@ interface EditorSectionProps {
   isExternalUpdate?: () => boolean;
 }
 
-export const EditorSection = ({
+export const EditorSection = React.memo(({
   mode,
   content,
   shortcut,
@@ -72,25 +79,26 @@ export const EditorSection = ({
   isExternalUpdate,
 }: EditorSectionProps) => {
   const { canEdit } = useEditableState();
-  if (mode === "preview") {
-    return (
-      <div className="border-r border-gray-200 min-w-0 overflow-hidden">
-        <PreviewPrompt content={content} shortcut={shortcut} />
-      </div>
-    );
-  }
+
+  const handleEditorReady = useCallback((editor: Editor) => {
+    editorRef.current = editor;
+    onEditorReady(editor);
+  }, [onEditorReady, editorRef]);
 
   return (
     <>
-      <section className="flex flex-col lg:pr-4 py-4 lg:border-r lg:border-gray-200 overflow-y-auto">
+      {/* Preview 模式 */}
+      <div className={`border-r border-gray-200 min-w-0 overflow-hidden ${mode === "preview" ? "block" : "hidden"}`}>
+        <PreviewPrompt content={content} shortcut={shortcut} />
+      </div>
+
+      {/* Edit 模式 */}
+      <section className={`flex flex-col lg:pr-4 py-4 lg:border-r lg:border-gray-200 overflow-y-auto ${mode === "edit" ? "block" : "hidden"}`}>
         <TipTapEditor
           value={content}
           disabled={!canEdit}
           onChange={onContentChange}
-          onEditorReady={(editor) => {
-            editorRef.current = editor;
-            onEditorReady(editor);
-          }}
+          onEditorReady={handleEditorReady}
           onFormTextNodeClick={onFormTextNodeClick}
           onFormMenuNodeClick={onFormMenuNodeClick}
           onEditorClick={onEditorClick}
@@ -98,8 +106,8 @@ export const EditorSection = ({
         />
       </section>
 
-      {/* 桌面版側邊欄 */}
-      {canEdit && (
+      {/* 桌面版側邊欄 - 只在 edit 模式顯示 */}
+      {canEdit && mode === "edit" && (
         <div className="hidden lg:block">
           <aside className="min-h-0 overflow-y-auto">
             {isEditPanelVisible && activeEditInfo ? (
@@ -114,8 +122,8 @@ export const EditorSection = ({
         </div>
       )}
       
-      {/* 手機版覆蓋面板 */}
-      {canEdit && (isMobilePanelOpen || isMobilePanelClosing) && (
+      {/* 手機版覆蓋面板 - 只在 edit 模式顯示 */}
+      {canEdit && mode === "edit" && (isMobilePanelOpen || isMobilePanelClosing) && (
         <div className="fixed inset-0 z-50 flex justify-end">
           <div
             className="fixed inset-0 bg-black opacity-50"
@@ -135,4 +143,6 @@ export const EditorSection = ({
       )}
     </>
   );
-};
+});
+
+EditorSection.displayName = 'EditorSection';

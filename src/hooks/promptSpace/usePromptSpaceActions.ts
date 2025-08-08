@@ -141,20 +141,23 @@ export const usePromptSpaceActions = () => {
   // 切換 space 並自動獲取該 space 的完整資訊
   const switchToSpace = async (spaceId: string) => {
     try {
+      // 先更新當前 space，讓 UI 立即反映變化
+      setCurrentSpace(spaceId);
+      
       // 設定載入狀態，避免 UI 閃爍
       setLoading(true);
 
-      // 先更新當前 space
-      setCurrentSpace(spaceId);
-
-      await Promise.all([
+      // 並行載入數據，減少總體等待時間和狀態更新次數
+      const [, ] = await Promise.all([
         loadSpaceOverview(spaceId),
-        fetchFolders(spaceId)
+        fetchFolders(spaceId, true) // 強制重新整理，避免快取問題
       ]);
+      
+      // 批次完成所有狀態更新後，一次性設定 loading 為 false
+      setLoading(false);
     } catch (error) {
       console.error('Failed to switch to space:', spaceId, error);
       setError(error instanceof Error ? error.message : 'Unknown error');
-    } finally {
       setLoading(false);
     }
   };

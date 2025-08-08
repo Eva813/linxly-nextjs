@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useContext } from "react";
+import React, { useContext, useMemo } from "react";
 import Link from "next/link";
 import { SidebarContext } from '@/providers/clientRootProvider';
 import { BsThreeDotsVertical } from "react-icons/bs";
@@ -14,6 +14,7 @@ import { PromptItemProps } from "@/types/prompt";
 import { useSidebarStore } from "@/stores/sidebar";
 import { useSidebarActions } from "@/hooks/sidebar";
 import { useEditableState } from '@/hooks/useEditableState';
+import { usePromptStore } from "@/stores/prompt";
 
 const PromptItem: React.FC<PromptItemProps> = React.memo(({
   prompt,
@@ -23,6 +24,22 @@ const PromptItem: React.FC<PromptItemProps> = React.memo(({
   const { activePromptMenuId, setActivePromptMenu } = useSidebarStore();
   const { navigation, handleDeletePrompt } = useSidebarActions();
   const { canDelete } = useEditableState();
+  
+  // 使用 store selector 獲取最新的 prompt 資料，確保與 PromptHeader 編輯同步
+  const storePrompt = usePromptStore((state) => {
+    for (const folder of state.folders) {
+      const foundPrompt = folder.prompts.find(p => p.id === prompt.id);
+      if (foundPrompt) return foundPrompt;
+    }
+    return null;
+  });
+  
+  // 建立計算後的 prompt 物件，優先使用 store 資料以確保同步
+  const computedPrompt = useMemo(() => ({
+    ...prompt,
+    name: storePrompt?.name || prompt.name,
+    shortcut: storePrompt?.shortcut || prompt.shortcut,
+  }), [prompt, storePrompt?.name, storePrompt?.shortcut]);
   
   const isActivePrompt = navigation.currentPromptId === prompt.id;
 
@@ -41,9 +58,9 @@ const PromptItem: React.FC<PromptItemProps> = React.memo(({
           }}
           className="flex items-center justify-between flex-1"
         >
-          <span className="max-w-[110px] truncate">{prompt.name}</span>
+          <span className="max-w-[110px] truncate">{computedPrompt.name}</span>
             <span className="inline-block px-3 py-0 border-2 border-secondary dark:text-third dark:border-third text-sm leading-5 rounded-full max-w-[80px] truncate">
-            {prompt.shortcut}
+            {computedPrompt.shortcut}
             </span>
         </Link>
         {canDelete && (

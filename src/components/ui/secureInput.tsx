@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useCallback } from 'react';
+import React, { useRef, useEffect, useCallback, useMemo } from 'react';
 
 export interface SecureInputStyleConfig {
   paddingLeft?: string;
@@ -288,7 +288,7 @@ interface SecureInputProps {
   onBlur?: () => void;
 }
 
-const SecureInput: React.FC<SecureInputProps> = ({
+const SecureInput: React.FC<SecureInputProps> = React.memo(({
   value,
   placeholder,
   className,
@@ -301,9 +301,10 @@ const SecureInput: React.FC<SecureInputProps> = ({
 }) => {
   const ref = useRef<SecureInputElement>(null);
 
-  // 根據 variant 選擇樣式配置
-  const finalStyleConfig = styleConfig ||
-    (variant === 'shortcut' ? SHORTCUT_STYLES : DEFAULT_STYLES);
+  // 根據 variant 選擇樣式配置 - 使用 useMemo 穩定化物件
+  const finalStyleConfig = useMemo(() => {
+    return styleConfig || (variant === 'shortcut' ? SHORTCUT_STYLES : DEFAULT_STYLES);
+  }, [styleConfig, variant]);
 
   // 當外部 value 變化時，同步到 custom element
   useEffect(() => {
@@ -381,6 +382,9 @@ const SecureInput: React.FC<SecureInputProps> = ({
     value,
     'data-testid': 'secure-input'
   });
-};
+});
+
+// 添加自定義比較函數優化記憶化
+SecureInput.displayName = 'SecureInput';
 
 export default SecureInput;

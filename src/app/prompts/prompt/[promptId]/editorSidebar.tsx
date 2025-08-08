@@ -8,27 +8,30 @@ interface SidebarProps {
   onInsertMenuFieldClick: () => void;
 }
 
+const textFieldIcon = <MdOutlineShortText className="h-8 w-8 text-grey-500" />;
+const menuIcon = <MdMenuOpen className="h-8 w-8 text-grey-500" />;
+
 const EditorSidebar: React.FC<SidebarProps> = React.memo(({ onInsertTextFieldClick, onInsertMenuFieldClick }) => {
-  console.log('EditorSidebar rendered');
   return (
     <>
       <h2 className="font-bold px-4 pt-4 pb-2">Tools</h2>
       <ToolFieldItem
-        icon={<MdOutlineShortText className="h-8 w-8 text-grey-500" />}
+        icon={textFieldIcon}
         title="Text field"
         description="Single line Text Field"
-        pro={false} // 不顯示 PRO 狀態
+        pro={false}
         onClick={onInsertTextFieldClick}
       />
       <ToolFieldItem
-        icon={<MdMenuOpen className="h-8 w-8 text-grey-500" />}
+        icon={menuIcon}
         title="Dropdown Menu"
         description="Options in a menu"
-        pro={false} // 不顯示 PRO 狀態
+        pro={false}
         onClick={onInsertMenuFieldClick}
       />
     </>
   )
 })
+
 EditorSidebar.displayName = 'EditorSidebar';
 export default EditorSidebar;

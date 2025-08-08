@@ -1,7 +1,6 @@
 "use client"
 
 import * as React from "react"
-// import { Input } from "@/components/ui/input"
 import { Lock } from "lucide-react"
 
 interface IconTitleDescriptionProps {
@@ -12,14 +11,21 @@ interface IconTitleDescriptionProps {
   onClick?: React.MouseEventHandler<HTMLButtonElement>
 }
 
+const ProLabel = React.memo(() => (
+  <div className="flex items-center gap-1 text-sm text-gray-500">
+    <Lock size={14} />
+    PRO
+  </div>
+));
+ProLabel.displayName = 'ProLabel';
 
-export function ToolFieldItem({
+export const ToolFieldItem = React.memo<IconTitleDescriptionProps>(({
   icon,
   title,
   description,
   pro = true,
   onClick
-}: IconTitleDescriptionProps) {
+}) => {
   return (
     <button type="button" onClick={onClick} className="w-full text-left flex gap-3 py-2 px-4 cursor-pointer hover:bg-light transition-colors">
       {/* 左側 Icon */}
@@ -31,15 +37,12 @@ export function ToolFieldItem({
       <div className="flex-1">
         <div className="flex items-center justify-between mb-1">
           <h2 className="font-medium">{title}</h2>
-          {pro && (
-            <div className="flex items-center gap-1 text-sm text-gray-500">
-              <Lock size={14} />
-              PRO
-            </div>
-          )}
+          {pro && <ProLabel />}
         </div>
         <p className="text-sm text-gray-500">{description}</p>
       </div>
     </button>
   )
-}
+});
+
+ToolFieldItem.displayName = 'ToolFieldItem';

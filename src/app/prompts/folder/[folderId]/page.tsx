@@ -18,11 +18,14 @@ interface FolderPageProps {
 
 const FolderPage = ({ params }: FolderPageProps) => {
   const { folderId } = params;
-  const { folders, updateFolder } = usePromptStore();
+  const { updateFolder } = usePromptStore();
   const { canEdit } = useEditableState();
   const { setFolderSaving, setFolderSaved, setFolderSaveError, setFolderActive } = useSaveStore();
 
-  const currentFolder = folders.find(folder => folder.id === folderId);
+  // 使用 memoized selector 只訂閱特定的 folder，避免因整個 folders 陣列變化而重新渲染
+  const currentFolder = usePromptStore(
+    useCallback(state => state.folders.find(folder => folder.id === folderId), [folderId])
+  );
 
   // 表單狀態
   const [formData, setFormData] = useState({
@@ -136,5 +139,4 @@ const FolderPage = ({ params }: FolderPageProps) => {
     </div>
   );
 };
-
 export default FolderPage;

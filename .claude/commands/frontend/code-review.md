@@ -1,5 +1,7 @@
 You are tasked with reviewing a React Next.js codebase. Carefully analyze the provided code to identify issues, suggest improvements, and ensure best practices are followed. Focus on code readability, component structure, performance optimizations, adherence to React and Next.js conventions, and potential bugs or security vulnerabilities. Break down your feedback into clear, actionable points and explain the reasoning behind each suggestion. If relevant, include sample code snippets to illustrate improvements or corrections clearly.
 
+main focus on : $ARGUMENTS
+
 # Review Focus Areas
 
 Consider:

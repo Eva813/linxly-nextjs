@@ -14,6 +14,11 @@ export const useViewAndPanel = () => {
     }
   }, []);
 
+  // 使用 useCallback 穩定化 setMode 函數
+  const handleModeChange = useCallback((newMode: Mode) => {
+    setMode(newMode);
+  }, []);
+
   // 切換移動面板
   const toggleMobilePanel = useCallback(() => {
     clearPendingTimeout();
@@ -40,7 +45,7 @@ export const useViewAndPanel = () => {
     mode,
     isMobilePanelOpen,
     isMobilePanelClosing,
-    setMode,
+    setMode: handleModeChange,
     toggleMobilePanel,
   };
 };

@@ -1,54 +1,56 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
 import dynamic from "next/dynamic";
 import { usePromptStore } from "@/stores/prompt";
 import { useSidebarStore } from "@/stores/sidebar";
 import { useSidebarActions } from "@/hooks/sidebar";
 import { useEditableState } from "@/hooks/useEditableState";
-import { Button } from "@/components/ui/button";
-import { FaFolderPlus, FaFileMedical, FaSpinner } from "react-icons/fa";
 import SmartLoadingSkeleton from "./components/smartLoadingSkeleton";
 import FolderList from "./folderList";
 import PromptSpaceSelector from "./promptSpaceSelector";
+import ActionButtons from "./components/actionButtons";
 
 // 懶載入 Modal 組件 (只在用戶點擊創建時才需要)
 const CreateSpaceModal = dynamic(() => import("./createSpaceModal"), {
   ssr: false,
 });
 
-const Sidebar = () => {
+const SidebarComponent = () => {
+  // 選擇性訂閱 Zustand store，只訂閱真正需要的狀態
+  // 將不同的狀態訂閱分開，減少不必要的重新渲染
   const folders = usePromptStore(state => state.folders);
   const isLoading = usePromptStore(state => state.isLoading);
   const error = usePromptStore(state => state.error);
+  
+  // 按鈕相關狀態單獨訂閱
   const isCreatingFolder = useSidebarStore(state => state.isCreatingFolder);
   const isCreatingPrompt = useSidebarStore(state => state.isCreatingPrompt);
+  
   const { handleCreateFolder, handleCreatePrompt } = useSidebarActions();
   const { canEdit } = useEditableState();
   const [isCreateSpaceModalOpen, setIsCreateSpaceModalOpen] = useState(false);
 
+  const handleCreateSpaceModalOpen = useCallback(() => {
+    setIsCreateSpaceModalOpen(true);
+  }, []);
+
+  const handleCreateSpaceModalClose = useCallback(() => {
+    setIsCreateSpaceModalOpen(false);
+  }, []);
+
   return (
     <div className="p-4 border-r border-gray-300 h-full flex flex-col">
-      <PromptSpaceSelector onCreateSpace={() => setIsCreateSpaceModalOpen(true)} />
+      <PromptSpaceSelector onCreateSpace={handleCreateSpaceModalOpen} />
       
-      <div className="grid grid-cols-2 gap-x-4 mb-4 sticky top-0 bg-white dark:bg-gray-900 z-10">
-        <Button
-          className="h-8 dark:text-third"
-          onClick={handleCreateFolder}
-          disabled={isCreatingFolder || !canEdit}
-        >
-          {isCreatingFolder ? <FaSpinner className="animate-spin" /> : <FaFolderPlus />}
-          Add Folder
-        </Button>
-        <Button
-          className="h-8 dark:text-third"
-          onClick={handleCreatePrompt}
-          disabled={isCreatingPrompt || !canEdit}
-        >
-          {isCreatingPrompt ? <FaSpinner className="animate-spin" /> : <FaFileMedical />}
-          Add Prompt
-        </Button>
-      </div>
+      {/* 使用抽取的 ActionButtons 組件，確保 props 穩定時不會重新渲染 */}
+      <ActionButtons
+        onCreateFolder={handleCreateFolder}
+        onCreatePrompt={handleCreatePrompt}
+        isCreatingFolder={isCreatingFolder}
+        isCreatingPrompt={isCreatingPrompt}
+        canEdit={canEdit}
+      />
       
       <div className="flex-1 overflow-y-auto">
         {error && (
@@ -75,10 +77,12 @@ const Sidebar = () => {
       
       <CreateSpaceModal 
         isOpen={isCreateSpaceModalOpen} 
-        onClose={() => setIsCreateSpaceModalOpen(false)} 
+        onClose={handleCreateSpaceModalClose} 
       />
     </div>
   );
 };
+
+const Sidebar = React.memo(SidebarComponent);
 
 export default Sidebar;

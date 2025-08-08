@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import { usePromptSpaceStore } from '@/stores/promptSpace';
 
 export interface PromptSpacePermissionState {
@@ -28,7 +28,7 @@ export const usePromptSpacePermission = (): PromptSpacePermissionState => {
   const canDelete = isOwner || currentRole === 'edit';
   const canShare = isOwner; // 只有擁有者可以分享
 
-  const getRoleDisplay = () => {
+  const getRoleDisplay = useCallback(() => {
     switch (currentRole) {
       case 'owner':
         return 'Owner';
@@ -39,13 +39,20 @@ export const usePromptSpacePermission = (): PromptSpacePermissionState => {
       default:
         return 'Unknown';
     }
-  };
+  }, [currentRole]);
 
-  const getEditableProps = () => ({
+  /**
+   * 獲取可編輯屬性的函式
+   * 
+   * 使用 useCallback 確保函式穩定性：
+   * - 避免每次渲染都創建新的函式實例
+   * - 返回一致的屬性物件格式
+   */
+  const getEditableProps = useCallback(() => ({
     disabled: !canEdit,
     className: !canEdit ? 'cursor-not-allowed opacity-60' : '',
     title: !canEdit ? `${getRoleDisplay()} - Read-only access` : undefined,
-  });
+  }), [canEdit, getRoleDisplay]);
 
   return {
     canEdit,

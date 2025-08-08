@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useCallback, useEffect } from "react";
+import React, { useState, useRef, useCallback, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import { usePromptSpaceStore } from "@/stores/promptSpace";
@@ -31,6 +31,105 @@ interface PromptSpaceSelectorProps {
   onCreateSpace: () => void;
 }
 
+interface SpaceMenuItemProps {
+  space: {
+    id: string;
+    name: string;
+    defaultSpace?: boolean;
+  };
+  isCurrentSpace: boolean;
+  onSpaceClick: (spaceId: string) => void;
+  onDeleteClick?: (e: React.MouseEvent, space: { id: string; name: string }) => void;
+  index: number;
+  permission?: 'view' | 'edit';
+}
+
+// Memo 化的 SpaceMenuItem 元件，減少不必要的重新渲染
+const SpaceMenuItem = React.memo<SpaceMenuItemProps>(({ space, isCurrentSpace, onSpaceClick, onDeleteClick, index, permission }) => {
+  // 使用 useCallback 穩定化事件處理函數，並加入錯誤處理
+  const handleClick = useCallback(() => {
+    try {
+      onSpaceClick(space.id);
+    } catch (error) {
+      console.error('Failed to switch workspace:', error);
+      // 這裡可以加入 toast 通知或其他使用者回饋機制
+    }
+  }, [onSpaceClick, space.id]);
+
+  const handleDeleteClick = useCallback((e: React.MouseEvent) => {
+    try {
+      e.stopPropagation(); // 防止觸發父元件的點擊事件
+      if (onDeleteClick) {
+        onDeleteClick(e, space);
+      }
+    } catch (error) {
+      console.error('Failed to delete workspace:', error);
+      // 這裡可以加入 toast 通知或其他使用者回饋機制
+    }
+  }, [onDeleteClick, space]);
+
+  // 使用 useMemo 計算動態 className
+  const itemClassName = useMemo(() => {
+    const baseClasses = "cursor-pointer flex items-center justify-between";
+    const activeClass = isCurrentSpace ? "bg-accent" : "";
+    const spacingClass = index > 0 ? "mt-1" : "";
+    return `${baseClasses} ${activeClass} ${spacingClass}`.trim();
+  }, [isCurrentSpace, index]);
+
+  // 使用 useMemo 優化 renderSpaceAction，避免每次渲染都重新創建
+  const spaceAction = useMemo(() => {
+    if (space.defaultSpace) {
+      return (
+        <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-medium whitespace-nowrap flex-shrink-0 ml-2">
+          default
+        </span>
+      );
+    }
+
+    if (onDeleteClick) {
+      return (
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-6 w-6 p-0 ml-2 hover:bg-red-100 hover:text-red-600"
+          onClick={handleDeleteClick}
+          title="Delete workspace"
+          aria-label={`Delete workspace ${space.name}`}
+        >
+          <TrashIcon className="h-3 w-3" />
+        </Button>
+      );
+    }
+
+    return null;
+  }, [space.defaultSpace, space.name, onDeleteClick, handleDeleteClick]);
+
+  return (
+    <DropdownMenuItem
+      key={space.id}
+      onClick={handleClick}
+      className={itemClassName}
+      aria-label={`Switch to workspace ${space.name}${permission ? ` (${permission} access)` : ''}`}
+      role="menuitem"
+    >
+      <div className="flex items-center flex-1 min-w-0">
+        <span className="truncate">{space.name}</span>
+        {permission && (
+          <span 
+            className="text-xs text-muted-foreground bg-gray-100 px-1 py-0.5 rounded ml-2"
+            aria-label={`Access level: ${permission}`}
+          >
+            {permission}
+          </span>
+        )}
+      </div>
+      {spaceAction}
+    </DropdownMenuItem>
+  );
+});
+
+SpaceMenuItem.displayName = "SpaceMenuItem";
+
 const PromptSpaceSelector: React.FC<PromptSpaceSelectorProps> = ({ onCreateSpace }) => {
   const router = useRouter();
   const {
@@ -59,7 +158,6 @@ const PromptSpaceSelector: React.FC<PromptSpaceSelectorProps> = ({ onCreateSpace
   const currentSpaceIdRef = useRef(currentSpaceId);
   const routerRef = useRef(router);
   
-  // 更新 refs
   useEffect(() => {
     currentSpaceIdRef.current = currentSpaceId;
     routerRef.current = router;
@@ -160,29 +258,46 @@ const PromptSpaceSelector: React.FC<PromptSpaceSelectorProps> = ({ onCreateSpace
     }
   }, [currentSpace]);
 
-  const renderSpaceAction = useCallback((space: { id: string, name: string, defaultSpace?: boolean }) => {
-    if (space.defaultSpace) {
+  // 使用 useCallback 穩定化事件處理函數，避免子元件不必要的重新渲染，並加入錯誤處理
+  const memoizedHandleSpaceChange = useCallback(async (spaceId: string) => {
+    try {
+      await handleSpaceChange(spaceId);
+    } catch (error) {
+      console.error('Failed to change workspace:', error);
+      // 這裡可以加入使用者友善的錯誤提示
+    }
+  }, [handleSpaceChange]);
+
+  const memoizedHandleDeleteClick = useCallback((e: React.MouseEvent, space: { id: string; name: string }) => {
+    try {
+      handleDeleteClick(e, space);
+    } catch (error) {
+      console.error('Failed to initiate workspace deletion:', error);
+      // 這裡可以加入使用者友善的錯誤提示
+    }
+  }, [handleDeleteClick]);
+
+  const triggerContent = useMemo(() => {
+    if (isLoading) {
       return (
-        <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-medium whitespace-nowrap flex-shrink-0 ml-2">
-          default
-        </span>
+        <div className="flex items-center gap-2">
+          <FaSpinner className="animate-spin h-3 w-3" />
+          <span className="truncate">
+            {currentSpace?.name || "Loading..."}
+          </span>
+        </div>
       );
     }
 
-    const handleClick = (e: React.MouseEvent) => handleDeleteClick(e, space);
-
     return (
-      <Button
-        variant="ghost"
-        size="sm"
-        className="h-6 w-6 p-0 ml-2 hover:bg-red-100 hover:text-red-600"
-        onClick={handleClick}
-        title="Delete workspace"
-      >
-        <TrashIcon className="h-3 w-3" />
-      </Button>
+      <>
+        <span className="truncate">
+          {currentSpace?.name || "Select a workspace"}
+        </span>
+        <ChevronDownIcon className="h-4 w-4" />
+      </>
     );
-  }, [handleDeleteClick]);
+  }, [isLoading, currentSpace?.name]);
 
 
   return (
@@ -195,46 +310,31 @@ const PromptSpaceSelector: React.FC<PromptSpaceSelectorProps> = ({ onCreateSpace
               className="flex-1 justify-between h-8 text-sm"
               disabled={isLoading}
             >
-              {isLoading ? (
-                <div className="flex items-center gap-2">
-                  <FaSpinner className="animate-spin h-3 w-3" />
-                  <span className="truncate">
-                    {currentSpace?.name || "Loading..."}
-                  </span>
-                </div>
-              ) : (
-                <>
-                  <span className="truncate">
-                    {currentSpace?.name || "Select a workspace"}
-                  </span>
-                  <ChevronDownIcon className="h-4 w-4" />
-                </>
-              )}
+              {triggerContent}
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="start" className="w-56 p-2 mt-2">
+          <DropdownMenuContent 
+            align="start" 
+            className="w-56 p-2 mt-2"
+            role="menu"
+            aria-label="Workspace selector menu"
+          >
             {/* Owned Spaces */}
             {ownedSpaces.length > 0 && (
               <>
                 <div className="px-2 py-1 text-xs font-medium text-muted-foreground">
                   My Workspaces
                 </div>
-                {ownedSpaces.map((space, index) => {
-                  const handleClick = () => handleSpaceChange(space.id);
-                  return (
-                    <DropdownMenuItem
-                      key={space.id}
-                      onClick={handleClick}
-                      className={`cursor-pointer flex items-center justify-between ${currentSpaceId === space.id ? "bg-accent" : ""
-                        } ${index > 0 ? "mt-1" : ""}`}
-                    >
-                      <div className="flex items-center flex-1 min-w-0">
-                        <span className="truncate">{space.name}</span>
-                      </div>
-                      {renderSpaceAction(space)}
-                    </DropdownMenuItem>
-                  );
-                })}
+                {ownedSpaces.map((space, index) => (
+                  <SpaceMenuItem
+                    key={space.id}
+                    space={space}
+                    isCurrentSpace={currentSpaceId === space.id}
+                    onSpaceClick={memoizedHandleSpaceChange}
+                    onDeleteClick={memoizedHandleDeleteClick}
+                    index={index}
+                  />
+                ))}
               </>
             )}
 
@@ -245,24 +345,16 @@ const PromptSpaceSelector: React.FC<PromptSpaceSelectorProps> = ({ onCreateSpace
                 <div className="px-2 py-1 text-xs font-medium text-muted-foreground">
                   Shared with Me
                 </div>
-                {sharedSpaces.map((shared, index) => {
-                  const handleClick = () => handleSpaceChange(shared.space.id);
-                  return (
-                    <DropdownMenuItem
-                      key={shared.space.id}
-                      onClick={handleClick}
-                      className={`cursor-pointer flex items-center justify-between ${currentSpaceId === shared.space.id ? "bg-accent" : ""
-                        } ${index > 0 ? "mt-1" : ""}`}
-                    >
-                      <div className="flex-1 flex items-center gap-2">
-                        <span className="flex-1 truncate">{shared.space.name}</span>
-                        <span className="text-xs text-muted-foreground bg-gray-100 px-1 py-0.5 rounded">
-                          {shared.permission}
-                        </span>
-                      </div>
-                    </DropdownMenuItem>
-                  );
-                })}
+                {sharedSpaces.map((shared, index) => (
+                  <SpaceMenuItem
+                    key={shared.space.id}
+                    space={shared.space}
+                    isCurrentSpace={currentSpaceId === shared.space.id}
+                    onSpaceClick={memoizedHandleSpaceChange}
+                    index={index}
+                    permission={shared.permission}
+                  />
+                ))}
               </>
             )}
           </DropdownMenuContent>

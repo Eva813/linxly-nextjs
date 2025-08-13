@@ -1,9 +1,18 @@
 import React, { useMemo } from 'react';
+import dynamic from 'next/dynamic';
 import { FaTag } from "react-icons/fa6";
 import SaveStatusIndicator from '@/components/ui/saveStatusIndicator';
-import SecureInput from '@/components/ui/secureInput';
 import { useEditableState } from '@/hooks/useEditableState';
 import { useLocalInputWithDebounce } from '@/hooks/useLocalInputWithDebounce';
+
+const SecureInput = dynamic(() => import('@/components/ui/secureInput'), {
+  ssr: false,
+  loading: () => (
+    <div className="h-12 border border-input bg-background pl-9 pr-3 py-2 text-sm text-muted-foreground rounded-md animate-pulse flex items-center">
+      Loading...
+    </div>
+  )
+});
 
 interface NameInputProps {
   name: string;

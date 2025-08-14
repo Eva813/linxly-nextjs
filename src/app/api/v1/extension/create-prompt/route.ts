@@ -19,15 +19,9 @@ function sanitizePageTitle(title: string): string {
     .slice(0, 200);
 }
 
-function createPrefillContent(content: string, pageTitle: string, pageUrl: string): string {
+function createPrefillContent(content: string): string {
   const cleanContent = sanitizeInput(content);
-  const cleanTitle = sanitizePageTitle(pageTitle);
-  
-  const sourceInfo = `---
-  來源：${cleanTitle}
-  網址：${pageUrl}`;
-
-  return `${cleanContent}\n\n${sourceInfo}`;
+  return `${cleanContent}`;
 }
 
 export async function POST(req: Request) {
@@ -39,13 +33,6 @@ export async function POST(req: Request) {
 
   try {
     const { content, pageTitle, pageUrl, promptSpaceId, folderId } = await req.json();
-    console.log('[Extension API] Request body parsed:', {
-      contentLength: content?.length,
-      pageTitle: pageTitle?.substring(0, 50) + '...',
-      pageUrl,
-      promptSpaceId,
-      folderId
-    });
 
     // 驗證必要參數
     if (!content || !pageTitle || !pageUrl) {
@@ -73,7 +60,7 @@ export async function POST(req: Request) {
     }
 
     // 創建預填內容
-    const prefillContent = createPrefillContent(content, pageTitle, pageUrl);
+    const prefillContent = createPrefillContent(content);
     const cleanTitle = sanitizePageTitle(pageTitle);
 
     // 如果沒有指定 folderId，需要找到該 space 的第一個 folder
@@ -138,15 +125,6 @@ export async function POST(req: Request) {
       updatedAt: FieldValue.serverTimestamp()
     };
 
-    console.log('[Extension API] Preparing to write prompt data:', {
-      folderId: promptData.folderId,
-      userId: promptData.userId,
-      nameLength: promptData.name.length,
-      contentLength: promptData.content.length,
-      promptSpaceId: promptData.promptSpaceId,
-      seqNo: promptData.seqNo
-    });
-
     const docRef = await adminDb.collection('prompts').add(promptData);
     
     // 等待一小段時間確保寫入完成
@@ -154,25 +132,16 @@ export async function POST(req: Request) {
     
     // 第一次驗證：直接讀取
     let verifyDoc = await adminDb.collection('prompts').doc(docRef.id).get();
-    console.log('[Extension API] First verification attempt:', {
-      exists: verifyDoc.exists,
-      id: docRef.id
-    });
     
     // 如果第一次失敗，等待並重試
     if (!verifyDoc.exists) {
       await new Promise(resolve => setTimeout(resolve, 500));
       
       verifyDoc = await adminDb.collection('prompts').doc(docRef.id).get();
-      console.log('[Extension API] Second verification attempt:', {
-        exists: verifyDoc.exists,
-        id: docRef.id
-      });
     }
     
     // 如果還是失敗，嘗試查詢方式驗證
     if (!verifyDoc.exists) {
-      console.log('[Extension API] Direct read failed, trying query verification...');
       const querySnapshot = await adminDb.collection('prompts')
         .where('folderId', '==', targetFolderId)
         .where('userId', '==', userId)
@@ -180,20 +149,7 @@ export async function POST(req: Request) {
         .limit(1)
         .get();
       
-      console.log('[Extension API] Query verification result:', {
-        empty: querySnapshot.empty,
-        size: querySnapshot.size
-      });
-      
       if (querySnapshot.empty) {
-        console.error('[Extension API] CRITICAL: Document was not written to Firestore despite success response!');
-        console.error('[Extension API] Write operation details:', {
-          docRefId: docRef.id,
-          targetFolderId,
-          userId,
-          nextSeqNo,
-          promptSpaceId
-        });
         throw new Error('Failed to write document to database - verification failed');
       } else {
         // 找到了文檔，但 ID 不匹配
@@ -216,14 +172,6 @@ export async function POST(req: Request) {
 
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'unknown error';
-    const errorStack = error instanceof Error ? error.stack : 'no stack trace';
-    
-    console.error('[Extension API] Error creating prompt:', {
-      error,
-      message: errorMessage,
-      stack: errorStack,
-      timestamp: new Date().toISOString()
-    });
 
     // 如果是特定的驗證錯誤，返回更具體的錯誤信息
     if (errorMessage.includes('Failed to write document to database')) {

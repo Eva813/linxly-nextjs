@@ -1,10 +1,19 @@
 import React from 'react';
+import dynamic from 'next/dynamic';
 import { FaKeyboard } from "react-icons/fa6";
 import ShortcutErrorAlert from "@/app/prompts/components/shortcutErrorAlert";
-import SecureInput from '@/components/ui/secureInput';
 import { TryItOutButton } from './tryItOutButton';
 import { useEditableState } from '@/hooks/useEditableState';
 import { useLocalInputWithDebounce } from '@/hooks/useLocalInputWithDebounce';
+
+const SecureInput = dynamic(() => import('@/components/ui/secureInput'), {
+  ssr: false,
+  loading: () => (
+    <div className="h-12 border border-input bg-background pl-9 pr-3 py-2 text-sm text-muted-foreground rounded-md animate-pulse flex items-center">
+      Loading...
+    </div>
+  )
+});
 
 interface ShortcutError {
   conflictingShortcut: string;

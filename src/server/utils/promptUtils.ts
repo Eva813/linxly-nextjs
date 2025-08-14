@@ -93,6 +93,30 @@ export async function getMaxSeqNo(folderId: string, userId: string): Promise<num
   return seqNos.length > 0 ? Math.max(...seqNos) : 0;
 }
 
+/**
+ * 在交易中取得資料夾中的最大 seqNo (用於避免競爭條件)
+ */
+export async function getMaxSeqNoInTransaction(
+  transaction: Transaction, 
+  folderId: string, 
+  userId: string
+): Promise<number> {
+  const snapshot = await transaction.get(
+    adminDb
+      .collection('prompts')
+      .where('folderId', '==', folderId)
+      .where('userId', '==', userId)
+  );
+
+  if (snapshot.empty) return 0;
+
+  const seqNos = snapshot.docs
+    .map(doc => doc.data().seqNo)
+    .filter(seqNo => seqNo !== undefined && seqNo !== null);
+
+  return seqNos.length > 0 ? Math.max(...seqNos) : 0;
+}
+
 // === 以下為資料處理相關的工具函式，與 seqNo 邏輯解耦 ===
 
 /**

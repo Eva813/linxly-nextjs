@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { adminDb } from '@/server/db/firebase';
 import { FieldValue } from 'firebase-admin/firestore';
-import { getMaxSeqNo } from '@/server/utils/promptUtils';
+import { getMaxSeqNoInTransaction } from '@/server/utils/promptUtils';
 
 // 輸入清理函數
 function sanitizeInput(input: string): string {
@@ -105,67 +105,45 @@ export async function POST(req: Request) {
       );
     }
 
-    // 獲取下一個 seqNo
-    const maxSeqNo = await getMaxSeqNo(targetFolderId, userId);
-    const nextSeqNo = maxSeqNo + 1;
+    // 使用交易確保 seqNo 生成和 prompt 創建的原子性，避免競爭條件
+    const result = await adminDb.runTransaction(async (transaction) => {
+      // 在交易中獲取最大 seqNo
+      const maxSeqNo = await getMaxSeqNoInTransaction(transaction, targetFolderId, userId);
+      const nextSeqNo = maxSeqNo + 1;
 
-    // 創建 prompt
-    // 產生唯一 shortcut，格式為 /webPrompt-<seqNo>
-    const shortcut = `/webPrompt-${nextSeqNo}`;
+      // 產生唯一 shortcut，格式為 /webPrompt-<seqNo>
+      const shortcut = `/webPrompt-${nextSeqNo}`;
 
-    const promptData = {
-      folderId: targetFolderId,
-      userId,
-      name: cleanTitle,
-      content: prefillContent,
-      shortcut, // shortcut 會依照 seqNo 順序遞增，確保唯一性
-      promptSpaceId,
-      seqNo: nextSeqNo,
-      createdAt: FieldValue.serverTimestamp(),
-      updatedAt: FieldValue.serverTimestamp()
-    };
+      const promptData = {
+        folderId: targetFolderId,
+        userId,
+        name: cleanTitle,
+        content: prefillContent,
+        shortcut, // shortcut 會依照 seqNo 順序遞增，確保唯一性
+        promptSpaceId,
+        seqNo: nextSeqNo,
+        createdAt: FieldValue.serverTimestamp(),
+        updatedAt: FieldValue.serverTimestamp()
+      };
 
-    const docRef = await adminDb.collection('prompts').add(promptData);
-    
-    // 等待一小段時間確保寫入完成
-    await new Promise(resolve => setTimeout(resolve, 100));
-    
-    // 第一次驗證：直接讀取
-    let verifyDoc = await adminDb.collection('prompts').doc(docRef.id).get();
-    
-    // 如果第一次失敗，等待並重試
-    if (!verifyDoc.exists) {
-      await new Promise(resolve => setTimeout(resolve, 500));
+      // 在交易中創建 prompt 文件
+      const newDocRef = adminDb.collection('prompts').doc();
+      transaction.set(newDocRef, promptData);
       
-      verifyDoc = await adminDb.collection('prompts').doc(docRef.id).get();
-    }
-    
-    // 如果還是失敗，嘗試查詢方式驗證
-    if (!verifyDoc.exists) {
-      const querySnapshot = await adminDb.collection('prompts')
-        .where('folderId', '==', targetFolderId)
-        .where('userId', '==', userId)
-        .where('seqNo', '==', nextSeqNo)
-        .limit(1)
-        .get();
-      
-      if (querySnapshot.empty) {
-        throw new Error('Failed to write document to database - verification failed');
-      } else {
-        // 找到了文檔，但 ID 不匹配
-        const actualDoc = querySnapshot.docs[0];
-        // 使用實際的文檔作為驗證結果
-        verifyDoc = actualDoc;
-      }
-    }
-    const finalDocId = verifyDoc.exists ? verifyDoc.id : docRef.id;
+      // 回傳需要的資料
+      return {
+        docRef: newDocRef,
+        shortcut,
+        seqNo: nextSeqNo
+      };
+    });
 
     const created = {
-      id: finalDocId,
+      id: result.docRef.id,
       name: cleanTitle,
       content: prefillContent,
-      shortcut,
-      seqNo: nextSeqNo
+      shortcut: result.shortcut,
+      seqNo: result.seqNo
     };
 
     return NextResponse.json(created, { status: 201 });

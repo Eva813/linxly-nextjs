@@ -28,7 +28,7 @@ const initialNodes: Node[] = [];
 const initialEdges: Edge[] = [];
 
 import { Prompt } from '@/types/prompt';
-import { parseHtml } from '@/lib/utils/parseHtml';
+import { generateCompatibleSafeHTML, extractTextContent } from '@/lib/utils/generateSafeHTML';
 
 export default function Flow({ boardId, promptToAdd, onPromptHandled }:
   { boardId: string; promptToAdd?: Prompt; onPromptHandled?: () => void; }
@@ -142,8 +142,12 @@ export default function Flow({ boardId, promptToAdd, onPromptHandled }:
     if (promptToAdd) {
       const newId = `${Date.now()}`;
       const position = getNewNodePosition();
+      
+      // 使用安全的 HTML 生成工具，支援漸進式遷移
+      const safeHTML = generateCompatibleSafeHTML(promptToAdd.content, promptToAdd.contentJSON);
+      
       // 判斷內容是否包含自定義表單元素
-      const isCustom = /<span[^>]*data-type/.test(promptToAdd.content);
+      const isCustom = /<span[^>]*data-type/.test(safeHTML);
       if (isCustom) {
         // 新增自定義 Prompt 節點
         setNodes((current) => [
@@ -151,12 +155,13 @@ export default function Flow({ boardId, promptToAdd, onPromptHandled }:
           {
             id: newId,
             type: 'customPromptNode',
-            data: { html: promptToAdd.content, title: promptToAdd.name },
+            data: { html: safeHTML, title: promptToAdd.name },
             position,
           },
         ]);
       } else {
-        const text = parseHtml(promptToAdd.content)?.textContent || promptToAdd.content;
+        // 使用安全的文本提取工具
+        const text = extractTextContent(promptToAdd.content, promptToAdd.contentJSON);
         setNodes((current) => [
           ...current,
           {

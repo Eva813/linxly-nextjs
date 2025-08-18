@@ -133,6 +133,7 @@ export function groupPromptsByFolderId(
       id: doc.id,
       name: prompt.name,
       content: prompt.content,
+      contentJSON: prompt.contentJSON,
       shortcut: prompt.shortcut,
       seqNo: prompt.seqNo,
       createdAt: prompt.createdAt,
@@ -158,6 +159,7 @@ export function formatPromptsForResponse(prompts: PromptData[]): PromptApiRespon
     id: prompt.id,
     name: prompt.name,
     content: prompt.content,
+    contentJSON: prompt.contentJSON,
     shortcut: prompt.shortcut,
     seqNo: prompt.seqNo || undefined
   }));
@@ -176,6 +178,7 @@ export function mapFirestoreDocToPromptData(doc: FirebaseFirestore.DocumentSnaps
     id: doc.id,
     name: data.name,
     content: data.content,
+    contentJSON: data.contentJSON,
     shortcut: data.shortcut,
     seqNo: data.seqNo,
     createdAt: data.createdAt,

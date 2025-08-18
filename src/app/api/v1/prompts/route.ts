@@ -95,7 +95,8 @@ export async function GET(req: Request) {
       return {
         id: doc.id,
         name: prompt.name,
-        content: prompt.content,
+        content: prompt.content || '',
+        contentJSON: prompt.contentJSON || null,
         shortcut: prompt.shortcut,
         seqNo: prompt.seqNo,
         createdAt: prompt.createdAt,
@@ -111,6 +112,7 @@ export async function GET(req: Request) {
       id: prompt.id,
       name: prompt.name,
       content: prompt.content,
+      contentJSON: prompt.contentJSON,
       shortcut: prompt.shortcut,
       seqNo: prompt.seqNo
     }));
@@ -132,7 +134,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
   try {
-    const { folderId, name, content, shortcut, afterPromptId, promptSpaceId } = await req.json();
+    const { folderId, name, content, contentJSON, shortcut, afterPromptId, promptSpaceId } = await req.json();
 
     if (!folderId || !name || !shortcut) {
       return NextResponse.json(
@@ -238,7 +240,8 @@ export async function POST(req: Request) {
             folderId,
             userId: promptOwnerUserId, // Use folder owner's userId for consistency
             name,
-            content: content || '',
+            content: contentJSON ? '' : (content || ''), // JSON 優先，HTML 向後相容
+            contentJSON: contentJSON || null,
             shortcut,
             promptSpaceId,
             seqNo: insertSeqNo,
@@ -251,7 +254,8 @@ export async function POST(req: Request) {
           return {
             id: promptRef.id,
             name,
-            content: content || '',
+            content: contentJSON ? '' : (content || ''),
+            contentJSON: contentJSON || null,
             shortcut,
             seqNo: insertSeqNo
           };
@@ -277,7 +281,8 @@ export async function POST(req: Request) {
       folderId,
       userId: promptOwnerUserId, // Use folder owner's userId for consistency
       name,
-      content: content || '',
+      content: contentJSON ? '' : (content || ''), // JSON 優先，HTML 向後相容
+      contentJSON: contentJSON || null,
       shortcut,
       promptSpaceId,
       seqNo: nextSeqNo,
@@ -290,7 +295,8 @@ export async function POST(req: Request) {
     const created = {
       id: docRef.id,
       name,
-      content: content || '',
+      content: contentJSON ? '' : (content || ''),
+      contentJSON: contentJSON || null,
       shortcut,
       seqNo: nextSeqNo
     };

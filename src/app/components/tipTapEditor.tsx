@@ -1,6 +1,6 @@
 'use client';
 
-import React, { memo, useCallback } from 'react';
+import React, { memo, useCallback, useMemo } from 'react';
 import { useEditor, EditorContent, Editor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import TextStyle from '@tiptap/extension-text-style';
@@ -11,11 +11,13 @@ import TipTapToolbar from './tipTapToolbar';
 import { FormTextNode } from './tipTapCustomNode/FormTextNode'
 import { FormMenuNode } from './tipTapCustomNode/FormMenuNode'
 import { FormMenuClickHandler, FormMenuData } from '@/types/prompt'
+import type { JSONContent } from '@tiptap/react';
+
 interface TipTapEditorProps {
-  value: string;
+  value: string | JSONContent | null | undefined; // 支援 HTML 字串、JSON 格式或空值
   isRequired?: boolean;
   disabled?: boolean;
-  onChange: (value: string) => void;
+  onChange: (value: JSONContent) => void; // 改為回傳 JSON 格式
   onEditorReady: (editor: Editor) => void;
   onStartEditing?: () => void; // 開始編輯的回調
   // 當用戶點擊自訂 Node 時的回呼
@@ -29,6 +31,81 @@ interface TipTapEditorProps {
   // 檢查是否為外部更新
   isExternalUpdate?: () => boolean;
 }
+
+// 純函數：內容比較（組件外定義，避免重複創建）
+const isContentEqual = (content1: JSONContent, content2: JSONContent | string): boolean => {
+  return JSON.stringify(content1) === JSON.stringify(content2);
+};
+
+// 純函數：判斷是否需要保持游標位置
+const shouldPreserveCursor = (editorContent: JSONContent): boolean => {
+  return Boolean(editorContent?.content && editorContent.content.length > 0);
+};
+
+// 工具函數：確保內容格式有效
+const getValidTipTapContent = (value: string | JSONContent | null | undefined): string | JSONContent => {
+  
+  // 處理空值
+  if (!value) {
+    return {
+      type: 'doc',
+      content: [
+        {
+          type: 'paragraph',
+          content: []
+        }
+      ]
+    };
+  }
+
+  // 如果是字串 (HTML 格式)
+  if (typeof value === 'string') {
+    const result = value.trim() || '<p></p>';
+    return result;
+  }
+
+  // 如果是物件 (JSON 格式)
+  if (typeof value === 'object' && value !== null) {
+    // 檢查是否為有效的 TipTap JSON 結構
+    if (!value.type || value.type !== 'doc') {
+      return {
+        type: 'doc',
+        content: [
+          {
+            type: 'paragraph',
+            content: []
+          }
+        ]
+      };
+    }
+
+    // 確保有 content 陣列
+    if (!value.content || !Array.isArray(value.content)) {
+      return {
+        type: 'doc',
+        content: [
+          {
+            type: 'paragraph',
+            content: []
+          }
+        ]
+      };
+    }
+
+    return value;
+  }
+
+  // 其他情況，返回預設結構
+  return {
+    type: 'doc',
+    content: [
+      {
+        type: 'paragraph',
+        content: []
+      }
+    ]
+  };
+};
 const TipTapEditor = memo(({
   value,
   isRequired = false,
@@ -45,7 +122,7 @@ const TipTapEditor = memo(({
   const [currentFontSize, setCurrentFontSize] = useState('');
   
   // 追蹤編輯器內容，避免循環更新
-  const editorContentRef = useRef<string>("");
+  const editorContentRef = useRef<JSONContent | null>(null);
   const isUserEditingRef = useRef(false);
   const resetEditingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -54,14 +131,19 @@ const TipTapEditor = memo(({
     return isExternalUpdate?.() || false;
   }, [isExternalUpdate]);
 
+  // 確保傳給 TipTap 的內容格式正確
+  const validContent = useMemo(() => {
+    return getValidTipTapContent(value);
+  }, [value]);
+
   const editor = useEditor({
-    content: value,
+    content: validContent,
     editable: !disabled,
     onUpdate: ({ editor }) => {
-      const currentContent = editor.getHTML();
+      const currentContent = editor.getJSON();
       
-      // 避免重複觸發 onChange
-      if (editorContentRef.current === currentContent) {
+      // 避免重複觸發 onChange (比較 JSON 內容)
+      if (JSON.stringify(editorContentRef.current) === JSON.stringify(currentContent)) {
         return;
       }
       
@@ -84,12 +166,12 @@ const TipTapEditor = memo(({
       
       // 立即觸發 onChange，讓上層處理 debounce
       onChange(currentContent);
-      validateContent(currentContent);
+      validateContent(editor.getText());
     },
     onBlur: ({ editor }) => {
-      const updatedValue = editor.getHTML();
-      if (!updatedValue && isRequired) {
-        validateContent(updatedValue);
+      const updatedText = editor.getText();
+      if (!updatedText && isRequired) {
+        validateContent(updatedText);
       }
     },
     immediatelyRender: false,
@@ -126,62 +208,68 @@ const TipTapEditor = memo(({
     editor?.chain().focus().unsetFontSize().run();
   }, [editor]);
 
+  // 穩定化的內容更新處理函數
+  const handleContentUpdate = useCallback((
+    editor: Editor,
+    content: JSONContent | string,
+    isExternal: boolean,
+    currentContent: JSONContent
+  ) => {
+    if (isExternal) {
+      editor.commands.setContent(content, false);
+      return;
+    }
+    
+    // 內部更新：保持游標位置
+    const { from, to } = editor.state.selection;
+    editor.commands.setContent(content, false);
+    
+    if (shouldPreserveCursor(currentContent)) {
+      const timeoutId = setTimeout(() => {
+        try {
+          const docSize = editor.state.doc.content.size;
+          const newFrom = Math.min(from, docSize);
+          const newTo = Math.min(to, docSize);
+          editor.commands.setTextSelection({ from: newFrom, to: newTo });
+        } catch (error) {
+          console.warn('無法恢復游標位置:', error);
+        }
+      }, 0);
+      
+      // 返回清理函數
+      return () => clearTimeout(timeoutId);
+    }
+  }, []);
+
   useEffect(() => {
     if (!editor) return;
     
-    // 檢查是否為外部更新（例如切換 prompt）
     const isExternal = stableIsExternalUpdate();
     
-    // 如果用戶正在編輯且不是外部更新，延遲更新
-    if (isUserEditingRef.current && !isExternal) {
-      return;
-    }
+    // 早期返回檢查
+    if (isUserEditingRef.current && !isExternal) return;
     
-    // 如果編輯器內容和 props value 相同，不需要更新
-    const currentEditorContent = editor.getHTML();
-    if (currentEditorContent === value) {
-      return;
-    }
+    const currentEditorContent = editor.getJSON();
+    if (isContentEqual(currentEditorContent, validContent)) return;
     
-    // 清除用戶編輯狀態，因為現在要更新內容
+    // 狀態更新
     if (isExternal) {
       isUserEditingRef.current = false;
     }
+    editorContentRef.current = typeof validContent === 'string' ? null : validContent;
     
-    // 更新內容參考
-    editorContentRef.current = value;
+    // 內容更新 - 使用穩定的回調函數
+    const cleanup = handleContentUpdate(editor, validContent, isExternal, currentEditorContent);
     
-    if (isExternal) {
-      // 外部更新：直接設定內容，不保存游標位置
-      editor.commands.setContent(value || '', false);
-    } else {
-      // 非外部更新但需要同步：謹慎處理游標位置
-      const { from, to } = editor.state.selection;
-      const wasEmpty = currentEditorContent === '<p></p>' || currentEditorContent === '';
-      
-      editor.commands.setContent(value || '', false);
-      
-      // 只有在編輯器原本為空時才不恢復游標位置
-      if (!wasEmpty) {
-        setTimeout(() => {
-          try {
-            const docSize = editor.state.doc.content.size;
-            const newFrom = Math.min(from, docSize);
-            const newTo = Math.min(to, docSize);
-            editor.commands.setTextSelection({ from: newFrom, to: newTo });
-          } catch (error) {
-            console.warn('無法恢復游標位置:', error);
-          }
-        }, 0);
-      }
-    }
-  }, [value, editor, stableIsExternalUpdate]);
+    // 返回清理函數（如果有的話）
+    return cleanup;
+  }, [validContent, editor, stableIsExternalUpdate, handleContentUpdate]);
 
   // 當 editor 實例創建完成時，通過 onEditorReady 傳遞給父組件
   useEffect(() => {
     if (editor) {
       // 初始化時設置 editorContentRef
-      editorContentRef.current = editor.getHTML();
+      editorContentRef.current = editor.getJSON();
       onEditorReady(editor);
     }
   }, [editor, onEditorReady]);

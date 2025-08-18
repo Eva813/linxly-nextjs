@@ -28,10 +28,12 @@ const PromptPage = ({ params }: PromptPageProps) => {
     name,
     shortcut,
     content,
+    contentJSON,
     shortcutError,
     handleNameChange,
     handleShortcutChange,
     updateContent,
+    // updateContentHTML,
     clearShortcutError,
   } = usePromptPageLogic({ promptId });
 
@@ -110,6 +112,7 @@ const PromptPage = ({ params }: PromptPageProps) => {
         <EditorSection
           mode={mode}
           content={content}
+          contentJSON={contentJSON}
           shortcut={shortcut}
           isEditPanelVisible={isEditPanelVisible}
           activeEditInfo={activeEditInfo}

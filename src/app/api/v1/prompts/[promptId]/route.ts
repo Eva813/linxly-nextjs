@@ -38,7 +38,8 @@ export async function GET(
       id: promptId,
       folderId: prompt.folderId,
       name: prompt.name,
-      content: prompt.content,
+      content: prompt.content || '',
+      contentJSON: prompt.contentJSON || null,
       shortcut: prompt.shortcut,
       seqNo: prompt.seqNo
     };
@@ -64,8 +65,14 @@ export async function PUT(
   }
 
   const promptId = params.promptId;
-  const { name, content, shortcut } = await req.json();
-  if (!name && content === undefined && !shortcut) {
+  const { name, content, contentJSON, shortcut } = await req.json();
+  // 檢查是否至少有一個有效欄位用於更新
+  const hasName = name && name.trim();
+  const hasContent = content !== undefined && content !== '';
+  const hasContentJSON = contentJSON !== undefined && contentJSON !== null;
+  const hasShortcut = shortcut && shortcut.trim();
+
+  if (!hasName && !hasContent && !hasContentJSON && !hasShortcut) {
     return NextResponse.json(
       { message: 'at least one field is required for update' },
       { status: 400 }
@@ -84,9 +91,23 @@ export async function PUT(
     }
 
     // 準備更新資料
-    const updateData: { updatedAt: FirebaseFirestore.FieldValue; name?: string; content?: string; shortcut?: string } = { updatedAt: FieldValue.serverTimestamp() };
+    const updateData: { 
+      updatedAt: FirebaseFirestore.FieldValue; 
+      name?: string; 
+      content?: string; 
+      contentJSON?: object;
+      shortcut?: string;
+    } = { updatedAt: FieldValue.serverTimestamp() };
+    
     if (name) updateData.name = name;
-    if (content !== undefined) updateData.content = content;
+    // 支援 JSON 格式 (優先) 和 HTML 格式 (向後相容)
+    if (contentJSON !== undefined) {
+      updateData.contentJSON = contentJSON;
+      // 當提供 JSON 時，清空舊的 HTML content
+      updateData.content = '';
+    } else if (content !== undefined) {
+      updateData.content = content;
+    }
     if (shortcut) updateData.shortcut = shortcut;
 
     // 更新文件
@@ -107,7 +128,8 @@ export async function PUT(
       id: promptId,
       folderId: updated.folderId,
       name: updated.name,
-      content: updated.content,
+      content: updated.content || '',
+      contentJSON: updated.contentJSON || null,
       shortcut: updated.shortcut,
       seqNo: updated.seqNo
     });

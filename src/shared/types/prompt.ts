@@ -8,6 +8,7 @@ export interface PromptData {
   id: string;
   name: string;
   content: string;
+  contentJSON?: object | null; // 新增 JSON 格式支援
   shortcut: string;
   seqNo?: number | null;
   createdAt?: Date | { seconds: number; nanoseconds?: number } | null;
@@ -20,6 +21,7 @@ export interface PromptApiResponse {
   id: string;
   name: string;
   content: string;
+  contentJSON?: object | null; // 新增 JSON 格式支援
   shortcut: string;
   seqNo?: number;
 }

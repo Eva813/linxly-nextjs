@@ -48,17 +48,26 @@ export const FormMenuNode = Node.create({
   },
 
   /**
-   * 這裡只負責產出最外層 <span>，真正在 React 中如何顯示 chip 交給 NodeView
+   * 產出完整的 HTML 結構，包含 data-prompt 屬性和顯示文字
+   * 這個 HTML 會被用於 generateSafeHTML 的輸出
    */
-  renderHTML({ HTMLAttributes }) {
+  renderHTML({ HTMLAttributes, node }) {
+    const promptData = node.attrs.promptData || {};
+    const defaultValue = Array.isArray(promptData.default) 
+      ? promptData.default.join(', ') 
+      : (promptData.default || '');
+    const displayText = `[${promptData.name || 'menu'}:${defaultValue}]`;
+    
     return [
       'span',
       mergeAttributes(
         {
           'data-type': 'formmenu',
+          'data-prompt': JSON.stringify(promptData),
         },
         HTMLAttributes,
       ),
+      displayText
     ]
   },
 

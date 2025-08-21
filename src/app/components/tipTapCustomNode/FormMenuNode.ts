@@ -63,7 +63,6 @@ export const FormMenuNode = Node.create({
       mergeAttributes(
         {
           'data-type': 'formmenu',
-          'data-prompt': JSON.stringify(promptData),
         },
         HTMLAttributes,
       ),

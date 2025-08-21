@@ -64,7 +64,6 @@ export const FormTextNode = Node.create({
       mergeAttributes(
         {
           'data-type': 'formtext',
-          'data-prompt': JSON.stringify(promptData),
         },
         HTMLAttributes,
       ),

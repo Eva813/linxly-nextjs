@@ -7,6 +7,7 @@ import {
   getMaxSeqNo
 } from '@/server/utils/promptUtils';
 import type { PromptData } from '@/shared/types/prompt';
+import { validateAndSanitizeContentJSON } from '@/server/validation/contentValidation';
 
 export async function GET(req: Request) {
   const userId = req.headers.get('x-user-id');
@@ -150,6 +151,19 @@ export async function POST(req: Request) {
       );
     }
 
+    // JSON 內容安全驗證
+    let validatedContentJSON = null;
+    if (contentJSON) {
+      const validation = validateAndSanitizeContentJSON(contentJSON);
+      if (!validation.isValid) {
+        return NextResponse.json(
+          { message: 'Invalid content format', error: validation.error },
+          { status: 400 }
+        );
+      }
+      validatedContentJSON = validation.sanitizedJSON;
+    }
+
     // 檢查資料夾是否存在
     const folderDoc = await adminDb
       .collection('folders')
@@ -240,8 +254,8 @@ export async function POST(req: Request) {
             folderId,
             userId: promptOwnerUserId, // Use folder owner's userId for consistency
             name,
-            content: contentJSON ? '' : (content || ''), // JSON 優先，HTML 向後相容
-            contentJSON: contentJSON || null,
+            content: validatedContentJSON ? '' : (content || ''), // JSON 優先，HTML 向後相容
+            contentJSON: validatedContentJSON,
             shortcut,
             promptSpaceId,
             seqNo: insertSeqNo,
@@ -254,8 +268,8 @@ export async function POST(req: Request) {
           return {
             id: promptRef.id,
             name,
-            content: contentJSON ? '' : (content || ''),
-            contentJSON: contentJSON || null,
+            content: validatedContentJSON ? '' : (content || ''),
+            contentJSON: validatedContentJSON,
             shortcut,
             seqNo: insertSeqNo
           };
@@ -281,8 +295,8 @@ export async function POST(req: Request) {
       folderId,
       userId: promptOwnerUserId, // Use folder owner's userId for consistency
       name,
-      content: contentJSON ? '' : (content || ''), // JSON 優先，HTML 向後相容
-      contentJSON: contentJSON || null,
+      content: validatedContentJSON ? '' : (content || ''), // JSON 優先，HTML 向後相容
+      contentJSON: validatedContentJSON,
       shortcut,
       promptSpaceId,
       seqNo: nextSeqNo,
@@ -295,8 +309,8 @@ export async function POST(req: Request) {
     const created = {
       id: docRef.id,
       name,
-      content: contentJSON ? '' : (content || ''),
-      contentJSON: contentJSON || null,
+      content: validatedContentJSON ? '' : (content || ''),
+      contentJSON: validatedContentJSON,
       shortcut,
       seqNo: nextSeqNo
     };

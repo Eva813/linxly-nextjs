@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { adminDb } from '@/server/db/firebase';
 import { FieldValue } from 'firebase-admin/firestore';
+import { validateAndSanitizeContentJSON } from '@/server/validation/contentValidation';
 
 export async function GET(
   req: Request,
@@ -66,10 +67,28 @@ export async function PUT(
 
   const promptId = params.promptId;
   const { name, content, contentJSON, shortcut } = await req.json();
+  
+  // JSON 內容安全驗證
+  let validatedContentJSON = undefined;
+  if (contentJSON !== undefined) {
+    if (contentJSON === null) {
+      validatedContentJSON = null;
+    } else {
+      const validation = validateAndSanitizeContentJSON(contentJSON);
+      if (!validation.isValid) {
+        return NextResponse.json(
+          { message: 'Invalid content format', error: validation.error },
+          { status: 400 }
+        );
+      }
+      validatedContentJSON = validation.sanitizedJSON;
+    }
+  }
+  
   // 檢查是否至少有一個有效欄位用於更新
   const hasName = name && name.trim();
   const hasContent = content !== undefined && content !== '';
-  const hasContentJSON = contentJSON !== undefined && contentJSON !== null;
+  const hasContentJSON = validatedContentJSON !== undefined;
   const hasShortcut = shortcut && shortcut.trim();
 
   if (!hasName && !hasContent && !hasContentJSON && !hasShortcut) {
@@ -95,14 +114,14 @@ export async function PUT(
       updatedAt: FirebaseFirestore.FieldValue; 
       name?: string; 
       content?: string; 
-      contentJSON?: object;
+      contentJSON?: unknown;
       shortcut?: string;
     } = { updatedAt: FieldValue.serverTimestamp() };
     
     if (name) updateData.name = name;
     // 支援 JSON 格式 (優先) 和 HTML 格式 (向後相容)
-    if (contentJSON !== undefined) {
-      updateData.contentJSON = contentJSON;
+    if (validatedContentJSON !== undefined) {
+      updateData.contentJSON = validatedContentJSON;
       // 當提供 JSON 時，清空舊的 HTML content
       updateData.content = '';
     } else if (content !== undefined) {

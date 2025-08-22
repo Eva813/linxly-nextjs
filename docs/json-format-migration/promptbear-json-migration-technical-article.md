@@ -419,9 +419,415 @@ export function generateCompatibleSafeHTML(
 
 ---
 
-## 五、前端編輯器重構：效能與體驗優化
+## 五、後端多層安全防護機制
 
-### 5.1 TipTap 編輯器介面重設計
+### 5.1 後端驗證的必要性
+
+雖然前端已經透過 DOMPurify 和 TipTap JSON 格式提供了安全保障，但前端安全機制存在天然的局限性：
+
+**前端安全的局限性**
+```typescript
+// 前端安全可能被繞過的風險
+const maliciousRequest = {
+  method: 'PUT',
+  body: JSON.stringify({
+    contentJSON: {
+      type: 'doc',
+      content: [
+        {
+          type: 'script',  // 惡意節點類型
+          attrs: {
+            __proto__: { dangerous: 'payload' }  // 原型污染攻擊
+          }
+        }
+      ]
+    }
+  })
+};
+
+// 直接 API 呼叫繞過前端驗證
+fetch('/api/v1/prompts/123', maliciousRequest);
+```
+
+因此，後端必須實施獨立的安全驗證機制，確保即使前端被完全繞過，系統仍能維持安全性。
+
+### 5.2 六層安全防護架構
+
+PromptBear 後端實施了全面的 6 層安全防護機制：
+
+**核心驗證函數架構**
+```typescript
+// src/server/validation/contentValidation.ts
+export function validateAndSanitizeContentJSON(contentJSON: unknown): ValidationResult {
+  try {
+    // 第 1 層：基本類型檢查
+    if (!contentJSON || typeof contentJSON !== 'object') {
+      return {
+        isValid: false,
+        error: 'Content must be a valid object'
+      };
+    }
+
+    // 第 2 層：內容大小限制 (1MB)，防止 DoS 攻擊
+    const jsonString = JSON.stringify(contentJSON);
+    const maxSize = 1024 * 1024; // 1MB
+    
+    if (jsonString.length > maxSize) {
+      return {
+        isValid: false,
+        error: 'Content too large (max 1MB)'
+      };
+    }
+
+    // 第 3 層：基本 TipTap 結構驗證
+    const contentObj = contentJSON as Record<string, unknown>;
+    if (!contentObj.type || contentObj.type !== 'doc') {
+      return {
+        isValid: false,
+        error: 'Invalid document structure: must be TipTap doc format'
+      };
+    }
+
+    if (!Array.isArray(contentObj.content)) {
+      return {
+        isValid: false,
+        error: 'Invalid document structure: content must be an array'
+      };
+    }
+
+    // 第 4 層：節點深度限制，防止極深嵌套攻擊
+    const maxDepth = 20;
+    if (!validateDepth(contentObj, 0)) {
+      return {
+        isValid: false,
+        error: 'Content structure too deep (max 20 levels)'
+      };
+    }
+
+    // 第 5 層：節點類型白名單驗證
+    if (!validateNodeTypes(contentObj)) {
+      return {
+        isValid: false,
+        error: 'Invalid node type detected'
+      };
+    }
+
+    // 第 6 層：原型污染防護 + 深度清理
+    const sanitizedJSON = sanitizeObjectDeep(contentObj);
+
+    return {
+      isValid: true,
+      sanitizedJSON
+    };
+
+  } catch (error) {
+    return {
+      isValid: false,
+      error: `Validation failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+    };
+  }
+}
+```
+
+### 5.3 各層防護機制詳解
+
+**第 1 層：基本類型檢查**
+```typescript
+// 防止傳入非物件類型
+if (!contentJSON || typeof contentJSON !== 'object') {
+  return { isValid: false, error: 'Content must be a valid object' };
+}
+```
+- 確保輸入是有效的物件類型
+- 過濾 `null`、`undefined`、字串、數字等無效輸入
+
+**第 2 層：DoS 攻擊防護**
+```typescript
+// 1MB 大小限制
+const jsonString = JSON.stringify(contentJSON);
+const maxSize = 1024 * 1024;
+
+if (jsonString.length > maxSize) {
+  return { isValid: false, error: 'Content too large (max 1MB)' };
+}
+```
+- 防止大型 JSON 物件消耗伺服器記憶體
+- 避免惡意用戶上傳巨型文件造成服務中斷
+
+**第 3 層：TipTap 結構驗證**
+```typescript
+// 確保符合 TipTap 基本結構
+if (!contentObj.type || contentObj.type !== 'doc') {
+  return { isValid: false, error: 'Invalid document structure' };
+}
+
+if (!Array.isArray(contentObj.content)) {
+  return { isValid: false, error: 'content must be an array' };
+}
+```
+- 驗證頂層文件類型必須為 `doc`
+- 確保 `content` 屬性為陣列格式
+
+**第 4 層：深度嵌套攻擊防護**
+```typescript
+function validateDepth(node: unknown, depth: number): boolean {
+  if (depth > maxDepth) {
+    return false;  // 超過 20 層深度
+  }
+
+  if (node && typeof node === 'object' && 'content' in node) {
+    const nodeContent = (node as Record<string, unknown>).content;
+    if (Array.isArray(nodeContent)) {
+      return nodeContent.every((child: unknown) => 
+        validateDepth(child, depth + 1)
+      );
+    }
+  }
+
+  return true;
+}
+```
+- 限制節點嵌套深度最多 20 層
+- 防止遞歸炸彈攻擊消耗伺服器資源
+
+**第 5 層：節點類型白名單**
+```typescript
+const allowedNodeTypes = [
+  'doc', 'paragraph', 'text', 'heading', 'bulletList', 'orderedList', 
+  'listItem', 'blockquote', 'codeBlock', 'hardBreak',
+  'formtext', 'formmenu' // PromptBear 自訂節點
+];
+
+function validateNodeTypes(node: unknown): boolean {
+  if (!node || typeof node !== 'object') return true;
+  
+  const nodeObj = node as Record<string, unknown>;
+  if (nodeObj.type && typeof nodeObj.type === 'string') {
+    if (!allowedNodeTypes.includes(nodeObj.type)) {
+      return false;  // 不允許的節點類型
+    }
+  }
+
+  // 遞歸檢查子節點
+  if (nodeObj.content && Array.isArray(nodeObj.content)) {
+    return nodeObj.content.every(validateNodeTypes);
+  }
+
+  return true;
+}
+```
+- 只允許預定義的安全節點類型
+- 包含 PromptBear 特有的表單節點
+- 徹底防止惡意節點注入
+
+**第 6 層：原型污染防護**
+```typescript
+function sanitizeObjectDeep(obj: unknown): unknown {
+  if (obj === null || obj === undefined || typeof obj !== 'object') {
+    return obj;
+  }
+
+  if (Array.isArray(obj)) {
+    return obj.map(sanitizeObjectDeep);
+  }
+
+  // 創建新物件，避免修改原始物件
+  const sanitized: Record<string, unknown> = {};
+
+  const objRecord = obj as Record<string, unknown>;
+  for (const key in objRecord) {
+    // 只處理物件自有屬性，跳過原型鏈
+    if (objRecord.hasOwnProperty(key)) {
+      // 跳過危險的屬性名稱
+      if (isDangerousProperty(key)) {
+        continue;
+      }
+
+      // 遞歸清理值
+      sanitized[key] = sanitizeObjectDeep(objRecord[key]);
+    }
+  }
+
+  return sanitized;
+}
+
+function isDangerousProperty(propertyName: string): boolean {
+  const dangerousProperties = [
+    '__proto__', 'constructor', 'prototype',
+    '__defineGetter__', '__defineSetter__',
+    '__lookupGetter__', '__lookupSetter__'
+  ];
+
+  return dangerousProperties.includes(propertyName);
+}
+```
+- 移除所有危險的原型相關屬性
+- 防止原型污染攻擊
+- 深度遞歸清理整個物件樹
+
+### 5.4 API 層級安全整合
+
+**POST API 驗證整合**
+```typescript
+// src/app/api/v1/prompts/route.ts - POST 端點
+export async function POST(req: Request) {
+  const { contentJSON } = await req.json();
+  
+  // 後端 JSON 內容安全驗證
+  let validatedContentJSON = null;
+  if (contentJSON) {
+    const validation = validateAndSanitizeContentJSON(contentJSON);
+    if (!validation.isValid) {
+      return NextResponse.json(
+        { message: 'Invalid content format', error: validation.error },
+        { status: 400 }
+      );
+    }
+    validatedContentJSON = validation.sanitizedJSON;
+  }
+
+  // 只有驗證通過的內容才會被儲存
+  const promptData = {
+    contentJSON: validatedContentJSON,
+    // 其他欄位...
+  };
+  
+  await adminDb.collection('prompts').add(promptData);
+}
+```
+
+**PUT API 驗證整合**
+```typescript
+// src/app/api/v1/prompts/[promptId]/route.ts - PUT 端點
+export async function PUT(req: Request, { params }: { params: { promptId: string } }) {
+  const { contentJSON } = await req.json();
+  
+  // 同樣的安全驗證流程
+  let validatedContentJSON = undefined;
+  if (contentJSON !== undefined) {
+    if (contentJSON === null) {
+      validatedContentJSON = null;
+    } else {
+      const validation = validateAndSanitizeContentJSON(contentJSON);
+      if (!validation.isValid) {
+        return NextResponse.json(
+          { message: 'Invalid content format', error: validation.error },
+          { status: 400 }
+        );
+      }
+      validatedContentJSON = validation.sanitizedJSON;
+    }
+  }
+
+  // 更新邏輯...
+}
+```
+
+### 5.5 安全威脅防護效果驗證
+
+**DoS 攻擊防護測試**
+```typescript
+// 測試大型物件攻擊
+const massiveContent = {
+  type: 'doc',
+  content: new Array(100000).fill({
+    type: 'paragraph',
+    content: [{ type: 'text', text: 'A'.repeat(1000) }]
+  })
+};
+
+const result = validateAndSanitizeContentJSON(massiveContent);
+// 結果：{ isValid: false, error: 'Content too large (max 1MB)' }
+```
+
+**原型污染攻擊防護測試**
+```typescript
+// 測試原型污染攻擊
+const maliciousContent = {
+  type: 'doc',
+  content: [],
+  __proto__: { isAdmin: true },
+  constructor: { prototype: { isAdmin: true } }
+};
+
+const result = validateAndSanitizeContentJSON(maliciousContent);
+// 結果：危險屬性被完全移除，返回乾淨的物件
+```
+
+**深度嵌套攻擊防護測試**
+```typescript
+// 測試深度嵌套攻擊
+function createDeepContent(depth: number): any {
+  if (depth === 0) return { type: 'text', text: 'deep' };
+  return {
+    type: 'paragraph',
+    content: [createDeepContent(depth - 1)]
+  };
+}
+
+const deepContent = {
+  type: 'doc',
+  content: [createDeepContent(25)]  // 超過 20 層限制
+};
+
+const result = validateAndSanitizeContentJSON(deepContent);
+// 結果：{ isValid: false, error: 'Content structure too deep (max 20 levels)' }
+```
+
+**節點類型白名單防護測試**
+```typescript
+// 測試惡意節點類型
+const maliciousContent = {
+  type: 'doc',
+  content: [
+    {
+      type: 'script',  // 不在白名單中
+      attrs: { src: 'malicious.js' }
+    }
+  ]
+};
+
+const result = validateAndSanitizeContentJSON(maliciousContent);
+// 結果：{ isValid: false, error: 'Invalid node type detected' }
+```
+
+### 5.6 多層防護的協同效應
+
+後端的 6 層安全防護與前端安全機制形成了完整的防禦體系：
+
+**完整安全流程**
+```
+用戶輸入 
+    ↓
+前端 TipTap 編輯器 (結構化 JSON)
+    ↓
+前端 DOMPurify 清理 (顯示時)
+    ↓
+後端 API 接收
+    ↓
+後端 6 層安全驗證
+    ├── 類型檢查
+    ├── 大小限制
+    ├── 結構驗證
+    ├── 深度限制
+    ├── 類型白名單
+    └── 原型污染防護
+    ↓
+資料庫安全存儲
+    ↓
+前端安全顯示 (再次 DOMPurify)
+```
+
+這種多層防護確保了：
+- **縱深防禦**：即使某一層被繞過，其他層仍能提供保護
+- **零信任原則**：對所有輸入都進行驗證，不信任任何來源
+- **最小權限原則**：只允許最必要的內容格式和類型
+
+---
+
+## 六、前端編輯器重構：效能與體驗優化
+
+### 6.1 TipTap 編輯器介面重設計
 
 **新版本介面設計**
 ```typescript
@@ -439,7 +845,7 @@ interface TipTapEditorProps {
 2. **效能優化**：避免不必要的重複渲染
 3. **狀態管理**：精確控制編輯器更新時機
 
-### 5.2 內容驗證與轉換
+### 6.2 內容驗證與轉換
 
 **安全的內容驗證函數**
 ```typescript
@@ -478,7 +884,7 @@ const getValidTipTapContent = (
 };
 ```
 
-### 5.3 效能問題解決
+### 6.3 效能問題解決
 
 **解決無限 API 呼叫問題**
 
@@ -526,9 +932,9 @@ const handleContentUpdate = useCallback((
 
 ---
 
-## 六、實際效果與成果評估
+## 七、實際效果與成果評估
 
-### 6.1 安全性提升
+### 7.1 安全性提升
 
 **XSS 攻擊防護測試**
 ```typescript
@@ -550,7 +956,7 @@ const safeOutput = generateSafeHTML(maliciousContent);
 - ✅ 危險元素無法通過過濾
 - ✅ 只允許白名單內的安全元素和屬性
 
-### 6.2 效能改善成果
+### 7.2 效能改善成果
 
 **編輯器載入時間比較**
 ```
@@ -570,7 +976,7 @@ const safeOutput = generateSafeHTML(maliciousContent);
 - 消除了記憶體洩漏問題
 - 垃圾回收頻率降低 60%
 
-### 6.3 開發體驗改善
+### 7.3 開發體驗改善
 
 **類型安全性**
 ```typescript
@@ -591,9 +997,9 @@ const analyzeContent = (content: JSONContent): AnalysisResult => {
 
 ---
 
-## 七、最佳實踐與經驗總結
+## 八、最佳實踐與經驗總結
 
-### 7.1 遷移策略最佳實踐
+### 8.1 遷移策略最佳實踐
 
 **1. 漸進式遷移原則**
 ```typescript
@@ -620,7 +1026,7 @@ const safeDisplay = generateSafeHTML(anyFormatContent);
 // 永遠不要直接顯示未處理的用戶內容
 ```
 
-### 7.2 技術選型建議
+### 8.2 技術選型建議
 
 **編輯器選擇標準**
 1. **原生 JSON 支援**：避免格式轉換開銷
@@ -636,7 +1042,7 @@ const safeDisplay = generateSafeHTML(anyFormatContent);
 - ✅ TypeScript 原生支援
 - ✅ 優秀的效能表現
 
-### 7.3 安全實踐指南
+### 8.3 安全實踐指南
 
 **DOMPurify 配置原則**
 ```typescript
@@ -658,9 +1064,9 @@ const secureConfig = {
 
 ---
 
-## 八、未來發展方向
+## 九、未來發展方向
 
-### 8.1 進一步優化機會
+### 9.1 進一步優化機會
 
 **效能優化**
 - 實施 Service Worker 快取策略
@@ -677,7 +1083,7 @@ const secureConfig = {
 - 內容加密存儲
 - 細粒度權限控制
 
-### 8.2 技術趨勢展望
+### 9.2 技術趨勢展望
 
 **AI 輔助編輯**
 ```typescript
@@ -698,19 +1104,22 @@ interface AIEnhancedEditor {
 
 ## 結論
 
-PromptBear 從 HTML 字串到 JSON 格式的遷移，是一次全面的技術升級實踐。這次遷移不僅徹底解決了安全性問題，更帶來了架構清晰化、效能優化、開發體驗改善等多重收益。
+PromptBear 從 HTML 字串到 JSON 格式的遷移，是一次全面的技術升級實踐。這次遷移不僅徹底解決了安全性問題，更帶來了架構清晰化、效能優化、開發體驗改善等多重收益。特別是實施的 6 層後端安全防護機制，為整個系統建立了堅固的安全基礎。
 
 **關鍵成功因素：**
 
 1. **漸進式策略**：零停機遷移，用戶無感知
-2. **安全優先**：從源頭杜絕 XSS 攻擊風險
-3. **效能導向**：系統響應速度顯著提升
-4. **可維護性**：程式碼結構更清晰，bug 率降低
+2. **多層安全防護**：前端 + 後端雙重保障，從源頭杜絕安全風險
+3. **縱深防禦**：6 層後端驗證機制，確保每個層面都有適當防護
+4. **效能導向**：系統響應速度顯著提升
+5. **可維護性**：程式碼結構更清晰，bug 率降低
 
 **可複製的經驗：**
 
 - 大型系統遷移需要詳細的向後相容性規劃
 - 安全性設計應該內建於架構中，而非後加功能
+- 前端安全機制可被繞過，後端驗證不可或缺
+- 多層防護比單點防護更可靠，形成縱深防禦體系
 - JSON 結構化資料比 HTML 字串更適合現代應用
 - 效能優化需要從資料結構層面開始考慮
 
@@ -729,8 +1138,11 @@ PromptBear 從 HTML 字串到 JSON 格式的遷移，是一次全面的技術升
 
 ### 程式碼範例
 - [PromptBear generateSafeHTML 實作](./src/lib/utils/generateSafeHTML.ts)
+- [後端 JSON 內容安全驗證](./src/server/validation/contentValidation.ts)
 - [TipTap 編輯器組件](./src/app/components/tipTapEditor.tsx)
 - [API 層級雙格式支援](./src/app/api/v1/prompts/)
+- [POST API 安全驗證整合](./src/app/api/v1/prompts/route.ts)
+- [PUT API 安全驗證整合](./src/app/api/v1/prompts/[promptId]/route.ts)
 
 ### 效能基準測試
 ```typescript

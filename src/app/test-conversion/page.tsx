@@ -100,7 +100,7 @@ interface ConversionResult {
   hasFormElements: boolean;
   formElementsData: Array<{
     type: string;
-    promptData: any;
+    promptData: Record<string, unknown>;
     element: string;
   }>;
 }

@@ -183,7 +183,7 @@ function validateConversionResult(html: string): boolean {
         console.error('❌ promptData 缺少 name 屬性:', parsed);
         isValid = false;
       }
-    } catch (error) {
+    } catch {
       console.error('❌ 無法解析 data-prompt:', promptData);
       isValid = false;
     }

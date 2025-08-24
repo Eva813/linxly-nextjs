@@ -256,20 +256,25 @@ function renderPromptPreview(prompt) {
       previewContainer.innerHTML = htmlContent;
       
       // 設置表單元素點擊監聽器
-      formElements.forEach(formElement => {
-        const spanElement = previewContainer.querySelector(`span[data-type="${formElement.type}"]`);
-        if (spanElement) {
-          spanElement.style.cursor = 'pointer';
-          spanElement.style.backgroundColor = '#e3f2fd';
-          spanElement.style.padding = '2px 4px';
-          spanElement.style.borderRadius = '3px';
-          
-          spanElement.addEventListener('click', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            showFormDialog(formElement);
-          });
-        }
+      const spans = previewContainer.querySelectorAll('span[data-prompt]');
+      spans.forEach(spanElement => {
+        const promptDataStr = spanElement.getAttribute('data-prompt');
+        if (!promptDataStr) return;
+
+        // 找到對應的 formElement
+        const formElement = formElements.find(el => JSON.stringify(el.promptData) === promptDataStr);
+        if (!formElement) return;
+
+        spanElement.style.cursor = 'pointer';
+        spanElement.style.backgroundColor = '#e3f2fd';
+        spanElement.style.padding = '2px 4px';
+        spanElement.style.borderRadius = '3px';
+        
+        spanElement.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          showFormDialog(formElement);
+        });
       });
     }
     
@@ -458,7 +463,41 @@ function testBackwardCompatibility() {
 
 ### **常見問題與解決方案**
 
-#### **問題 1：表單元素無法檢測**
+#### **問題 1：多個相同類型表單元素的點擊事件綁定問題**
+**症狀**：當一個 prompt 中有多個相同類型的表單元素時，只有第一個元素能正常響應點擊事件  
+**根本原因**：使用 `querySelector` 只會選取第一個符合條件的元素
+
+**錯誤的實作**：
+```javascript
+// ❌ 錯誤：只會選取第一個匹配的元素
+formElements.forEach(formElement => {
+  const spanElement = previewContainer.querySelector(`span[data-type="${formElement.type}"]`);
+  // 只有第一個 formtext 或 formmenu 會被綁定事件
+});
+```
+
+**正確的解決方案**：
+```javascript
+// ✅ 正確：使用 querySelectorAll 並透過 data-prompt 屬性匹配
+const spans = previewContainer.querySelectorAll('span[data-prompt]');
+spans.forEach(spanElement => {
+  const promptDataStr = spanElement.getAttribute('data-prompt');
+  if (!promptDataStr) return;
+
+  // 找到對應的 formElement
+  const formElement = formElements.find(el => JSON.stringify(el.promptData) === promptDataStr);
+  if (!formElement) return;
+
+  // 為每個元素綁定點擊事件
+  spanElement.addEventListener('click', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    showFormDialog(formElement);
+  });
+});
+```
+
+#### **問題 2：表單元素無法檢測**
 **症狀**：`analyzeFormElements()` 回傳空陣列  
 **可能原因**：
 - TipTap 轉換器缺少 FormTextNode/FormMenuNode 擴展

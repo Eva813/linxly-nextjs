@@ -7,6 +7,11 @@ export function getPrompts(folderId: string, promptSpaceId?: string): Promise<Pr
   return request<Prompt[]>(`/prompts${params}`);
 }
 
+// 取得單個prompt片段
+export function getPrompt(promptId: string): Promise<Prompt> {
+  return request<Prompt>(`/prompts/${promptId}`);
+}
+
 // 建立新的prompt片段
 /**
  * 建立新的 prompt 片段，支援插入位置 afterPromptId

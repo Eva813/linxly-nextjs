@@ -61,19 +61,19 @@ const CreateSpaceModal: React.FC<CreateSpaceModalProps> = ({ isOpen, onClose }) 
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Create New Prompt Space</DialogTitle>
+          <DialogTitle>Create New Space</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit}>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
               <label htmlFor="spaceName" className="text-sm font-medium">
-                Prompt Space Name
+                Space Name
               </label>
               <Input
                 id="spaceName"
                 value={spaceName}
                 onChange={(e) => setSpaceName(e.target.value)}
-                placeholder="Enter a new prompt space name"
+                placeholder="Enter a new space name"
                 disabled={isCreatingSpace}
                 autoFocus
                 maxLength={50}

@@ -3,14 +3,6 @@ import { adminDb } from '@/server/db/firebase';
 import { FieldValue } from 'firebase-admin/firestore';
 import { getMaxSeqNoInTransaction } from '@/server/utils/promptUtils';
 
-// 輸入清理函數
-function sanitizeInput(input: string): string {
-  return input
-    .trim()
-    .replace(/[<>"'`]/g, '') // 移除潛在危險字元
-    .replace(/\s+/g, ' ')
-    .slice(0, 10000); // 限制長度
-}
 
 function sanitizePageTitle(title: string): string {
   return title
@@ -19,9 +11,31 @@ function sanitizePageTitle(title: string): string {
     .slice(0, 200);
 }
 
-function createPrefillContent(content: string): string {
-  const cleanContent = sanitizeInput(content);
-  return `${cleanContent}`;
+function sanitizeAndConvertToJSON(input: string): object {
+  // 清理並提取純文字
+  const cleanText = input
+    .replace(/<script[^>]*>.*?<\/script>/gi, '')
+    .replace(/on\w+="[^"]*"/gi, '')
+    .replace(/<[^>]*>/g, '') // 移除所有 HTML，保留純文字
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, 10000);
+  
+  // 轉換為標準 TipTap JSON 格式
+  return {
+    type: 'doc',
+    content: [
+      {
+        type: 'paragraph',
+        content: [
+          {
+            type: 'text',
+            text: cleanText
+          }
+        ]
+      }
+    ]
+  };
 }
 
 export async function POST(req: Request) {
@@ -59,8 +73,8 @@ export async function POST(req: Request) {
       );
     }
 
-    // 創建預填內容
-    const prefillContent = createPrefillContent(content);
+    // 創建 JSON 格式內容
+    const contentJSON = sanitizeAndConvertToJSON(content);
     const cleanTitle = sanitizePageTitle(pageTitle);
 
     // 如果沒有指定 folderId，需要找到該 space 的第一個 folder
@@ -118,7 +132,8 @@ export async function POST(req: Request) {
         folderId: targetFolderId,
         userId,
         name: cleanTitle,
-        content: prefillContent,
+        content: '', // 新格式不使用 HTML
+        contentJSON: contentJSON, // 統一使用 JSON 格式
         shortcut, // shortcut 會依照 seqNo 順序遞增，確保唯一性
         promptSpaceId,
         seqNo: nextSeqNo,
@@ -141,7 +156,8 @@ export async function POST(req: Request) {
     const created = {
       id: result.docRef.id,
       name: cleanTitle,
-      content: prefillContent,
+      content: '',
+      contentJSON: contentJSON,
       shortcut: result.shortcut,
       seqNo: result.seqNo
     };

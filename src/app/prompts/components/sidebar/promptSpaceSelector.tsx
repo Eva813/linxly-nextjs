@@ -232,7 +232,7 @@ const PromptSpaceSelector: React.FC<PromptSpaceSelectorProps> = ({ onCreateSpace
             {ownedSpaces.length > 0 && (
               <>
                 <div className="px-2 py-1 text-xs font-medium text-muted-foreground">
-                  My Workspaces
+                  My Spaces
                 </div>
                 {ownedSpaces.map((space, index) => (
                   <SpaceMenuItem

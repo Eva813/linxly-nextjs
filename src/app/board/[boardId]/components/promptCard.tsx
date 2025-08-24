@@ -5,32 +5,30 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Settings2, Plus } from "lucide-react"
 import { SheetClose } from "@/components/ui/sheet"
 import { Prompt } from "@/types/prompt"
+import { generateCompatibleSafeHTML, analyzeInteractiveElements, extractTextContent } from "@/lib/utils/generateSafeHTML"
+import type { JSONContent } from '@tiptap/react';
 
 interface PromptCardProps {
   prompt: Prompt
   onAdd: (prompt: Prompt) => void
 }
 
-const extractContentInfo = (html: string) => {
-  const formTextMatches = html.match(/data-type=\"formtext\"/g) || []
-  const formMenuMatches = html.match(/data-type=\"formmenu\"/g) || []
+const extractContentInfo = (content: string | JSONContent | null | undefined, contentJSON?: JSONContent | null | undefined) => {
+  // 使用安全 HTML 工具函數分析內容
+  const analysis = analyzeInteractiveElements(content, contentJSON);
+  const safeHTML = generateCompatibleSafeHTML(content, contentJSON);
+  let cleanText = extractTextContent(content, contentJSON);
 
-  const interactiveCount = formTextMatches.length + formMenuMatches.length
-
-  let cleanText = html
-    .replace(/<[^>]*>/g, " ")
-    .replace(/\s+/g, " ")
-    .trim()
-
-  if (interactiveCount <= 4) {
-    cleanText = html
+  // 根據互動元素數量調整顯示方式
+  if (analysis.totalCount <= 4) {
+    cleanText = safeHTML
       .replace(/<span[^>]*data-type=\"formtext\"[^>]*><\/span>/g, " [input field] ")
       .replace(/<span[^>]*data-type=\"formmenu\"[^>]*><\/span>/g, " [dropdown menu] ")
       .replace(/<[^>]*>/g, " ")
       .replace(/\s+/g, " ")
       .trim()
   } else {
-    cleanText = html
+    cleanText = safeHTML
       .replace(/<span[^>]*data-type=\"[^\"]*\"[^>]*><\/span>/g, " [...] ")
       .replace(/<[^>]*>/g, " ")
       .replace(/\s+/g, " ")
@@ -38,15 +36,19 @@ const extractContentInfo = (html: string) => {
   }
 
   return {
-    interactiveCount,
+    interactiveCount: analysis.totalCount,
     cleanText,
-    formTextCount: formTextMatches.length,
-    formMenuCount: formMenuMatches.length,
+    formTextCount: analysis.formTextCount,
+    formMenuCount: analysis.formMenuCount,
   }
 }
 
 export default function PromptCard({ prompt, onAdd }: PromptCardProps) {
-  const { interactiveCount, cleanText, formTextCount, formMenuCount } = extractContentInfo(prompt.content)
+  // 使用漸進式遷移策略：優先 JSON，向後相容 HTML
+  const { interactiveCount, cleanText, formTextCount, formMenuCount } = extractContentInfo(
+    prompt.content, 
+    prompt.contentJSON
+  );
   const hasInteractiveElements = interactiveCount > 0
 
   return (

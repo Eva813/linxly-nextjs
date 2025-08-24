@@ -67,7 +67,7 @@ export async function GET(req: Request) {
         .collection('prompts')
         .where('promptSpaceId', '==', promptSpaceId)
         .where('userId', '==', spaceOwnerId)
-        .select('name', 'content', 'shortcut', 'seqNo', 'folderId', 'createdAt')
+        .select('name', 'content', 'contentJSON', 'shortcut', 'seqNo', 'folderId', 'createdAt')
         .get()
     ]);
 

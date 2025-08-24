@@ -6,6 +6,7 @@ import { useSaveStore } from '@/stores/loading';
 import { deepEqual } from '@/lib/utils/deepEqual';
 import debounce from '@/lib/utils/debounce';
 import { useEditableState } from '@/hooks/useEditableState';
+import type { JSONContent } from '@tiptap/react';
 
 interface ShortcutError {
   conflictingShortcut: string;
@@ -77,7 +78,8 @@ export const usePromptPageLogic = ({ promptId }: UsePromptPageLogicProps) => {
   const [formData, setFormData] = useState(() => ({
     name: "",
     shortcut: "",
-    content: ""
+    content: "",
+    contentJSON: null as JSONContent | null
   }));
 
   const [shortcutError, setShortcutError] = useState<ShortcutError | null>(null);
@@ -86,7 +88,8 @@ export const usePromptPageLogic = ({ promptId }: UsePromptPageLogicProps) => {
   const [initialValues, setInitialValues] = useState(() => ({
     name: "",
     shortcut: "",
-    content: ""
+    content: "",
+    contentJSON: null as JSONContent | null
   }));
 
   // 只用一個 ref 來追蹤是否正在進行 API 操作，避免在 API 回應期間重複觸發
@@ -130,7 +133,7 @@ export const usePromptPageLogic = ({ promptId }: UsePromptPageLogicProps) => {
 
   // 建立穩定的 debounced 儲存函式
   const debouncedSave = useMemo(() => {
-    const saveFunction = (data: { name: string; shortcut: string; content: string }) => {
+    const saveFunction = (data: { name: string; shortcut: string; content: string; contentJSON: JSONContent | null }) => {
       savePrompt(data);
     };
     return debounce(saveFunction as (...args: unknown[]) => void, 800);
@@ -168,17 +171,28 @@ export const usePromptPageLogic = ({ promptId }: UsePromptPageLogicProps) => {
     }
   }, [updateFormField, otherPrompts]);
 
-  const updateContent = useCallback((newContent: string) => {
+  // 更新內容 - 支援 JSON 格式 (新格式優先)
+  const updateContent = useCallback((newContentJSON: JSONContent) => {
+    setFormData(prev => ({ 
+      ...prev, 
+      contentJSON: newContentJSON,
+      content: '' // 使用 JSON 時清空 HTML
+    }));
+  }, []);
+
+  // 向後相容：HTML 格式更新 (僅在必要時使用)
+  const updateContentHTML = useCallback((newContent: string) => {
     updateFormField('content', newContent);
   }, [updateFormField]);
 
-  // 初始化資料 - 使用 useMemo 來穩定初始值計算
+  // 初始化資料 - 支援 JSON 格式的漸進式遷移
   const currentInitialData = useMemo(() => {
     if (!currentPrompt) return null;
     return {
       name: currentPrompt.name,
       shortcut: currentPrompt.shortcut || "",
-      content: currentPrompt.content
+      content: currentPrompt.content || "",
+      contentJSON: currentPrompt.contentJSON || null
     };
   }, [currentPrompt]);
 
@@ -221,6 +235,7 @@ export const usePromptPageLogic = ({ promptId }: UsePromptPageLogicProps) => {
     name: formData.name,
     shortcut: formData.shortcut,
     content: formData.content,
+    contentJSON: formData.contentJSON,
     shortcutError,
     hasUnsavedChanges,
     currentPrompt,
@@ -228,7 +243,8 @@ export const usePromptPageLogic = ({ promptId }: UsePromptPageLogicProps) => {
     // 表單更新函式
     handleNameChange,
     handleShortcutChange,
-    updateContent,
+    updateContent, // JSON 格式更新 (主要使用)
+    updateContentHTML, // HTML 格式更新 (向後相容)
     clearShortcutError,
   };
 };

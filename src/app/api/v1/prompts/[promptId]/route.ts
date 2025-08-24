@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { adminDb } from '@/server/db/firebase';
 import { FieldValue } from 'firebase-admin/firestore';
+import { validateAndSanitizeContentJSON } from '@/server/validation/contentValidation';
 
 export async function GET(
   req: Request,
@@ -38,7 +39,8 @@ export async function GET(
       id: promptId,
       folderId: prompt.folderId,
       name: prompt.name,
-      content: prompt.content,
+      content: prompt.content || '',
+      contentJSON: prompt.contentJSON || null,
       shortcut: prompt.shortcut,
       seqNo: prompt.seqNo
     };
@@ -64,8 +66,32 @@ export async function PUT(
   }
 
   const promptId = params.promptId;
-  const { name, content, shortcut } = await req.json();
-  if (!name && content === undefined && !shortcut) {
+  const { name, content, contentJSON, shortcut } = await req.json();
+  
+  // JSON 內容安全驗證
+  let validatedContentJSON = undefined;
+  if (contentJSON !== undefined) {
+    if (contentJSON === null) {
+      validatedContentJSON = null;
+    } else {
+      const validation = validateAndSanitizeContentJSON(contentJSON);
+      if (!validation.isValid) {
+        return NextResponse.json(
+          { message: 'Invalid content format', error: validation.error },
+          { status: 400 }
+        );
+      }
+      validatedContentJSON = validation.sanitizedJSON;
+    }
+  }
+  
+  // 檢查是否至少有一個有效欄位用於更新
+  const hasName = name && name.trim();
+  const hasContent = content !== undefined && content !== '';
+  const hasContentJSON = validatedContentJSON !== undefined;
+  const hasShortcut = shortcut && shortcut.trim();
+
+  if (!hasName && !hasContent && !hasContentJSON && !hasShortcut) {
     return NextResponse.json(
       { message: 'at least one field is required for update' },
       { status: 400 }
@@ -84,9 +110,23 @@ export async function PUT(
     }
 
     // 準備更新資料
-    const updateData: { updatedAt: FirebaseFirestore.FieldValue; name?: string; content?: string; shortcut?: string } = { updatedAt: FieldValue.serverTimestamp() };
+    const updateData: { 
+      updatedAt: FirebaseFirestore.FieldValue; 
+      name?: string; 
+      content?: string; 
+      contentJSON?: unknown;
+      shortcut?: string;
+    } = { updatedAt: FieldValue.serverTimestamp() };
+    
     if (name) updateData.name = name;
-    if (content !== undefined) updateData.content = content;
+    // 支援 JSON 格式 (優先) 和 HTML 格式 (向後相容)
+    if (validatedContentJSON !== undefined) {
+      updateData.contentJSON = validatedContentJSON;
+      // 當提供 JSON 時，清空舊的 HTML content
+      updateData.content = '';
+    } else if (content !== undefined) {
+      updateData.content = content;
+    }
     if (shortcut) updateData.shortcut = shortcut;
 
     // 更新文件
@@ -107,7 +147,8 @@ export async function PUT(
       id: promptId,
       folderId: updated.folderId,
       name: updated.name,
-      content: updated.content,
+      content: updated.content || '',
+      contentJSON: updated.contentJSON || null,
       shortcut: updated.shortcut,
       seqNo: updated.seqNo
     });

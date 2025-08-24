@@ -1,5 +1,5 @@
 import { useState, useRef, useMemo, useCallback } from 'react';
-import { Editor } from '@tiptap/react';
+import { Editor, JSONContent } from '@tiptap/react';
 import { NodeSelection } from 'prosemirror-state';
 import { DropdownEditInfo, TextInputEditInfo } from '@/types/prompt';
 import { formTextSpec } from "@/lib/specs/formTextSpec";
@@ -87,7 +87,7 @@ export const useEditorLogic = () => {
   }, []);
 
   // 插入文字欄位的處理函式
-  const handleTextFieldInsert = useCallback((name: string, defaultValue: string) => {
+  const handleTextFieldInsert = useCallback((name: string, defaultValue: string): JSONContent | null => {
     const editor = editorRef.current;
     if (!editor || textInputEditInfo) return null;
 
@@ -107,8 +107,7 @@ export const useEditorLogic = () => {
     
     setIsTextDialogOpen(false);
     
-    // 返回新內容
-    return editor.getHTML();
+    return editor.getJSON();
   }, [textInputEditInfo]);
 
   // 插入下拉選單的處理函式
@@ -117,7 +116,7 @@ export const useEditorLogic = () => {
     values: string[],
     selectedValues: string | string[],
     multiple: boolean
-  ) => {
+  ): JSONContent | null => {
     const editor = editorRef.current;
     if (!editor || dropdownEditInfo) return null;
 
@@ -139,14 +138,13 @@ export const useEditorLogic = () => {
 
     setIsDropdownDialogOpen(false);
     
-    // 返回新內容
-    return editor.getHTML();
+    return editor.getJSON();
   }, [dropdownEditInfo]);
 
   // 處理輸入變更的處理函式
   const handleTextInputChange = useCallback((
     updates: { [key: string]: string | string[] | boolean | null }
-  ) => {
+  ): JSONContent | null => {
     const editor = editorRef.current;
     if (!editor) return null;
 
@@ -207,8 +205,7 @@ export const useEditorLogic = () => {
         .run();
     }
     
-    // 返回新內容
-    return editor.getHTML();
+    return editor.getJSON();
   }, [textInputEditInfo, dropdownEditInfo]);
 
   return {

@@ -250,7 +250,7 @@ const SpaceSettingsDialog: React.FC<SpaceSettingsDialogProps> = ({
             <span>Space Settings</span>
           </DialogTitle>
           <p className="text-sm text-muted-foreground">
-            Manage your workspace name and sharing settings
+            Manage your space name and sharing settings
           </p>
         </DialogHeader>
         

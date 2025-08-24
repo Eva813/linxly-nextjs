@@ -50,11 +50,11 @@ export const SpaceSelector: React.FC<SpaceSelectorProps> = ({
           )}
         </SelectTrigger>
         <SelectContent>
-          {/* My Workspaces */}
+          {/* Space */}
           {ownedSpaces.length > 0 && (
             <SelectGroup>
               <SelectLabel className="text-xs font-medium text-muted-foreground px-2 py-1">
-                My Workspaces
+                My Space
               </SelectLabel>
               {ownedSpaces.map((space) => (
                 <SelectItem key={space.id} value={space.id}>

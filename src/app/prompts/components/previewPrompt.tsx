@@ -2,9 +2,12 @@
 import React, { useMemo, useCallback } from "react";
 import { parseHtml } from "@/lib/utils/parseHtml";
 import { renderCustomElement } from "./renderers/renderCustomElement";
+import { generateCompatibleSafeHTML } from "@/lib/utils/generateSafeHTML";
+import type { JSONContent } from '@tiptap/react';
 
 interface PreviewPromptProps {
-  content: string;
+  content: string | JSONContent | null | undefined;
+  contentJSON?: JSONContent | null | undefined;
   shortcut: string;
 }
 const VOID_TAGS = new Set([
@@ -12,7 +15,12 @@ const VOID_TAGS = new Set([
   "link", "meta", "source", "track", "wbr"
 ]);
 
-const PreviewPrompt: React.FC<PreviewPromptProps> = ({ content, shortcut }) => {
+const PreviewPrompt: React.FC<PreviewPromptProps> = ({ content, contentJSON, shortcut }) => {
+  // 生成安全的 HTML 內容 - 使用漸進式遷移策略
+  const safeHTML = useMemo(() => {
+    return generateCompatibleSafeHTML(content, contentJSON);
+  }, [content, contentJSON]);
+
   // 遞迴渲染 DOM ➝ React 元素
   const renderNode = useCallback((node: ChildNode, key: string): React.ReactNode => {
     if (node.nodeType === Node.TEXT_NODE) {
@@ -68,13 +76,13 @@ const PreviewPrompt: React.FC<PreviewPromptProps> = ({ content, shortcut }) => {
   }, []);
 
   const renderedContent = useMemo(() => {
-    const root = parseHtml(content);
+    const root = parseHtml(safeHTML);
     if (!root) return null;
 
     return Array.from(root.childNodes).map((child, i) =>
       renderNode(child, `root-${i}`)
     );
-  }, [content, renderNode]);
+  }, [safeHTML, renderNode]);
 
   return (
     <div className="p-4 space-y-4 h-[calc(100vh-160px)] flex flex-col">

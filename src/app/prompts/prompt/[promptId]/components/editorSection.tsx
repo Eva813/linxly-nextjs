@@ -31,7 +31,7 @@ const EditPanel = dynamic(() => import('../editPanel'), {
   ssr: false,
   loading: EditPanelLoading
 });
-import { Editor } from '@tiptap/react';
+import { Editor, JSONContent } from '@tiptap/react';
 import { DropdownEditInfo, TextInputEditInfo } from '@/types/prompt';
 import { useEditableState } from '@/hooks/useEditableState';
 
@@ -40,13 +40,14 @@ type EditInfo = TextInputEditInfo | DropdownEditInfo;
 interface EditorSectionProps {
   mode: Mode;
   content: string;
+  contentJSON?: JSONContent | null; // 新增 JSON 格式支援
   shortcut: string;
   isEditPanelVisible: boolean;
   activeEditInfo: EditInfo | null;
   editorRef: React.MutableRefObject<Editor | null>;
   isMobilePanelOpen: boolean;
   isMobilePanelClosing: boolean;
-  onContentChange: (content: string) => void;
+  onContentChange: (content: JSONContent) => void; // 改為 JSON 格式
   onEditorReady: (editor: Editor) => void;
   onFormTextNodeClick: (params: { pos: number; name: string; default: string }) => void;
   onFormMenuNodeClick: (params: { pos: number; name: string; default: string | string[]; options: string[]; multiple: boolean }) => void;
@@ -61,6 +62,7 @@ interface EditorSectionProps {
 export const EditorSection = React.memo(({
   mode,
   content,
+  contentJSON,
   shortcut,
   isEditPanelVisible,
   activeEditInfo,
@@ -89,13 +91,13 @@ export const EditorSection = React.memo(({
     <>
       {/* Preview 模式 */}
       <div className={`border-r border-gray-200 min-w-0 overflow-hidden ${mode === "preview" ? "block" : "hidden"}`}>
-        <PreviewPrompt content={content} shortcut={shortcut} />
+        <PreviewPrompt content={content} contentJSON={contentJSON} shortcut={shortcut} />
       </div>
 
       {/* Edit 模式 */}
       <section className={`flex flex-col lg:pr-4 py-4 lg:border-r lg:border-gray-200 overflow-y-auto ${mode === "edit" ? "block" : "hidden"}`}>
         <TipTapEditor
-          value={content}
+          value={contentJSON || content}
           disabled={!canEdit}
           onChange={onContentChange}
           onEditorReady={handleEditorReady}

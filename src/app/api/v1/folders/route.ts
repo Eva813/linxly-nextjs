@@ -55,6 +55,8 @@ export async function GET(req: Request) {
 
     // 直接查詢特定 promptSpaceId，減少不必要的資料傳輸
     // 使用 select() 只查詢需要的欄位
+    console.log(`API: Fetching folders and prompts for space ${promptSpaceId}, user ${userId}, spaceOwner ${spaceOwnerId}`);
+    
     const [foldersSnapshot, promptsSnapshot] = await Promise.all([
       adminDb
         .collection('folders')
@@ -71,12 +73,22 @@ export async function GET(req: Request) {
         .get()
     ]);
 
+    console.log(`API: Found ${foldersSnapshot.docs.length} folders and ${promptsSnapshot.docs.length} prompts`);
+
     // 資料已經是精準查詢的結果，不需要過濾
     const filteredFolders = foldersSnapshot.docs;
     const filteredPrompts = promptsSnapshot.docs;
 
     // 將 prompts 按 folderId 分組
     const promptsMap = groupPromptsByFolderId(filteredPrompts);
+    
+    console.log(`API: Prompts grouped by folder:`, 
+      Array.from(promptsMap.entries()).map(([folderId, prompts]) => ({
+        folderId,
+        promptCount: prompts.length,
+        promptNames: prompts.map(p => p.name)
+      }))
+    );
 
     // 處理每個資料夾並組合資料
     const result = await Promise.all(filteredFolders.map(async (folderDoc) => {
@@ -85,9 +97,41 @@ export async function GET(req: Request) {
 
       // 從分組的 Map 中獲取該資料夾的 prompts
       const folderPrompts = promptsMap.get(folderId) || [];
+      
+      console.log(`API: Processing folder ${folderId} (${folder.name}): found ${folderPrompts.length} prompts`);
+      
+      // 如果沒有找到 prompts，嘗試直接查詢該 folderId（可能是 promptSpaceId 不一致的問題）
+      let finalPrompts = folderPrompts;
+      if (folderPrompts.length === 0) {
+        console.log(`API: No prompts found for folder ${folderId}, trying direct query...`);
+        const directQuery = await adminDb
+          .collection('prompts')
+          .where('folderId', '==', folderId)
+          .where('userId', '==', spaceOwnerId)
+          .get();
+        
+        if (!directQuery.empty) {
+          console.log(`API: Direct query found ${directQuery.docs.length} prompts for folder ${folderId}`);
+          const directPrompts = directQuery.docs.map(doc => {
+            const prompt = doc.data();
+            return {
+              id: doc.id,
+              name: prompt.name,
+              content: prompt.content,
+              contentJSON: prompt.contentJSON,
+              shortcut: prompt.shortcut,
+              seqNo: prompt.seqNo,
+              createdAt: prompt.createdAt,
+              folderId: prompt.folderId,
+              userId: prompt.userId
+            };
+          });
+          finalPrompts = directPrompts;
+        }
+      }
 
       // 直接排序 prompts（所有 prompts 現在都有 seqNo）
-      const sortedPrompts = folderPrompts.sort((a, b) => (a.seqNo || 0) - (b.seqNo || 0));
+      const sortedPrompts = finalPrompts.sort((a, b) => (a.seqNo || 0) - (b.seqNo || 0));
 
       // 格式化程式碼片段資料
       const formattedPrompts = formatPromptsForResponse(sortedPrompts);

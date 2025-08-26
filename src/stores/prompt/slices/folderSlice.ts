@@ -49,6 +49,7 @@ export const createFolderSlice: StateCreator<FolderSlice> = (set, get) => ({
       // 檢查快取
       const cachedData = state.folderCache[promptSpaceId];
       if (!forceRefresh && cachedData && (now - cachedData.lastFetched) < cacheDuration) {
+        console.log('Using cached folders for space:', promptSpaceId);
         set({ folders: cachedData.folders, isLoading: false });
         return;
       }
@@ -60,7 +61,13 @@ export const createFolderSlice: StateCreator<FolderSlice> = (set, get) => ({
 
       set({ error: null });
       
+      console.log(`Fetching folders for space: ${promptSpaceId} (forceRefresh: ${forceRefresh})`);
       const folders = await getFolders(promptSpaceId);
+      console.log(`Received ${folders.length} folders:`, folders.map(f => ({ 
+        id: f.id, 
+        name: f.name, 
+        promptCount: f.prompts?.length || 0 
+      })));
 
       // 清除延遲計時器
       clearTimeout(loadingTimer);

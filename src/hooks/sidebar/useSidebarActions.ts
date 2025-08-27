@@ -187,8 +187,8 @@ export const useSidebarActions = () => {
       const newPrompt = await addPromptToFolder(
         targetFolderId,
         DEFAULT_PROMPT_DATA,
-        currentNavigation.currentPromptId || undefined,
-        spaceId
+        spaceId,
+        currentNavigation.currentPromptId || undefined
       );
       
       // 新增成功後自動導航到新提示

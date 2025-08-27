@@ -46,19 +46,12 @@ export async function POST(req: Request) {
   }
 
   try {
-    const { content, pageTitle, pageUrl, promptSpaceId, folderId } = await req.json();
+    const { content, pageTitle, pageUrl, folderId } = await req.json();
 
     // 驗證必要參數
     if (!content || !pageTitle || !pageUrl) {
       return NextResponse.json(
         { message: 'content, pageTitle and pageUrl required' },
-        { status: 400 }
-      );
-    }
-
-    if (!promptSpaceId) {
-      return NextResponse.json(
-        { message: 'promptSpaceId required' },
         { status: 400 }
       );
     }
@@ -77,20 +70,19 @@ export async function POST(req: Request) {
     const contentJSON = sanitizeAndConvertToJSON(content);
     const cleanTitle = sanitizePageTitle(pageTitle);
 
-    // 如果沒有指定 folderId，需要找到該 space 的第一個 folder
+    // 如果沒有指定 folderId，需要找到用戶的第一個 folder
     let targetFolderId = folderId;
     if (!targetFolderId) {
       const foldersSnapshot = await adminDb
         .collection('folders')
         .where('userId', '==', userId)
-        .where('promptSpaceId', '==', promptSpaceId)
         .orderBy('createdAt', 'asc')
         .limit(1)
         .get();
 
       if (foldersSnapshot.empty) {
         return NextResponse.json(
-          { message: 'no folder found in the specified space' },
+          { message: 'no folder found for user' },
           { status: 404 }
         );
       }
@@ -116,6 +108,15 @@ export async function POST(req: Request) {
       return NextResponse.json(
         { message: 'access denied' },
         { status: 403 }
+      );
+    }
+
+    // 從 folder 獲取正確的 promptSpaceId，確保資料一致性
+    const promptSpaceId = folderData.promptSpaceId;
+    if (!promptSpaceId) {
+      return NextResponse.json(
+        { message: 'folder does not have a valid promptSpaceId' },
+        { status: 400 }
       );
     }
 

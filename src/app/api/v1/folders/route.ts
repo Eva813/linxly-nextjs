@@ -178,6 +178,14 @@ export async function POST(req: Request) {
       );
     }
 
+    // Validate promptSpaceId format (basic check)
+    if (typeof body.promptSpaceId !== 'string' || body.promptSpaceId.trim().length === 0) {
+      return NextResponse.json(
+        { message: 'Invalid promptSpaceId format' },
+        { status: 400 }
+      );
+    }
+
     // Check if user has edit permission for this space
     const spaceDoc = await adminDb.collection('prompt_spaces').doc(body.promptSpaceId).get();
     if (!spaceDoc.exists) {

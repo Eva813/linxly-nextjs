@@ -2,12 +2,16 @@ import { StateCreator } from 'zustand';
 import { Prompt, Folder } from '@/types/prompt';
 import { FolderSlice } from './folderSlice';
 import { getPrompts, createPrompt, deletePrompt as apiDeletePrompt, updatePrompt as apiUpdatePrompt } from '@/api/prompts';
+import debounce from '@/lib/utils/debounce';
 
 export interface PromptSlice {
   fetchPromptsForFolder: (folderId: string, promptSpaceId?: string) => Promise<void>;
-  addPromptToFolder: (folderId: string, prompt: Omit<Prompt, 'id'>, afterPromptId?: string, promptSpaceId?: string) => Promise<Prompt>;
+  addPromptToFolder: (folderId: string, prompt: Omit<Prompt, 'id'>, promptSpaceId: string, afterPromptId?: string) => Promise<Prompt>;
   deletePromptFromFolder: (folderId: string, promptId: string) => Promise<void>;
   updatePrompt: (promptId: string, updatedPrompt: Partial<Prompt>, promptSpaceId?: string) => Promise<Prompt>;
+  
+  // 內部防抖方法
+  _debouncedRefreshFolder: (folderId: string, promptSpaceId: string) => void;
 }
 
 // 這裡依賴 FolderSlice，因為 prompts 都儲存在 folders 內
@@ -17,7 +21,16 @@ export const createPromptSlice: StateCreator<
   [],
   [],
   PromptSlice
-> = (set, get) => ({
+> = (set, get) => {
+  // 創建防抖函數，延遲 60ms 執行資料夾刷新，避免頻繁 API 呼叫且減少視覺延遲
+  const debouncedRefresh = debounce((...args: unknown[]) => {
+    const [folderId, promptSpaceId] = args as [string, string];
+    get().fetchPromptsForFolder(folderId, promptSpaceId).catch(error => {
+      console.error('Debounced refresh failed:', error);
+    });
+  }, 60);
+
+  return {
   fetchPromptsForFolder: async (folderId, promptSpaceId) => {
     try {
       const prompts = await getPrompts(folderId, promptSpaceId);
@@ -32,20 +45,26 @@ export const createPromptSlice: StateCreator<
       console.error('Failed to fetch prompts:', error);
     }
   },
-  addPromptToFolder: async (folderId, prompt, afterPromptId, promptSpaceId) => {
+  addPromptToFolder: async (folderId, prompt, promptSpaceId, afterPromptId) => {
     try {
-      if (!promptSpaceId) {
-        throw new Error('promptSpaceId is required');
+      // 使用 API，傳入 promptSpaceId 進行驗證和確保資料一致性
+      const newPrompt = await createPrompt({ folderId, promptSpaceId, afterPromptId, ...prompt });
+
+      // 條件性本地更新：只在安全的情況下立即更新
+      if (!afterPromptId) {
+        // 沒有插入需求，安全地添加到最後，消除視覺延遲
+        set(state => ({
+          folders: state.folders.map(folder => 
+            folder.id === folderId 
+              ? { ...folder, prompts: [...folder.prompts, newPrompt] }
+              : folder
+          )
+        }));
       }
-      
-      // 直接使用 API，讓後端處理所有排序邏輯
-      const newPrompt = await createPrompt({ folderId, afterPromptId, promptSpaceId, ...prompt });
+      // 有 afterPromptId 時不做本地更新，等 debounce 處理確保順序正確
 
-      // 清除該 space 的快取，確保下次切換時會重新載入最新數據
-      get().clearSpaceCache(promptSpaceId);
-
-      // 重新獲取該資料夾的所有 prompts，確保排序正確
-      await get().fetchPromptsForFolder(folderId, promptSpaceId);
+      // 背景同步確保最終資料一致性（順序、seqNo等）
+      get()._debouncedRefreshFolder(folderId, promptSpaceId);
 
       return newPrompt;
     } catch (error) {
@@ -118,4 +137,11 @@ export const createPromptSlice: StateCreator<
       throw error;
     }
   },
-});
+
+  // 內部防抖方法
+  _debouncedRefreshFolder: (folderId: string, promptSpaceId: string) => {
+    get().clearSpaceCache(promptSpaceId);
+    debouncedRefresh(folderId, promptSpaceId);
+  }
+  };
+};

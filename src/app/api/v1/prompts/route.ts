@@ -144,13 +144,6 @@ export async function POST(req: Request) {
       );
     }
 
-    if (!promptSpaceId) {
-      return NextResponse.json(
-        { message: 'promptSpaceId required' },
-        { status: 400 }
-      );
-    }
-
     // JSON 內容安全驗證
     let validatedContentJSON = null;
     if (contentJSON) {
@@ -164,7 +157,7 @@ export async function POST(req: Request) {
       validatedContentJSON = validation.sanitizedJSON;
     }
 
-    // 檢查資料夾是否存在
+    // 檢查資料夾是否存在並獲取其 promptSpaceId
     const folderDoc = await adminDb
       .collection('folders')
       .doc(folderId)
@@ -178,6 +171,26 @@ export async function POST(req: Request) {
     }
 
     const folderData = folderDoc.data();
+    const folderPromptSpaceId = folderData?.promptSpaceId;
+    
+    if (!folderPromptSpaceId) {
+      return NextResponse.json(
+        { message: 'folder does not have a valid promptSpaceId' },
+        { status: 400 }
+      );
+    }
+
+    // 如果前端提供了 promptSpaceId，驗證是否與 folder 的 promptSpaceId 一致
+    if (promptSpaceId && promptSpaceId !== folderPromptSpaceId) {
+      return NextResponse.json(
+        { message: 'promptSpaceId mismatch with folder' },
+        { status: 400 }
+      );
+    }
+
+    // 使用 folder 的 promptSpaceId 確保資料一致性
+    const finalPromptSpaceId = folderPromptSpaceId;
+
     let canEdit = false;
     let promptOwnerUserId = userId;
 
@@ -189,7 +202,7 @@ export async function POST(req: Request) {
       // Check if user has shared access with edit permission
       const shareQuery = await adminDb
         .collection('space_shares')
-        .where('promptSpaceId', '==', promptSpaceId)
+        .where('promptSpaceId', '==', finalPromptSpaceId)
         .where('sharedWithUserId', '==', userId)
         .limit(1)
         .get();
@@ -222,7 +235,7 @@ export async function POST(req: Request) {
       // 過濾指定 promptSpaceId 的 prompts
       const filteredExistingPrompts = existingPromptsSnapshot.docs.filter(doc => {
         const data = doc.data();
-        return data.promptSpaceId === promptSpaceId;
+        return data.promptSpaceId === finalPromptSpaceId;
       });
 
       const existingPrompts: PromptData[] = filteredExistingPrompts.map(doc => {
@@ -257,7 +270,7 @@ export async function POST(req: Request) {
             content: validatedContentJSON ? '' : (content || ''), // JSON 優先，HTML 向後相容
             contentJSON: validatedContentJSON,
             shortcut,
-            promptSpaceId,
+            promptSpaceId: finalPromptSpaceId,
             seqNo: insertSeqNo,
             createdAt: FieldValue.serverTimestamp(),
             updatedAt: FieldValue.serverTimestamp()
@@ -298,7 +311,7 @@ export async function POST(req: Request) {
       content: validatedContentJSON ? '' : (content || ''), // JSON 優先，HTML 向後相容
       contentJSON: validatedContentJSON,
       shortcut,
-      promptSpaceId,
+      promptSpaceId: finalPromptSpaceId,
       seqNo: nextSeqNo,
       createdAt: FieldValue.serverTimestamp(),
       updatedAt: FieldValue.serverTimestamp()

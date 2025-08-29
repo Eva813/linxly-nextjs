@@ -12,6 +12,8 @@ export interface PromptSlice {
   
   // 內部防抖方法
   _debouncedRefreshFolder: (folderId: string, promptSpaceId: string) => void;
+  // 清理 timeout 的方法
+  _clearRetryTimeouts: () => void;
 }
 
 // 這裡依賴 FolderSlice，因為 prompts 都儲存在 folders 內
@@ -22,13 +24,39 @@ export const createPromptSlice: StateCreator<
   [],
   PromptSlice
 > = (set, get) => {
+  // 用於追踪和清理 timeout
+  const retryTimeouts = new Set<NodeJS.Timeout>();
+  
   // 創建防抖函數，延遲 60ms 執行資料夾刷新，避免頻繁 API 呼叫且減少視覺延遲
   const debouncedRefresh = debounce((...args: unknown[]) => {
     const [folderId, promptSpaceId] = args as [string, string];
-    get().fetchPromptsForFolder(folderId, promptSpaceId).catch(error => {
-      console.error('Debounced refresh failed:', error);
-    });
+    
+    // 簡單的重試機制，帶有 timeout 管理
+    const retrySync = async (attempt = 0) => {
+      try {
+        await get().fetchPromptsForFolder(folderId, promptSpaceId);
+      } catch (error) {
+        console.error(`Debounced refresh attempt ${attempt + 1} failed:`, error);
+        if (attempt < 2) {
+          // 最多重試 2 次，間隔遞增
+          const timeoutId = setTimeout(() => {
+            retryTimeouts.delete(timeoutId);
+            retrySync(attempt + 1);
+          }, 1000 * (attempt + 1));
+          retryTimeouts.add(timeoutId);
+        }
+        // 最終失敗時靜默處理，不干擾用戶體驗
+      }
+    };
+    
+    retrySync();
   }, 60);
+
+  // 清理所有 timeout 的函數
+  const clearAllTimeouts = () => {
+    retryTimeouts.forEach(timeoutId => clearTimeout(timeoutId));
+    retryTimeouts.clear();
+  };
 
   return {
   fetchPromptsForFolder: async (folderId, promptSpaceId) => {
@@ -142,6 +170,9 @@ export const createPromptSlice: StateCreator<
   _debouncedRefreshFolder: (folderId: string, promptSpaceId: string) => {
     get().clearSpaceCache(promptSpaceId);
     debouncedRefresh(folderId, promptSpaceId);
-  }
+  },
+
+  // 清理 timeout 的方法
+  _clearRetryTimeouts: clearAllTimeouts
   };
 };

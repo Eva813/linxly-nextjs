@@ -3,7 +3,8 @@ import { adminDb } from '@/server/db/firebase';
 import { FieldValue } from 'firebase-admin/firestore';
 import { 
   groupPromptsByFolderId, 
-  formatPromptsForResponse 
+  formatPromptsForResponse,
+  mapFirestoreDocToPromptData
 } from '@/server/utils/promptUtils';
 
 export async function GET(req: Request) {
@@ -112,20 +113,7 @@ export async function GET(req: Request) {
         
         if (!directQuery.empty) {
           console.log(`API: Direct query found ${directQuery.docs.length} prompts for folder ${folderId}`);
-          const directPrompts = directQuery.docs.map(doc => {
-            const prompt = doc.data();
-            return {
-              id: doc.id,
-              name: prompt.name,
-              content: prompt.content,
-              contentJSON: prompt.contentJSON,
-              shortcut: prompt.shortcut,
-              seqNo: prompt.seqNo,
-              createdAt: prompt.createdAt,
-              folderId: prompt.folderId,
-              userId: prompt.userId
-            };
-          });
+          const directPrompts = directQuery.docs.map(mapFirestoreDocToPromptData);
           finalPrompts = directPrompts;
         }
       }

@@ -24,16 +24,15 @@ const extractContentInfo = (content: string | JSONContent | null | undefined, co
     cleanText = safeHTML
       .replace(/<span[^>]*data-type=\"formtext\"[^>]*><\/span>/g, " [input field] ")
       .replace(/<span[^>]*data-type=\"formmenu\"[^>]*><\/span>/g, " [dropdown menu] ")
-      .replace(/<[^>]*>/g, " ")
-      .replace(/\s+/g, " ")
-      .trim()
   } else {
     cleanText = safeHTML
       .replace(/<span[^>]*data-type=\"[^\"]*\"[^>]*><\/span>/g, " [...] ")
-      .replace(/<[^>]*>/g, " ")
-      .replace(/\s+/g, " ")
-      .trim()
   }
+
+  cleanText = cleanText
+    .replace(/<[^>]*>/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
 
   return {
     interactiveCount: analysis.totalCount,

@@ -49,7 +49,6 @@ export const createFolderSlice: StateCreator<FolderSlice> = (set, get) => ({
       // 檢查快取
       const cachedData = state.folderCache[promptSpaceId];
       if (!forceRefresh && cachedData && (now - cachedData.lastFetched) < cacheDuration) {
-        console.log('Using cached folders for space:', promptSpaceId);
         set({ folders: cachedData.folders, isLoading: false });
         return;
       }

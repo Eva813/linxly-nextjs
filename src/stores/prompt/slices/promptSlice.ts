@@ -4,6 +4,25 @@ import { FolderSlice } from './folderSlice';
 import { getPrompts, createPrompt, deletePrompt as apiDeletePrompt, updatePrompt as apiUpdatePrompt } from '@/api/prompts';
 import debounce from '@/lib/utils/debounce';
 
+// 在指定位置插入 prompt 的輔助函數
+const insertPromptAtPosition = (prompts: Prompt[], newPrompt: Prompt, afterPromptId?: string): Prompt[] => {
+  if (!afterPromptId) {
+    return [...prompts, newPrompt]; // 添加到最後
+  }
+  
+  const afterIndex = prompts.findIndex(p => p.id === afterPromptId);
+  if (afterIndex === -1) {
+    console.warn(`AfterPromptId ${afterPromptId} not found, adding to end`);
+    return [...prompts, newPrompt]; // 找不到位置，添加到最後
+  }
+  
+  return [
+    ...prompts.slice(0, afterIndex + 1),
+    newPrompt,
+    ...prompts.slice(afterIndex + 1)
+  ];
+};
+
 export interface PromptSlice {
   fetchPromptsForFolder: (folderId: string, promptSpaceId?: string) => Promise<void>;
   addPromptToFolder: (folderId: string, prompt: Omit<Prompt, 'id'>, promptSpaceId: string, afterPromptId?: string) => Promise<Prompt>;
@@ -50,7 +69,7 @@ export const createPromptSlice: StateCreator<
     };
     
     retrySync();
-  }, 60);
+  }, 5);
 
   // 清理所有 timeout 的函數
   const clearAllTimeouts = () => {
@@ -78,18 +97,14 @@ export const createPromptSlice: StateCreator<
       // 使用 API，傳入 promptSpaceId 進行驗證和確保資料一致性
       const newPrompt = await createPrompt({ folderId, promptSpaceId, afterPromptId, ...prompt });
 
-      // 條件性本地更新：只在安全的情況下立即更新
-      if (!afterPromptId) {
-        // 沒有插入需求，安全地添加到最後，消除視覺延遲
-        set(state => ({
-          folders: state.folders.map(folder => 
-            folder.id === folderId 
-              ? { ...folder, prompts: [...folder.prompts, newPrompt] }
-              : folder
-          )
-        }));
-      }
-      // 有 afterPromptId 時不做本地更新，等 debounce 處理確保順序正確
+      // 統一樂觀更新：立即在正確位置插入 prompt，消除視覺延遲
+      set(state => ({
+        folders: state.folders.map(folder => 
+          folder.id === folderId 
+            ? { ...folder, prompts: insertPromptAtPosition(folder.prompts, newPrompt, afterPromptId) }
+            : folder
+        )
+      }));
 
       // 背景同步確保最終資料一致性（順序、seqNo等）
       get()._debouncedRefreshFolder(folderId, promptSpaceId);

@@ -54,6 +54,7 @@ export const useSidebarActions = () => {
     navigationRef.current = navigation;
   }, [navigation]);
 
+
   /**
    * 決定新增提示時的目標資料夾
    * 
@@ -110,7 +111,7 @@ export const useSidebarActions = () => {
       
       closeAllMenus();
     } catch (error) {
-      console.error('處理新增資料夾失敗:', error);
+      console.error('Failed to create folder:', error);
     } finally {
       setFolderCreationLoading(false);
     }
@@ -144,7 +145,7 @@ export const useSidebarActions = () => {
         }
       }
     } catch (error) {
-      console.error('處理刪除資料夾失敗:', error);
+      console.error('Failed to delete folder:', error);
     }
   }, [deleteFolder, setActiveFolderMenu]); // 移除 navigation 依賴
 
@@ -160,7 +161,7 @@ export const useSidebarActions = () => {
   const handleCreatePrompt = useCallback(async () => {
     const currentFolders = foldersRef.current; // 從 ref 獲取當前值
     if (currentFolders.length === 0) {
-      console.warn('無可用資料夾，無法新增提示');
+      console.warn('No available folder, cannot create prompt');
       return;
     }
 
@@ -171,7 +172,7 @@ export const useSidebarActions = () => {
     );
     
     if (!targetFolderId) {
-      console.error('無法找到有效的目標資料夾');
+      console.error('Unable to find a valid target folder');
       return;
     }
 
@@ -191,14 +192,16 @@ export const useSidebarActions = () => {
         currentNavigation.currentPromptId || undefined
       );
       
+      // 統一清除 loading 狀態（因為現在都有樂觀更新）
+      setPromptCreationLoading(false);
+      
       // 新增成功後自動導航到新提示
       navigationRef.current.navigateToPrompt(newPrompt.id);
       
       // 關閉所有開啟的選單
       closeAllMenus();
     } catch (error) {
-      console.error('處理新增提示失敗:', error);
-    } finally {
+      console.error('Failed to create prompt:', error);
       setPromptCreationLoading(false);
     }
   }, [determineTargetFolder, setPromptCreationLoading, addPromptToFolder, closeAllMenus]); // 移除 navigation 依賴
@@ -225,7 +228,7 @@ export const useSidebarActions = () => {
       // 導航回資料夾頁面
       navigationRef.current.navigateToFolder(folderId);
     } catch (error) {
-      console.error('處理刪除提示失敗:', error);
+      console.error('Failed to delete prompt:', error);
     }
   }, [deletePromptFromFolder, setActivePromptMenu]);
 

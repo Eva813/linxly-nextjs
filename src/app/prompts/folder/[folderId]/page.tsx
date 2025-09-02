@@ -190,12 +190,6 @@ const FolderPage = ({ params }: FolderPageProps) => {
     return <EditorSkeleton />;
   }
 
-  console.log(`Rendering folder ${folderId}:`, {
-    name: currentFolder.name,
-    promptCount: currentFolder.prompts?.length || 0,
-    prompts: currentFolder.prompts?.map(p => ({ id: p.id, name: p.name })) || []
-  });
-
   return (
     <div className='flex flex-col h-full'>
       {/* Folder 資訊編輯區域 */}

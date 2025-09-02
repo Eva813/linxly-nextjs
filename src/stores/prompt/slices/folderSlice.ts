@@ -59,14 +59,7 @@ export const createFolderSlice: StateCreator<FolderSlice> = (set, get) => ({
       }, 300);
 
       set({ error: null });
-      
-      console.log(`Fetching folders for space: ${promptSpaceId} (forceRefresh: ${forceRefresh})`);
       const folders = await getFolders(promptSpaceId);
-      console.log(`Received ${folders.length} folders:`, folders.map(f => ({ 
-        id: f.id, 
-        name: f.name, 
-        promptCount: f.prompts?.length || 0 
-      })));
 
       // 清除延遲計時器
       clearTimeout(loadingTimer);
@@ -183,9 +176,9 @@ export const createFolderSlice: StateCreator<FolderSlice> = (set, get) => ({
       return newFolder;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'unknown error';
-      console.error('新增資料夾失敗:', { error, message: errorMessage });
+      console.error('Failed to add folder:', { error, message: errorMessage });
 
-      set({ error: `無法新增資料夾: ${errorMessage}` });
+      set({ error: `Failed to add folder: ${errorMessage}` });
       throw error;
     }
   },

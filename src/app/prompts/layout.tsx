@@ -24,7 +24,7 @@ export default function PromptsLayout({ children }: { children: ReactNode }) {
 
   return (
     <FullPageLoading>
-      <div className="flex h-[calc(100vh-4rem)] overflow-hidden relative">
+      <div className="flex h-[calc(100vh-5rem)] overflow-hidden relative">
         <div
           className={`${isOpen ? 'fixed inset-0 bg-black/40 z-40' : 'hidden'} sm:hidden`}
           onClick={toggleSidebar}

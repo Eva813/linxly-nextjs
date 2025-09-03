@@ -15,9 +15,10 @@ export function getPrompt(promptId: string): Promise<Prompt> {
 // 建立新的prompt片段
 /**
  * 建立新的 prompt 片段，支援插入位置 afterPromptId
+ * promptSpaceId 用於驗證和確保資料一致性
  */
 export function createPrompt(
-  data: { folderId: string; afterPromptId?: string; promptSpaceId?: string } & Omit<Prompt, 'id'>
+  data: { folderId: string; promptSpaceId?: string; afterPromptId?: string } & Omit<Prompt, 'id'>
 ): Promise<Prompt> {
   return request<Prompt>('/prompts', {
     method: 'POST',

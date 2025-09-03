@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useContext, useCallback, useMemo } from "react";
+import React, { useContext, useCallback, useMemo, useState } from "react";
 import Link from "next/link";
 import { BsThreeDotsVertical } from "react-icons/bs";
 import {
@@ -21,6 +21,7 @@ import { SidebarContext } from '@/providers/clientRootProvider';
 import { useSidebarStore } from "@/stores/sidebar";
 import { useSidebarActions } from "@/hooks/sidebar";
 import { useEditableState } from '@/hooks/useEditableState';
+import { FolderShareDialog } from '@/components/folder/folderShareDialog';
 
 const FolderItemComponent: React.FC<FolderItemProps> = ({
   folder,
@@ -31,10 +32,11 @@ const FolderItemComponent: React.FC<FolderItemProps> = ({
     activeFolderMenuId, 
     setActiveFolderMenu, 
     collapsedFolderIds, 
-    toggleFolderCollapse 
+    toggleFolderCollapse
   } = useSidebarStore();
   const { navigation, handleDeleteFolder } = useSidebarActions();
   const { canDelete } = useEditableState();
+  const [isShareDialogOpen, setIsShareDialogOpen] = useState(false);
   
   const isActiveFolder = useMemo(() => 
     navigation.currentFolderId === folder.id, 
@@ -67,6 +69,14 @@ const FolderItemComponent: React.FC<FolderItemProps> = ({
   const handleDeleteClick = useCallback(() => {
     handleDeleteFolder(folder.id);
   }, [folder.id, handleDeleteFolder]);
+  
+  const handleShareClick = useCallback(() => {
+    setIsShareDialogOpen(true);
+  }, []);
+  
+  const handleCloseShareDialog = useCallback(() => {
+    setIsShareDialogOpen(false);
+  }, []);
   
   const linkClassName = useMemo(() => 
     `px-2 py-1 w-full block rounded font-extrabold hover:bg-light dark:hover:text-third flex items-center justify-between text-lg ${
@@ -117,14 +127,24 @@ const FolderItemComponent: React.FC<FolderItemProps> = ({
             {activeFolderMenuId === folder.id && (
               <DropdownMenuContent>
                 {canDelete && (
-                  <DropdownMenuItem className="dark:hover:bg-light">
-                    <button
-                      onClick={handleDeleteClick}
-                      className="w-full text-left"
-                    >
-                      Delete
-                    </button>
-                  </DropdownMenuItem>
+                  <>
+                    <DropdownMenuItem className="dark:hover:bg-light">
+                      <button
+                        onClick={handleShareClick}
+                        className="w-full text-left"
+                      >
+                        Share Folder
+                      </button>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem className="dark:hover:bg-light">
+                      <button
+                        onClick={handleDeleteClick}
+                        className="w-full text-left"
+                      >
+                        Delete
+                      </button>
+                    </DropdownMenuItem>
+                  </>
                 )}
               </DropdownMenuContent>
             )}
@@ -134,6 +154,13 @@ const FolderItemComponent: React.FC<FolderItemProps> = ({
       </Link>
       {/* 如果沒有折疊，顯示 children（也就是 prompt 列表） */}
       {!isCollapsed && children}
+      
+      {/* FolderShareDialog */}
+      <FolderShareDialog
+        folder={folder}
+        isOpen={isShareDialogOpen}
+        onClose={handleCloseShareDialog}
+      />
     </li>
   );
 };

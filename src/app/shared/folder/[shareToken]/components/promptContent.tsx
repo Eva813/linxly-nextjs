@@ -1,14 +1,6 @@
 import { memo } from 'react';
 import { usePromptRenderer } from '@/hooks/usePromptRenderer';
-import type { JSONContent } from '@tiptap/react';
-
-interface Prompt {
-  id: string;
-  name: string;
-  content: string;
-  contentJSON?: JSONContent | null;
-  shortcut?: string;
-}
+import { Prompt } from '@/types/prompt';
 
 interface PromptContentProps {
   selectedPrompt: Prompt | null;

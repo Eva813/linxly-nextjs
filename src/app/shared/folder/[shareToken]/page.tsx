@@ -2,33 +2,15 @@ import { Metadata } from 'next';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { FolderX, ExternalLink } from 'lucide-react';
+import { SharedFolderResponse } from '@/shared/types/sharedFolder';
 import SharedFolderView from './components/sharedFolderView';
 
 interface PageProps {
   params: { shareToken: string };
 }
 
-interface PublicFolderResponse {
-  available: boolean;
-  data?: {
-    folder: { 
-      name: string; 
-      description: string; 
-    };
-    prompts: Array<{ 
-      id: string; 
-      name: string; 
-      content: string; 
-      contentJSON?: object | null;
-      shortcut?: string; 
-    }>;
-  };
-  error?: {
-    code: 'NOT_FOUND' | 'INACTIVE' | 'TEAM_ONLY' | 'FOLDER_DELETED';
-    message: string;
-    cta: { text: string; link: string; };
-  };
-}
+// 使用共用類型定義
+type PublicFolderResponse = SharedFolderResponse;
 
 async function fetchPublicFolder(shareToken: string): Promise<PublicFolderResponse> {
   try {

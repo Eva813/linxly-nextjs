@@ -2,27 +2,14 @@
 
 import { useState, useCallback } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
+import { SharedFolderData } from '@/shared/types/sharedFolder';
 import FolderHeader from './folderHeader';
 import PromptList from './promptList';
 import PromptContent from './promptContent';
 import CTASection from './ctaSection';
 
-interface PublicFolderData {
-  folder: { 
-    name: string; 
-    description: string; 
-  };
-  prompts: Array<{ 
-    id: string; 
-    name: string; 
-    content: string; 
-    contentJSON?: object | null;
-    shortcut?: string; 
-  }>;
-}
-
 interface SharedFolderViewProps {
-  data: PublicFolderData;
+  data: SharedFolderData;
 }
 
 export default function SharedFolderView({ data }: SharedFolderViewProps) {

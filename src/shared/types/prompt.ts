@@ -3,12 +3,14 @@
  * 可以被前端和後端同時使用
  */
 
+import type { JSONContent } from '@tiptap/react';
+
 // 統一的 PromptData 介面
 export interface PromptData {
   id: string;
   name: string;
   content: string;
-  contentJSON?: object | null; // 新增 JSON 格式支援
+  contentJSON?: JSONContent | null;
   shortcut: string;
   seqNo?: number | null;
   createdAt?: Date | { seconds: number; nanoseconds?: number } | null;
@@ -21,7 +23,7 @@ export interface PromptApiResponse {
   id: string;
   name: string;
   content: string;
-  contentJSON?: object | null; // 新增 JSON 格式支援
+  contentJSON?: JSONContent | null;
   shortcut: string;
   seqNo?: number;
 }

@@ -1,9 +1,11 @@
 import React from "react";
+import type { JSONContent } from '@tiptap/react';
+
 export interface Prompt {
   id: string;
   name: string;
   content: string;
-  contentJSON?: object | null; // 新增 JSON 格式支援
+  contentJSON?: JSONContent | null;
   shortcut?: string;
   seqNo?: number; // 新增排序欄位，可選是因為要支援 Lazy Migration
 }

@@ -1,12 +1,5 @@
 import { memo } from 'react';
-
-interface Prompt {
-  id: string;
-  name: string;
-  content: string;
-  contentJSON?: object | null;
-  shortcut?: string;
-}
+import { Prompt } from '@/types/prompt';
 
 interface PromptListProps {
   prompts: Prompt[];

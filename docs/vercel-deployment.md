@@ -25,8 +25,8 @@ NEXT_PUBLIC_APP_URL=https://your-app-git-branch.vercel.app
 
 1. 檢查 Vercel 環境變數設定
 2. 重新部署專案
-3. 訪問 /api/v1/test/url 檢查 URL 生成
-4. 檢查瀏覽器開發者工具的網路請求
+3. 檢查瀏覽器開發者工具的網路請求
+4. 檢查實際生成的邀請連結是否正確
 
 ## 注意事項
 

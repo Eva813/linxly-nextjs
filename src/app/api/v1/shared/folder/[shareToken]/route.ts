@@ -1,27 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { adminDb } from '@/server/db/firebase';
+import { SharedFolderResponse } from '@/shared/types/sharedFolder';
 
-interface PublicFolderResponse {
-  available: boolean;
-  data?: {
-    folder: { 
-      name: string; 
-      description: string; 
-    };
-    prompts: Array<{ 
-      id: string; 
-      name: string; 
-      content: string; 
-      contentJSON?: object | null;
-      shortcut?: string; 
-    }>;
-  };
-  error?: {
-    code: 'NOT_FOUND' | 'INACTIVE' | 'TEAM_ONLY' | 'FOLDER_DELETED';
-    message: string;
-    cta: { text: string; link: string; };
-  };
-}
+// 使用共用類型定義
+type PublicFolderResponse = SharedFolderResponse;
 
 // 錯誤回應模板
 const ERROR_RESPONSES = {

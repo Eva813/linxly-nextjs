@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -41,6 +41,12 @@ export const FolderShareDialog: React.FC<FolderShareDialogProps> = ({
   
   const [copySuccess, setCopySuccess] = useState(false);
 
+  useEffect(() => {
+    if (isOpen) {
+      setCopySuccess(false);
+    }
+  }, [isOpen]);
+
   const shareOptions = [
     {
       value: 'none' as const,
@@ -63,13 +69,13 @@ export const FolderShareDialog: React.FC<FolderShareDialogProps> = ({
   ];
 
   const shareUrl = shareToken 
-    ? `https://app.linxly.ai/shared/folder/${shareToken}`
+    ? `${window.location.origin}/shared/folder/${shareToken}`
     : '';
 
   const handleShareChange = async (newStatus: string) => {
     if (newStatus === 'team') return; // Team option is disabled
     
-    clearError(); // 清除之前的錯誤
+    clearError();
     await updateShareStatus(newStatus as ShareStatus);
   };
 
@@ -77,8 +83,6 @@ export const FolderShareDialog: React.FC<FolderShareDialogProps> = ({
     const success = await copyShareLink();
     if (success) {
       setCopySuccess(true);
-      // 這是有需要的嗎？
-      setTimeout(() => setCopySuccess(false), 2000);
     }
   };
 

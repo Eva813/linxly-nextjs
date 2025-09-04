@@ -1,8 +1,6 @@
 "use client";
-import React, { useMemo, useCallback } from "react";
-import { parseHtml } from "@/lib/utils/parseHtml";
-import { renderCustomElement } from "./renderers/renderCustomElement";
-import { generateCompatibleSafeHTML } from "@/lib/utils/generateSafeHTML";
+import React from "react";
+import { usePromptRenderer } from "@/hooks/usePromptRenderer";
 import type { JSONContent } from '@tiptap/react';
 
 interface PreviewPromptProps {
@@ -10,79 +8,9 @@ interface PreviewPromptProps {
   contentJSON?: JSONContent | null | undefined;
   shortcut: string;
 }
-const VOID_TAGS = new Set([
-  "area", "base", "br", "col", "embed", "hr", "img", "input",
-  "link", "meta", "source", "track", "wbr"
-]);
 
 const PreviewPrompt: React.FC<PreviewPromptProps> = ({ content, contentJSON, shortcut }) => {
-  // 生成安全的 HTML 內容 - 使用漸進式遷移策略
-  const safeHTML = useMemo(() => {
-    return generateCompatibleSafeHTML(content, contentJSON);
-  }, [content, contentJSON]);
-
-  // 遞迴渲染 DOM ➝ React 元素
-  const renderNode = useCallback((node: ChildNode, key: string): React.ReactNode => {
-    if (node.nodeType === Node.TEXT_NODE) {
-      return node.textContent;
-    }
-
-    if (node.nodeType === Node.ELEMENT_NODE) {
-      const el = node as HTMLElement;
-      const tagName = el.tagName.toLowerCase();
-
-      if (el.tagName === "SPAN" && el.hasAttribute("data-type")) {
-        return renderCustomElement(el, key);
-      }
-
-      // 遞迴子節點
-      const children = Array.from(el.childNodes).map((child, i) =>
-        renderNode(child, `${key}-${i}`)
-      );
-
-      // void tag，不含 children
-      if (VOID_TAGS.has(tagName)) {
-        return React.createElement(tagName, { key });
-      }
-
-      // 建立 style object，加入樣式
-      const styleObj: React.CSSProperties = {};
-      const style = el.style;
-
-      for (let i = 0; i < style.length; i++) {
-        const prop = style.item(i);
-        if (!prop) continue;
-        const camelProp = prop.replace(/-([a-z])/g, (_, c) => c.toUpperCase()) as keyof React.CSSProperties;
-        const value = style.getPropertyValue(prop);
-        if (value) {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          styleObj[camelProp] = value as any;
-        }
-      }
-
-      return React.createElement(
-        tagName,
-        {
-          key,
-          className: "my-1",
-          style: styleObj,
-        },
-        children
-      );
-    }
-
-
-    return null;
-  }, []);
-
-  const renderedContent = useMemo(() => {
-    const root = parseHtml(safeHTML);
-    if (!root) return null;
-
-    return Array.from(root.childNodes).map((child, i) =>
-      renderNode(child, `root-${i}`)
-    );
-  }, [safeHTML, renderNode]);
+  const renderedContent = usePromptRenderer(content, contentJSON);
 
   return (
     <div className="p-4 space-y-4 h-[calc(100vh-160px)] flex flex-col">

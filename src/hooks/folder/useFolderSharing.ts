@@ -43,20 +43,23 @@ export const useFolderSharing = (folderId: string): UseFolderSharingReturn => {
     setState(prev => ({ ...prev, isLoading: true, error: null }));
     
     try {
-      // TODO: 實際 API 呼叫
-      // const response = await fetch(`/api/v1/folders/${folderId}/shares`);
-      // const data = await response.json();
+      const response = await fetch(`/api/v1/folders/${folderId}/shares`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
       
-      // 模擬 API 回應 - 初始化時生成 token
-      const mockData = {
-        shareType: 'none',
-        shareToken: `mock-token-${folderId}-${Date.now()}`,
-        isActive: false,
-      };
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to load share status');
+      }
+      
+      const data = await response.json();
       
       setState({
-        shareStatus: mockData.isActive ? mockData.shareType as ShareStatus : 'none',
-        shareToken: mockData.shareToken,
+        shareStatus: data.shareStatus as ShareStatus,
+        shareToken: data.shareToken || null,
         isLoading: false,
         error: null,
       });
@@ -82,24 +85,24 @@ export const useFolderSharing = (folderId: string): UseFolderSharingReturn => {
     setState(prev => ({ ...prev, isLoading: true, error: null }));
     
     try {
-      // TODO: 實際 API 呼叫
-      // const response = await fetch(`/api/v1/folders/${folderId}/shares`, {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify({ shareType: newStatus })
-      // });
-      // const data = await response.json();
+      const response = await fetch(`/api/v1/folders/${folderId}/shares`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ shareStatus: newStatus }),
+      });
       
-      // 模擬 API 回應
-      const mockData = {
-        shareType: newStatus,
-        shareToken: state.shareToken || `mock-token-${folderId}-${Date.now()}`,
-        isActive: newStatus !== 'none',
-      };
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to update share settings');
+      }
+      
+      const data = await response.json();
       
       setState({
-        shareStatus: newStatus,
-        shareToken: mockData.shareToken,
+        shareStatus: data.shareStatus as ShareStatus,
+        shareToken: data.shareToken || null,
         isLoading: false,
         error: null,
       });
@@ -111,7 +114,7 @@ export const useFolderSharing = (folderId: string): UseFolderSharingReturn => {
         error: errorMessage,
       }));
     }
-  }, [folderId, state.shareToken]);
+  }, [folderId]);
 
   /**
    * 複製分享連結到剪貼簿
@@ -121,7 +124,7 @@ export const useFolderSharing = (folderId: string): UseFolderSharingReturn => {
       return false;
     }
     
-    const shareUrl = `https://app.linxly.ai/shared/folder/${state.shareToken}`;
+    const shareUrl = `${window.location.origin}/shared/folder/${state.shareToken}`;
     
     try {
       await navigator.clipboard.writeText(shareUrl);

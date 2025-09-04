@@ -38,7 +38,9 @@ export async function middleware(request: NextRequest) {
     "/api/health",
   ];
 
-  const isPublicPath = publicPaths.includes(pathname) || pathname.startsWith("/api/v1/invites/");
+  const isPublicPath = publicPaths.includes(pathname) || 
+    pathname.startsWith("/api/v1/invites/") || 
+    pathname.startsWith("/api/v1/shared/");
 
   if (isPublicPath) {
     return NextResponse.next();

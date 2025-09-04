@@ -264,7 +264,7 @@ export default function Flow({ boardId, promptToAdd, onPromptHandled }:
 
 
   return (
-    <div className='h-[calc(100vh-64px)] w-full' >
+    <div className='h-[calc(100vh-65px)] w-full' >
       <ReactFlow
         nodes={nodes}
         nodeTypes={nodeTypes}

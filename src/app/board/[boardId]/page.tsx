@@ -40,7 +40,7 @@ export default function BoardPage() {
   // Folders are fetched by FullPageLoading and managed by store
 
   return (
-    <div className="w-full h-[calc(100vh-64px)] bg-white-50">
+    <div className="w-full h-[calc(100vh-65px)] bg-white-50">
       <div className="fixed top-19 left-4 flex items-center space-x-2 bg-white-50 p-2 rounded z-50">
         <Input
           type="text"

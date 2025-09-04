@@ -141,11 +141,17 @@ export const useInviteLinks = ({ spaceId, isOpen = false }: UseInviteLinksProps)
       // Refresh from API to get latest state
       await fetchInviteLinks();
       
-      await navigator.clipboard.writeText(`${window.location.origin}/invite/${response.shareId}`);
+      if (typeof window !== 'undefined') {
+        await navigator.clipboard.writeText(`${window.location.origin}/invite/${response.shareId}`);
+      }
+      
+      const inviteLink = typeof window !== 'undefined' 
+        ? `${window.location.origin}/invite/${response.shareId}`
+        : `/invite/${response.shareId}`;
       
       return { 
         success: true, 
-        link: `${window.location.origin}/invite/${response.shareId}`
+        link: inviteLink
       };
       
     } catch (error) {

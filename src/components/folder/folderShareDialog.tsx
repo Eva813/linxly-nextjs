@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -68,9 +68,10 @@ export const FolderShareDialog: React.FC<FolderShareDialogProps> = ({
     },
   ];
 
-  const shareUrl = shareToken 
-    ? `${window.location.origin}/shared/folder/${shareToken}`
-    : '';
+  const shareUrl = useMemo(() => {
+    if (typeof window === 'undefined' || !shareToken) return '';
+    return `${window.location.origin}/shared/folder/${shareToken}`;
+  }, [shareToken]);
 
   const handleShareChange = async (newStatus: string) => {
     if (newStatus === 'team') return; // Team option is disabled

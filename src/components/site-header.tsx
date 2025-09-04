@@ -22,16 +22,18 @@ export function SiteHeader() {
 
   const handleLogout = async () => {
     // 通知 Chrome 擴充功能使用者已登出
-    window.postMessage(
-      {
-        type: 'FROM_SITE_HEADER',
-        action: 'USER_LOGGED_OUT',
-        data: {
-          status: 'loggedOut',
+    if (typeof window !== 'undefined') {
+      window.postMessage(
+        {
+          type: 'FROM_SITE_HEADER',
+          action: 'USER_LOGGED_OUT',
+          data: {
+            status: 'loggedOut',
+          },
         },
-      },
-      window.location.origin
-    )
+        window.location.origin
+      );
+    }
 
     // 先執行 signOut，完成後再導向
     try {

@@ -92,13 +92,15 @@ export function useLoginForm() {
         // 如果有邀請參數，等待 useEffect 中的邀請處理邏輯
 
         // 通知內容腳本 (Content Script)
-        window.postMessage({
-          type: 'FROM_LOGIN_PAGE',
-          action: 'USER_LOGGED_IN',
-          data: {
-            status: 'loggedIn'
-          }
-        }, window.location.origin);
+        if (typeof window !== 'undefined') {
+          window.postMessage({
+            type: 'FROM_LOGIN_PAGE',
+            action: 'USER_LOGGED_IN',
+            data: {
+              status: 'loggedIn'
+            }
+          }, window.location.origin);
+        }
       }
     } catch {
       setError('Login failed');
@@ -119,15 +121,17 @@ export function useLoginForm() {
     signIn('google', { callbackUrl });
 
     // 通知內容腳本 (Content Script) - 保持原本功能
-    window.postMessage({
-      type: 'FROM_LOGIN_PAGE', // 自訂訊息類型
-      action: 'USER_LOGGED_IN',
-      data: {
-        // 傳遞一些使用者資訊，注意不要洩漏敏感資訊
-        // 例如：status: 'loggedIn' 或部分使用者 ID
-        status: 'loggedIn'
-      }
-    }, window.location.origin);
+    if (typeof window !== 'undefined') {
+      window.postMessage({
+        type: 'FROM_LOGIN_PAGE', // 自訂訊息類型
+        action: 'USER_LOGGED_IN',
+        data: {
+          // 傳遞一些使用者資訊，注意不要洩漏敏感資訊
+          // 例如：status: 'loggedIn' 或部分使用者 ID
+          status: 'loggedIn'
+        }
+      }, window.location.origin);
+    }
   };
 
   return {

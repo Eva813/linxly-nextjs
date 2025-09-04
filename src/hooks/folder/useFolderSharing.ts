@@ -124,6 +124,10 @@ export const useFolderSharing = (folderId: string): UseFolderSharingReturn => {
       return false;
     }
     
+    if (typeof window === 'undefined') {
+      return false;
+    }
+    
     const shareUrl = `${window.location.origin}/shared/folder/${state.shareToken}`;
     
     try {

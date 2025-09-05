@@ -13,9 +13,23 @@ const DEFAULT_FOLDER_DATA = {
 
 const DEFAULT_PROMPT_DATA = {
   name: 'New prompt',
-  content: 'New prompt content',
+  contentJSON: {
+    type: 'doc',
+    content: [
+      {
+        type: 'paragraph',
+        content: [
+          {
+            type: 'text',
+            text: 'New prompt content'
+          }
+        ]
+      }
+    ]
+  },
   shortcut: '/newPrompt',
-} as const;
+  content: '', 
+};
 
 /**
  * 側邊欄業務邏輯統合 Hook
@@ -115,7 +129,7 @@ export const useSidebarActions = () => {
     } finally {
       setFolderCreationLoading(false);
     }
-  }, [addFolder, closeAllMenus, setFolderCreationLoading]); // 移除 navigation 依賴
+  }, [addFolder, closeAllMenus, setFolderCreationLoading]);
 
   /**
    * 處理刪除資料夾的完整流程
@@ -159,13 +173,13 @@ export const useSidebarActions = () => {
    * - store 函式 (setPromptCreationLoading, addPromptToFolder, closeAllMenus) 來自 Zustand，本身穩定
    */
   const handleCreatePrompt = useCallback(async () => {
-    const currentFolders = foldersRef.current; // 從 ref 獲取當前值
+    const currentFolders = foldersRef.current;
     if (currentFolders.length === 0) {
       console.warn('No available folder, cannot create prompt');
       return;
     }
 
-    const currentNavigation = navigationRef.current; // 從 ref 獲取最新的導航信息
+    const currentNavigation = navigationRef.current;
     const targetFolderId = determineTargetFolder(
       currentNavigation.currentFolderId || undefined,
       currentNavigation.currentPromptId || undefined
@@ -179,7 +193,7 @@ export const useSidebarActions = () => {
     setPromptCreationLoading(true, targetFolderId, currentNavigation.currentPromptId || null);
 
     try {
-      const spaceId = currentSpaceIdRef.current; // 從 ref 獲取當前值
+      const spaceId = currentSpaceIdRef.current;
       if (!spaceId) {
         console.error('No current space selected');
         return;

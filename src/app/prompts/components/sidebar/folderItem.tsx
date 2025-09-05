@@ -9,6 +9,15 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 import { FolderItemProps } from "@/types/prompt";
 import {
   ChevronDown,
@@ -23,20 +32,33 @@ import { useSidebarActions } from "@/hooks/sidebar";
 import { useEditableState } from '@/hooks/useEditableState';
 import { FolderShareDialog } from '@/components/folder/folderShareDialog';
 
+const DIALOG_TEXTS = {
+  deleteTitle: "Confirm Delete Folder",
+  deleteDescription: (name: string) => 
+    `Are you sure you want to delete the folder "${name}"? This action cannot be undone, and all prompts inside the folder will also be deleted.`,
+  cancelButton: "Cancel",
+  deleteButton: "Delete",
+  shareButton: "Share Folder"
+} as const;
+
+const ICON_STYLES = {
+  chevron: "w-4 h-4 text-gray-400",
+  folder: "text-gray-500 w-4 h-4 mr-2"
+} as const;
+
 const FolderItemComponent: React.FC<FolderItemProps> = ({
   folder,
   children,
 }) => {
   const { isOpen, toggleSidebar } = useContext(SidebarContext);
   const { 
-    activeFolderMenuId, 
-    setActiveFolderMenu, 
     collapsedFolderIds, 
     toggleFolderCollapse
   } = useSidebarStore();
   const { navigation, handleDeleteFolder } = useSidebarActions();
   const { canDelete } = useEditableState();
   const [isShareDialogOpen, setIsShareDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   
   const isActiveFolder = useMemo(() => 
     navigation.currentFolderId === folder.id, 
@@ -48,6 +70,9 @@ const FolderItemComponent: React.FC<FolderItemProps> = ({
     [collapsedFolderIds, folder.id]
   );
   
+  const ChevronIcon = isCollapsed ? ChevronRight : ChevronDown;
+  const FolderIcon = isCollapsed ? Folder : FolderOpen;
+  
   const handleLinkClick = useCallback(() => {
     if (isOpen) toggleSidebar();
   }, [isOpen, toggleSidebar]);
@@ -58,16 +83,14 @@ const FolderItemComponent: React.FC<FolderItemProps> = ({
     toggleFolderCollapse(folder.id);
   }, [folder.id, toggleFolderCollapse]);
   
-  const handleMenuClick = useCallback((e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setActiveFolderMenu(
-      activeFolderMenuId === folder.id ? null : folder.id
-    );
-  }, [activeFolderMenuId, folder.id, setActiveFolderMenu]);
   
   const handleDeleteClick = useCallback(() => {
+    setIsDeleteDialogOpen(true);
+  }, []);
+  
+  const handleConfirmDelete = useCallback(() => {
     handleDeleteFolder(folder.id);
+    setIsDeleteDialogOpen(false);
   }, [folder.id, handleDeleteFolder]);
   
   const handleShareClick = useCallback(() => {
@@ -76,6 +99,10 @@ const FolderItemComponent: React.FC<FolderItemProps> = ({
   
   const handleCloseShareDialog = useCallback(() => {
     setIsShareDialogOpen(false);
+  }, []);
+  
+  const handleCloseDeleteDialog = useCallback(() => {
+    setIsDeleteDialogOpen(false);
   }, []);
   
   const linkClassName = useMemo(() => 
@@ -95,21 +122,15 @@ const FolderItemComponent: React.FC<FolderItemProps> = ({
       >
         <div className="flex items-center">
           {/* 折疊/展開按鈕 */}
-          <button
+            <button
             onClick={handleToggleCollapse}
-            className="focus:outline-none p-1 hover:bg-gray-light dark:hover:bg-light rounded"
-          >
-            {isCollapsed ? (
-              <ChevronRight className="w-4 h-4 text-gray-400" />
-            ) : (
-              <ChevronDown className="w-4 h-4  text-gray-400" />
-            )}
-          </button>
-          {isCollapsed ? (
-            <Folder className="text-gray-500 w-4 h-4 mr-2" />
-          ) : (
-            <FolderOpen className="text-gray-500 w-4 h-4 mr-2" />
-          )}
+            aria-expanded={!isCollapsed}
+            aria-label={`${isCollapsed ? 'Expand' : 'Collapse'} ${folder.name} folder`}
+            className="focus:outline-none p-1 hover:bg-gray-200 dark:hover:bg-light rounded"
+            >
+            <ChevronIcon className={ICON_STYLES.chevron} />
+            </button>
+          <FolderIcon className={ICON_STYLES.folder} />
           <strong className="cursor-pointer">{folder.name}</strong>
         </div>
         <div className="flex items-center">
@@ -118,36 +139,20 @@ const FolderItemComponent: React.FC<FolderItemProps> = ({
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button
-                onClick={handleMenuClick}
+                aria-label={`Open menu for ${folder.name} folder`}
                 className="focus:outline-none hover:bg-gray-200 dark:hover:bg-light p-1 rounded"
               >
                 <BsThreeDotsVertical className="text-gray-400" />
               </button>
             </DropdownMenuTrigger>
-            {activeFolderMenuId === folder.id && (
-              <DropdownMenuContent>
-                {canDelete && (
-                  <>
-                    <DropdownMenuItem className="dark:hover:bg-light">
-                      <button
-                        onClick={handleShareClick}
-                        className="w-full text-left"
-                      >
-                        Share Folder
-                      </button>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem className="dark:hover:bg-light">
-                      <button
-                        onClick={handleDeleteClick}
-                        className="w-full text-left"
-                      >
-                        Delete
-                      </button>
-                    </DropdownMenuItem>
-                  </>
-                )}
-              </DropdownMenuContent>
-            )}
+            <DropdownMenuContent>
+              <DropdownMenuItem onClick={handleShareClick} className="dark:hover:bg-light">
+                {DIALOG_TEXTS.shareButton}
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={handleDeleteClick} className="dark:hover:bg-light">
+                {DIALOG_TEXTS.deleteButton}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
           </DropdownMenu>
           )}
         </div>
@@ -161,6 +166,26 @@ const FolderItemComponent: React.FC<FolderItemProps> = ({
         isOpen={isShareDialogOpen}
         onClose={handleCloseShareDialog}
       />
+      
+      {/* DeleteConfirmationDialog */}
+      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+        <DialogTitle>{DIALOG_TEXTS.deleteTitle}</DialogTitle>
+        <DialogDescription>
+          {DIALOG_TEXTS.deleteDescription(folder.name)}
+        </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+        <Button variant="outline" onClick={handleCloseDeleteDialog}>
+          {DIALOG_TEXTS.cancelButton}
+        </Button>
+        <Button variant="danger" onClick={handleConfirmDelete}>
+          {DIALOG_TEXTS.deleteButton}
+        </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </li>
   );
 };

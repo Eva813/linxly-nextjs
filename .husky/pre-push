@@ -20,7 +20,13 @@ echo "✅ Type check passed!"
 # Step 2: Claude Code Review (Medium - ~30-60s) 
 echo ""
 echo "🤖 Step 2/3: AI Code Review with Specialized Prompts"
-if command -v claude &> /dev/null; then
+
+# Check if Claude CLI is available first
+if ! command -v claude &> /dev/null; then
+  echo "⚠️  Claude CLI not found. Skipping Claude Code Review."
+  echo "💡 To enable AI code review: install Claude Code CLI"
+  echo "✅ Code review skipped!"
+else
   echo "📝 Analyzing your changes with Claude..."
   
   # Get changed files (handle different scenarios)
@@ -40,42 +46,80 @@ if command -v claude &> /dev/null; then
   if [[ -z "$changed_files" ]]; then
     echo "ℹ️  No files to review."
   else
-    echo "📊 Found $(echo "$changed_files" | wc -l) files to review"
+    # Fix file count display (remove wc -l spaces)
+    file_count=$(echo "$changed_files" | wc -l | tr -d ' ')
+    echo "📊 Found $file_count files to review"
     
-    # Review each file with appropriate prompt
-    review_failed=false
-    echo "$changed_files" | while read -r file; do
+    # Debug: Show files found
+    echo "🔍 Files found for review:"
+    echo "$changed_files" | sed 's/^/  - /'
+    echo ""
+    
+    # Filter for JavaScript/TypeScript files only
+    js_ts_files=""
+    while IFS= read -r file; do
       if [[ "$file" =~ \.(js|jsx|ts|tsx)$ ]]; then
-        echo ""
+        if [[ -n "$js_ts_files" ]]; then
+          js_ts_files="$js_ts_files"$'\n'"$file"
+        else
+          js_ts_files="$file"
+        fi
+      fi
+    done <<< "$changed_files"
+    
+    if [[ -z "$js_ts_files" ]]; then
+      echo "ℹ️  No JavaScript/TypeScript files to review."
+    else
+      js_ts_count=$(echo "$js_ts_files" | wc -l | tr -d ' ')
+      echo "📋 Reviewing $js_ts_count JavaScript/TypeScript files:"
+      echo ""
+      
+      # Review each file with appropriate prompt (avoid subshell issues)
+      review_failed=false
+      while IFS= read -r file; do
         echo "🔍 Reviewing: $file"
         
         # Intelligent prompt selection based on file path
         if [[ "$file" =~ ^src/app/api/ ]] || [[ "$file" =~ ^src/server/ ]] || [[ "$file" =~ ^src/middleware ]] || [[ "$file" =~ middleware\.ts$ ]]; then
           # Backend files - use backend prompt
           echo "  📊 Using Backend/API review prompt"
-          claude code review "$file" --prompt-file=".claude/commands/backend/code-review.md"
+          if ! claude code review "$file" --prompt-file=".claude/commands/backend/code-review.md"; then
+            echo "  ❌ Review failed for $file"
+            review_failed=true
+          fi
         elif [[ "$file" =~ ^src/(app|components|hooks|stores)/ ]] || [[ "$file" =~ \.(tsx)$ ]]; then
           # Frontend files - use frontend prompt  
           echo "  🎨 Using Frontend/React review prompt"
-          claude code review "$file" --prompt-file=".claude/commands/frontend/code-review.md"
+          if ! claude code review "$file" --prompt-file=".claude/commands/frontend/code-review.md"; then
+            echo "  ❌ Review failed for $file"
+            review_failed=true
+          fi
         elif [[ "$file" =~ ^src/(shared|types|utils)/ ]]; then
           # Shared files - use brief review
           echo "  🔧 Using general review"
-          claude code review "$file" --brief
+          if ! claude code review "$file" --brief; then
+            echo "  ❌ Review failed for $file"
+            review_failed=true
+          fi
         else
           # Other files - use brief review
           echo "  📋 Using brief review"  
-          claude code review "$file" --brief
+          if ! claude code review "$file" --brief; then
+            echo "  ❌ Review failed for $file"
+            review_failed=true
+          fi
         fi
         echo "  ✅ Review completed for $file"
+        echo ""
+      done <<< "$js_ts_files"
+      
+      # Check if any reviews failed
+      if [[ "$review_failed" == true ]]; then
+        echo "❌ Some code reviews failed. Please check the output above."
+        exit 1
       fi
-    done
-    
-    if [[ $? -ne 0 ]]; then
-      review_failed=true
     fi
     
-    echo ""
     echo "🔍 Claude Code Review completed!"
     echo "💡 Review the suggestions above before pushing."
     echo ""
@@ -86,10 +130,8 @@ if command -v claude &> /dev/null; then
       exit 1
     fi
   fi
-else
-  echo "⚠️  Claude CLI not found. Skipping Claude Code Review."
-  echo "💡 To enable AI code review: install Claude Code CLI"
 fi
+
 echo "✅ Code review completed!"
 
 # Step 3: Build (Slow - ~1-5min)

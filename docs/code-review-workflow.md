@@ -49,21 +49,32 @@ npm run ci
 - **Pre-commit**: 自動 lint + format 修改的檔案
 - **Pre-push**: TypeScript 檢查 + Build 驗證 + Claude 智能審查
 
-### 2. Push 階段 (本地 + 互動)
+### 2. Push 階段 (本地 + 互動) - **Fast-fail 策略**
 
-當你執行 `git push` 時：
+當你執行 `git push` 時，採用專業 DevOps **快速失敗策略**：
 
-1. ✅ TypeScript 類型檢查
-2. ✅ 專案建置驗證
-3. 🤖 **Claude 智能代碼審查**
+1. 🔧 **TypeScript 類型檢查** (快速 ~10-30秒)
+   - 立即發現型別錯誤，失敗率較高
+   - 失敗即停，避免後續浪費時間
+2. 🤖 **Claude 智能代碼審查** (中等 ~30-60秒)
    - 自動識別檔案類型（Frontend/Backend/General）
    - 選擇對應的專業 prompt 進行審查
    - 提供針對性的改進建議
    - 互動選擇：繼續推送或取消修改
+3. 🏗️ **專案建置驗證** (最慢 ~1-5分鐘)
+   - 只在前兩步通過後執行
+   - 資源密集操作放在最後
 
 ```
-🤖 Running Claude Code Review with specialized prompts...
+🚀 Running professional CI checks with fast-fail strategy...
+
+🔧 Step 1/3: TypeScript Type Check
+⏰ Running type check...
+✅ Type check passed!
+
+🤖 Step 2/3: AI Code Review with Specialized Prompts
 📝 Analyzing your changes with Claude...
+📊 Found 2 files to review
 
 🔍 Reviewing: src/components/NewComponent.tsx
   🎨 Using Frontend/React review prompt
@@ -76,7 +87,15 @@ npm run ci
 🔍 Claude Code Review completed!
 💡 Review the suggestions above before pushing.
 
-Do you want to continue with the push? (y/N):
+Do you want to continue with the push? (y/N): y
+✅ Code review completed!
+
+🏗️ Step 3/3: Production Build
+⏰ Running build (this may take a few minutes)...
+✅ Build successful!
+
+🎉 All checks passed! Ready to push.
+📊 Summary: ✅ Type-check → ✅ Code Review → ✅ Build
 ```
 
 ### 3. Pull Request 階段 (雲端自動)
@@ -162,12 +181,28 @@ git diff --name-only HEAD~1 HEAD | grep "^src/components" | head -5
 
 修改 `.github/codeql/codeql-config.yml` 來自訂掃描規則。
 
-## 🎯 最佳實踐
+## 🎯 專業 DevOps 最佳實踐
+
+### **Fast-fail 策略優勢**
+
+1. **快速反饋**: 型別錯誤立即發現，減少等待時間
+2. **資源優化**: 避免在明確會失敗時執行昂貴的 build 操作
+3. **開發者體驗**: 最快 10 秒內就能發現問題，而不是等待 5 分鐘
+4. **專業標準**: 符合 Google、Microsoft 等大廠的 CI/CD 實踐
+
+### **Git Hook 分工策略**
+
+- **Pre-commit**: 快速、基礎檢查 (lint, format)
+- **Pre-push**: 深度、專業檢查 (type-check → review → build)
+- **CI**: 安全、整合檢查 (CodeQL, integration tests)
+
+### **日常開發建議**
 
 1. **頻繁使用本地檢查**: 在 commit/push 前執行 `npm run review`
 2. **重視 CodeQL 警告**: 優先修復安全相關問題
 3. **善用互動功能**: Pre-push 時仔細查看 Claude 建議
-4. **保持工具更新**: 定期更新 Claude CLI 和 GitHub Actions
+4. **信任 Fast-fail**: 早期失敗是好事，節省時間和資源
+5. **保持工具更新**: 定期更新 Claude CLI 和 GitHub Actions
 
 ## 🔧 故障排除
 

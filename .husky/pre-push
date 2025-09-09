@@ -1,17 +1,49 @@
-npm run type-check
-npm run build
+# ===============================
+# Professional DevOps Pre-push Hook
+# Fast-fail strategy: type-check → code review → build
+# ===============================
 
-# Claude Code Review (intelligent prompts)
-echo "🤖 Running Claude Code Review with specialized prompts..."
+echo "🚀 Running professional CI checks with fast-fail strategy..."
+
+# Step 1: Type Check (Fast - ~10-30s)
+echo ""
+echo "🔧 Step 1/3: TypeScript Type Check"
+echo "⏰ Running type check..."
+if ! npm run type-check; then
+  echo ""
+  echo "❌ Type check failed! Please fix TypeScript errors before pushing."
+  echo "💡 Run 'npm run type-check' to see detailed errors."
+  exit 1
+fi
+echo "✅ Type check passed!"
+
+# Step 2: Claude Code Review (Medium - ~30-60s) 
+echo ""
+echo "🤖 Step 2/3: AI Code Review with Specialized Prompts"
 if command -v claude &> /dev/null; then
   echo "📝 Analyzing your changes with Claude..."
   
-  # Get changed files
-  changed_files=$(git diff --name-only HEAD~1 HEAD | head -10)
+  # Get changed files (handle different scenarios)
+  remote_branch=$(git symbolic-ref refs/remotes/origin/HEAD | sed 's@^refs/remotes/origin/@@')
+  if [[ -z "$remote_branch" ]]; then
+    remote_branch="main"
+  fi
+  
+  # Try different git diff strategies
+  if git rev-parse --verify "origin/$remote_branch" >/dev/null 2>&1; then
+    changed_files=$(git diff --name-only "origin/$remote_branch"...HEAD | head -10)
+  else
+    # Fallback for first push or when remote branch doesn't exist
+    changed_files=$(git diff --cached --name-only | head -10)
+  fi
+  
   if [[ -z "$changed_files" ]]; then
     echo "ℹ️  No files to review."
   else
+    echo "📊 Found $(echo "$changed_files" | wc -l) files to review"
+    
     # Review each file with appropriate prompt
+    review_failed=false
     echo "$changed_files" | while read -r file; do
       if [[ "$file" =~ \.(js|jsx|ts|tsx)$ ]]; then
         echo ""
@@ -38,19 +70,40 @@ if command -v claude &> /dev/null; then
         echo "  ✅ Review completed for $file"
       fi
     done
-  fi
-  
-  echo ""
-  echo "🔍 Claude Code Review completed!"
-  echo "💡 Review the suggestions above before pushing."
-  echo ""
-  read -p "Do you want to continue with the push? (y/N): " -n 1 -r
-  echo ""
-  if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-    echo "❌ Push cancelled. Please review and fix the issues."
-    exit 1
+    
+    if [[ $? -ne 0 ]]; then
+      review_failed=true
+    fi
+    
+    echo ""
+    echo "🔍 Claude Code Review completed!"
+    echo "💡 Review the suggestions above before pushing."
+    echo ""
+    read -p "Do you want to continue with the push? (y/N): " -n 1 -r
+    echo ""
+    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+      echo "❌ Push cancelled. Please review and fix the issues."
+      exit 1
+    fi
   fi
 else
   echo "⚠️  Claude CLI not found. Skipping Claude Code Review."
-  echo "   To enable: install Claude Code CLI"
+  echo "💡 To enable AI code review: install Claude Code CLI"
 fi
+echo "✅ Code review completed!"
+
+# Step 3: Build (Slow - ~1-5min)
+echo ""
+echo "🏗️  Step 3/3: Production Build"
+echo "⏰ Running build (this may take a few minutes)..."
+if ! npm run build; then
+  echo ""
+  echo "❌ Build failed! Please fix build errors before pushing."
+  echo "💡 Run 'npm run build' locally to debug issues."
+  exit 1
+fi
+echo "✅ Build successful!"
+
+echo ""
+echo "🎉 All checks passed! Ready to push."
+echo "📊 Summary: ✅ Type-check → ✅ Code Review → ✅ Build"

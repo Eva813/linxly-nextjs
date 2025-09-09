@@ -35,12 +35,12 @@ else
     remote_branch="main"
   fi
   
-  # Try different git diff strategies
+  # Try different git diff strategies (remove file limit for Next.js projects)
   if git rev-parse --verify "origin/$remote_branch" >/dev/null 2>&1; then
-    changed_files=$(git diff --name-only "origin/$remote_branch"...HEAD | head -10)
+    changed_files=$(git diff --name-only "origin/$remote_branch"...HEAD)
   else
     # Fallback for first push or when remote branch doesn't exist
-    changed_files=$(git diff --cached --name-only | head -10)
+    changed_files=$(git diff --cached --name-only)
   fi
   
   if [[ -z "$changed_files" ]]; then
@@ -50,9 +50,28 @@ else
     file_count=$(echo "$changed_files" | wc -l | tr -d ' ')
     echo "📊 Found $file_count files to review"
     
-    # Debug: Show files found
+    # Debug: Show files found with categories
     echo "🔍 Files found for review:"
     echo "$changed_files" | sed 's/^/  - /'
+    echo ""
+    
+    # Show file categorization preview
+    echo "📂 File categorization preview:"
+    while IFS= read -r file; do
+      if [[ "$file" =~ \.(js|jsx|ts|tsx)$ ]]; then
+        if [[ "$file" =~ ^src/app/api/ ]] || [[ "$file" =~ ^pages/api/ ]] || [[ "$file" =~ ^src/server/ ]] || [[ "$file" =~ ^src/middleware ]] || [[ "$file" =~ middleware\.ts$ ]]; then
+          echo "  📊 Backend: $file"
+        elif [[ "$file" =~ ^src/(app|components|hooks|stores)/ ]] || [[ "$file" =~ ^src/app/.+\.tsx?$ ]] || [[ "$file" =~ ^pages/.+\.tsx?$ ]] || [[ "$file" =~ \.(tsx)$ ]]; then
+          echo "  🎨 Frontend: $file"
+        elif [[ "$file" =~ ^src/(shared|types|utils|lib)/ ]]; then
+          echo "  🔧 Shared: $file"
+        else
+          echo "  📋 Other JS/TS: $file"
+        fi
+      else
+        echo "  ⚪ Non-code: $file"
+      fi
+    done <<< "$changed_files"
     echo ""
     
     # Filter for JavaScript/TypeScript files only
@@ -69,6 +88,7 @@ else
     
     if [[ -z "$js_ts_files" ]]; then
       echo "ℹ️  No JavaScript/TypeScript files to review."
+      echo "✅ Skipping code review - no code files changed."
     else
       js_ts_count=$(echo "$js_ts_files" | wc -l | tr -d ' ')
       echo "📋 Reviewing $js_ts_count JavaScript/TypeScript files:"
@@ -76,25 +96,28 @@ else
       
       # Review each file with appropriate prompt (avoid subshell issues)
       review_failed=false
+      actual_reviews_conducted=false
+      
       while IFS= read -r file; do
         echo "🔍 Reviewing: $file"
+        actual_reviews_conducted=true
         
-        # Intelligent prompt selection based on file path
-        if [[ "$file" =~ ^src/app/api/ ]] || [[ "$file" =~ ^src/server/ ]] || [[ "$file" =~ ^src/middleware ]] || [[ "$file" =~ middleware\.ts$ ]]; then
+        # Enhanced Next.js file path detection
+        if [[ "$file" =~ ^src/app/api/ ]] || [[ "$file" =~ ^pages/api/ ]] || [[ "$file" =~ ^src/server/ ]] || [[ "$file" =~ ^src/middleware ]] || [[ "$file" =~ middleware\.ts$ ]]; then
           # Backend files - use backend prompt
           echo "  📊 Using Backend/API review prompt"
           if ! claude code review "$file" --prompt-file=".claude/commands/backend/code-review.md"; then
             echo "  ❌ Review failed for $file"
             review_failed=true
           fi
-        elif [[ "$file" =~ ^src/(app|components|hooks|stores)/ ]] || [[ "$file" =~ \.(tsx)$ ]]; then
-          # Frontend files - use frontend prompt  
+        elif [[ "$file" =~ ^src/(app|components|hooks|stores)/ ]] || [[ "$file" =~ ^src/app/.+\.tsx?$ ]] || [[ "$file" =~ ^pages/.+\.tsx?$ ]] || [[ "$file" =~ \.(tsx)$ ]]; then
+          # Frontend files (Next.js App Router + Pages Router) - use frontend prompt  
           echo "  🎨 Using Frontend/React review prompt"
           if ! claude code review "$file" --prompt-file=".claude/commands/frontend/code-review.md"; then
             echo "  ❌ Review failed for $file"
             review_failed=true
           fi
-        elif [[ "$file" =~ ^src/(shared|types|utils)/ ]]; then
+        elif [[ "$file" =~ ^src/(shared|types|utils|lib)/ ]]; then
           # Shared files - use brief review
           echo "  🔧 Using general review"
           if ! claude code review "$file" --brief; then
@@ -118,16 +141,19 @@ else
         echo "❌ Some code reviews failed. Please check the output above."
         exit 1
       fi
-    fi
-    
-    echo "🔍 Claude Code Review completed!"
-    echo "💡 Review the suggestions above before pushing."
-    echo ""
-    read -p "Do you want to continue with the push? (y/N): " -n 1 -r
-    echo ""
-    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-      echo "❌ Push cancelled. Please review and fix the issues."
-      exit 1
+      
+      # Only prompt for confirmation if actual reviews were conducted
+      if [[ "$actual_reviews_conducted" == true ]]; then
+        echo "🔍 Claude Code Review completed!"
+        echo "💡 Review the suggestions above before pushing."
+        echo ""
+        read -p "Do you want to continue with the push? (y/N): " -n 1 -r
+        echo ""
+        if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+          echo "❌ Push cancelled. Please review and fix the issues."
+          exit 1
+        fi
+      fi
     fi
   fi
 fi

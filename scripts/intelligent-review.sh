@@ -20,21 +20,21 @@ review_file() {
         return 1
     fi
     
-    # Intelligent prompt selection based on file path
+    # Intelligent prompt selection based on file path (Enhanced for Next.js)
     local review_result=0
-    if [[ "$file" =~ ^src/app/api/ ]] || [[ "$file" =~ ^src/server/ ]] || [[ "$file" =~ ^src/middleware ]] || [[ "$file" =~ middleware\.ts$ ]]; then
+    if [[ "$file" =~ ^src/app/api/ ]] || [[ "$file" =~ ^pages/api/ ]] || [[ "$file" =~ ^src/server/ ]] || [[ "$file" =~ ^src/middleware ]] || [[ "$file" =~ middleware\.ts$ ]]; then
         # Backend files - use backend prompt
         echo "  📊 Using Backend/API review prompt"
         if ! claude code review "$file" --prompt-file=".claude/commands/backend/code-review.md"; then
             review_result=1
         fi
-    elif [[ "$file" =~ ^src/(app|components|hooks|stores)/ ]] || [[ "$file" =~ \.(tsx)$ ]]; then
+    elif [[ "$file" =~ ^src/(app|components|hooks|stores)/ ]] || [[ "$file" =~ ^src/app/.+\.tsx?$ ]] || [[ "$file" =~ ^pages/.+\.tsx?$ ]] || [[ "$file" =~ \.(tsx)$ ]]; then
         # Frontend files - use frontend prompt  
         echo "  🎨 Using Frontend/React review prompt"
         if ! claude code review "$file" --prompt-file=".claude/commands/frontend/code-review.md"; then
             review_result=1
         fi
-    elif [[ "$file" =~ ^src/(shared|types|utils)/ ]]; then
+    elif [[ "$file" =~ ^src/(shared|types|utils|lib)/ ]]; then
         # Shared files - use brief review
         echo "  🔧 Using general review"
         if ! claude code review "$file" --brief; then

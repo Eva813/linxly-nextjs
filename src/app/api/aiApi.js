@@ -1,16 +1,15 @@
 import axios from 'axios';
 
 // 使用環境變數作為 API 的設定
-const apiBaseUrl = "https://web-tech-tw.eu.org/openai/v1";
+const apiBaseUrl = 'https://web-tech-tw.eu.org/openai/v1';
 const apiKey = process.env.AI_API_KEY;
 
 // 創建 axios 實例
-console.log('apiBaseUrl:', process.env.AI_API_KEY);
 const aiInstance = axios.create({
   baseURL: apiBaseUrl,
   headers: {
     'Content-Type': 'application/json',
-    'Authorization': `Bearer ${apiKey}`,
+    Authorization: `Bearer ${apiKey}`,
   },
 });
 

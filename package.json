@@ -11,12 +11,18 @@
     "type-check": "tsc --noEmit",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
+    "format:source": "prettier --write \"src/**/*.{js,jsx,ts,tsx,css}\"",
+    "format:check-source": "prettier --check \"src/**/*.{js,jsx,ts,tsx,css}\"",
+    "format:staged": "prettier --write $(git diff --cached --name-only --diff-filter=ACMR | grep -E '\\.(js|jsx|ts|tsx|css)$' | xargs)",
+    "format:current": "prettier --write src/",
+    "check:quick": "npm run lint && npm run type-check && npm run format:check-source",
+    "lint:format": "npm run lint:fix && npm run format:staged",
     "ci": "npm run type-check && npm run lint && npm run format:check && npm run build",
     "prepare": "husky",
     "review": "scripts/intelligent-review.sh staged",
     "review:all": "scripts/intelligent-review.sh all",
     "security": "echo '🔒 Security check reminder: CodeQL runs automatically on PR. Check GitHub Security tab for results.'",
-    "review:help": "echo '📖 Code Review Commands:' && echo '  npm run review     - Review staged files with intelligent prompts' && echo '  npm run review:all - Review all source files with intelligent prompts' && echo '  npm run security   - Security scanning info' && echo '  npm run ci         - Run all checks (lint, type, format, build)' && echo '' && echo 'Intelligent Prompts:' && echo '  Frontend (React/Next.js): Components, hooks, pages' && echo '  Backend (Node.js/Firebase): API routes, server utils, middleware' && echo '  General: Shared utilities, types, other files'"
+    "review:help": "echo '📖 Code Review & Development Commands:' && echo '' && echo 'AI Code Review:' && echo '  npm run review     - Review staged files with intelligent prompts' && echo '  npm run review:all - Review all source files with intelligent prompts' && echo '  npm run security   - Security scanning info' && echo '' && echo '🎨 Code Formatting (Daily Use):' && echo '  npm run format:staged  - Format staged files (before commit)' && echo '  npm run format:current - Format current source directory' && echo '  npm run check:quick    - Quick check (lint + type + format)' && echo '  npm run lint:format    - Fix lint issues + format staged files' && echo '' && echo '🔧 Full Formatting:' && echo '  npm run format:source       - Format source files only' && echo '  npm run format:check-source - Check source files formatting' && echo '  npm run format              - Format all files (use after team coordination)' && echo '' && echo '✅ All Checks:' && echo '  npm run ci - Run complete CI pipeline' && echo '' && echo 'Intelligent Prompts:' && echo '  Frontend (React/Next.js): Components, hooks, pages' && echo '  Backend (Node.js/Firebase): API routes, server utils, middleware' && echo '  General: Shared utilities, types, other files'"
   },
   "dependencies": {
     "@radix-ui/react-checkbox": "^1.1.4",

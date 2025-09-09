@@ -25,25 +25,27 @@ review_file() {
     if [[ "$file" =~ ^src/app/api/ ]] || [[ "$file" =~ ^pages/api/ ]] || [[ "$file" =~ ^src/server/ ]] || [[ "$file" =~ ^src/middleware ]] || [[ "$file" =~ middleware\.ts$ ]]; then
         # Backend files - use backend prompt
         echo "  📊 Using Backend/API review prompt"
-        if ! claude code review "$file" --prompt-file=".claude/commands/backend/code-review.md"; then
+        backend_prompt="You are tasked with reviewing a Node.js backend codebase that uses Firebase/Firestore, with Next.js API routes. Focus on API security, database optimization, error handling, performance, and adherence to Node.js and Firebase conventions. Provide clear, actionable feedback with reasoning."
+        if ! claude --print --append-system-prompt "$backend_prompt" "Please review this file for backend best practices, security, and performance:" < "$file"; then
             review_result=1
         fi
     elif [[ "$file" =~ ^src/(app|components|hooks|stores)/ ]] || [[ "$file" =~ ^src/app/.+\.tsx?$ ]] || [[ "$file" =~ ^pages/.+\.tsx?$ ]] || [[ "$file" =~ \.(tsx)$ ]]; then
         # Frontend files - use frontend prompt  
         echo "  🎨 Using Frontend/React review prompt"
-        if ! claude code review "$file" --prompt-file=".claude/commands/frontend/code-review.md"; then
+        frontend_prompt="You are tasked with reviewing a Next.js/React frontend codebase. Focus on React best practices, Next.js optimization, component design, performance, accessibility, and TypeScript usage. Provide clear, actionable feedback."
+        if ! claude --print --append-system-prompt "$frontend_prompt" "Please review this file for frontend best practices, performance, and maintainability:" < "$file"; then
             review_result=1
         fi
     elif [[ "$file" =~ ^src/(shared|types|utils|lib)/ ]]; then
         # Shared files - use brief review
         echo "  🔧 Using general review"
-        if ! claude code review "$file" --brief; then
+        if ! claude --print "Please review this file for code quality, TypeScript usage, and best practices:" < "$file"; then
             review_result=1
         fi
     else
         # Other files - use brief review
         echo "  📋 Using brief review"
-        if ! claude code review "$file" --brief; then
+        if ! claude --print "Please review this file for code quality and best practices:" < "$file"; then
             review_result=1
         fi
     fi

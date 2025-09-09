@@ -47,34 +47,50 @@ npm run ci
 #### Git Hooks 自動執行
 
 - **Pre-commit**: 自動 lint + format 修改的檔案
-- **Pre-push**: TypeScript 檢查 + Build 驗證 + Claude 智能審查
+- **Pre-push**: TypeScript 檢查 + Build 驗證 (簡化版)
 
-### 2. Push 階段 (本地 + 互動) - **Fast-fail 策略**
+### 2. Push 階段 (本地自動) - **Fast-fail 策略**
 
 當你執行 `git push` 時，採用專業 DevOps **快速失敗策略**：
 
 1. 🔧 **TypeScript 類型檢查** (快速 ~10-30秒)
    - 立即發現型別錯誤，失敗率較高
    - 失敗即停，避免後續浪費時間
-2. 🤖 **Claude 智能代碼審查** (中等 ~30-60秒)
-   - 自動識別檔案類型（Frontend/Backend/General）
-   - 選擇對應的專業 prompt 進行審查
-   - 提供針對性的改進建議
-   - 互動選擇：繼續推送或取消修改
-3. 🏗️ **專案建置驗證** (最慢 ~1-5分鐘)
-   - 只在前兩步通過後執行
-   - 資源密集操作放在最後
+2. 🏗️ **專案建置驗證** (較慢 ~1-5分鐘)
+   - 確保程式碼可以正常建置和部署
+   - 檢測 build-time 錯誤
+
+### AI 代碼審查 (手動執行)
+
+AI 代碼審查改為**手動執行**，提供更靈活的使用方式：
+
+- 🤖 **智能代碼審查**: `npm run review` (審查已暫存檔案)
+- 🔍 **全面代碼審查**: `npm run review:all` (審查所有源碼檔案)
+- 📋 **查看可用命令**: `npm run review:help`
 
 ```
 🚀 Running professional CI checks with fast-fail strategy...
 
-🔧 Step 1/3: TypeScript Type Check
+🔧 Step 1/2: TypeScript Type Check
 ⏰ Running type check...
 ✅ Type check passed!
 
-🤖 Step 2/3: AI Code Review with Specialized Prompts
-📝 Analyzing your changes with Claude...
-📊 Found 2 files to review
+🏗️ Step 2/2: Production Build
+⏰ Running build (this may take a few minutes)...
+✅ Build successful!
+
+🎉 All checks passed! Ready to push.
+💡 For AI code review, run: npm run review
+📊 Summary: ✅ Type-check → ✅ Build
+```
+
+**手動 AI 代碼審查示例**:
+
+```bash
+$ npm run review
+
+🤖 Running intelligent Claude Code Review on staged files...
+📊 Found 2 staged files to review
 
 🔍 Reviewing: src/components/NewComponent.tsx
   🎨 Using Frontend/React review prompt
@@ -84,18 +100,7 @@ npm run ci
   📊 Using Backend/API review prompt
   ✅ Review completed for src/app/api/v1/users/route.ts
 
-🔍 Claude Code Review completed!
-💡 Review the suggestions above before pushing.
-
-Do you want to continue with the push? (y/N): y
-✅ Code review completed!
-
-🏗️ Step 3/3: Production Build
-⏰ Running build (this may take a few minutes)...
-✅ Build successful!
-
-🎉 All checks passed! Ready to push.
-📊 Summary: ✅ Type-check → ✅ Code Review → ✅ Build
+🎉 All staged files reviewed successfully!
 ```
 
 ### 3. Pull Request 階段 (雲端自動)
@@ -193,16 +198,24 @@ git diff --name-only HEAD~1 HEAD | grep "^src/components" | head -5
 ### **Git Hook 分工策略**
 
 - **Pre-commit**: 快速、基礎檢查 (lint, format)
-- **Pre-push**: 深度、專業檢查 (type-check → review → build)
+- **Pre-push**: 核心品質檢查 (type-check → build)
 - **CI**: 安全、整合檢查 (CodeQL, integration tests)
+- **手動 AI 審查**: 靈活執行 (npm run review)
 
 ### **日常開發建議**
 
-1. **頻繁使用本地檢查**: 在 commit/push 前執行 `npm run review`
+1. **使用手動 AI 審查**: 在重要變更前執行 `npm run review`
 2. **重視 CodeQL 警告**: 優先修復安全相關問題
-3. **善用互動功能**: Pre-push 時仔細查看 Claude 建議
-4. **信任 Fast-fail**: 早期失敗是好事，節省時間和資源
+3. **信任 Fast-fail**: 早期失敗是好事，節省時間和資源
+4. **靈活使用工具**: 需要時手動執行 AI 審查，日常依賴自動檢查
 5. **保持工具更新**: 定期更新 Claude CLI 和 GitHub Actions
+
+### **AI 代碼審查使用時機**
+
+- **重要功能開發**: 實作新功能時執行全面審查
+- **重構代碼**: 大幅度修改後執行審查
+- **部署前檢查**: 重要版本發布前的最終檢查
+- **學習目的**: 想獲得代碼改進建議時
 
 ## 🔧 故障排除
 

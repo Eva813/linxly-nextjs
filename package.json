@@ -12,7 +12,11 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "ci": "npm run type-check && npm run lint && npm run format:check && npm run build",
-    "prepare": "husky"
+    "prepare": "husky",
+    "review": "scripts/intelligent-review.sh staged",
+    "review:all": "scripts/intelligent-review.sh all",
+    "security": "echo '🔒 Security check reminder: CodeQL runs automatically on PR. Check GitHub Security tab for results.'",
+    "review:help": "echo '📖 Code Review Commands:' && echo '  npm run review     - Review staged files with intelligent prompts' && echo '  npm run review:all - Review all source files with intelligent prompts' && echo '  npm run security   - Security scanning info' && echo '  npm run ci         - Run all checks (lint, type, format, build)' && echo '' && echo 'Intelligent Prompts:' && echo '  Frontend (React/Next.js): Components, hooks, pages' && echo '  Backend (Node.js/Firebase): API routes, server utils, middleware' && echo '  General: Shared utilities, types, other files'"
   },
   "dependencies": {
     "@radix-ui/react-checkbox": "^1.1.4",

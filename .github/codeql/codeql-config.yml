@@ -1,0 +1,47 @@
+name: "Next.js Security Analysis Config"
+
+# Disable default queries that might be too noisy for Next.js projects
+disable-default-queries: false
+
+# Include additional security and quality queries
+queries:
+  - name: security-extended
+    uses: security-extended
+  - name: security-and-quality
+    uses: security-and-quality
+
+# Path filters - focus on source code, ignore generated files
+paths:
+  - "src/**"
+  - "pages/**"  # Legacy Next.js structure
+  - "app/**"    # App Router structure
+  - "components/**"
+  - "lib/**"
+  - "utils/**"
+  - "hooks/**"
+  - "api/**"
+
+# Ignore paths that don't need security scanning
+paths-ignore:
+  - "**/*.test.js"
+  - "**/*.test.ts"
+  - "**/*.spec.js"
+  - "**/*.spec.ts"
+  - "**/*.stories.js"
+  - "**/*.stories.ts"
+  - "node_modules/**"
+  - ".next/**"
+  - "dist/**"
+  - "build/**"
+  - "coverage/**"
+  - "docs/**"
+  - "*.config.js"
+  - "*.config.ts"
+  - "public/**"
+
+# Custom queries for Next.js specific patterns
+# queries:
+#   - name: next-js-security
+#     description: Next.js specific security queries
+#     queries:
+#       - ql/javascript/security/next-js-*.ql

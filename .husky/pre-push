@@ -1,2 +1,56 @@
 npm run type-check
 npm run build
+
+# Claude Code Review (intelligent prompts)
+echo "🤖 Running Claude Code Review with specialized prompts..."
+if command -v claude &> /dev/null; then
+  echo "📝 Analyzing your changes with Claude..."
+  
+  # Get changed files
+  changed_files=$(git diff --name-only HEAD~1 HEAD | head -10)
+  if [[ -z "$changed_files" ]]; then
+    echo "ℹ️  No files to review."
+  else
+    # Review each file with appropriate prompt
+    echo "$changed_files" | while read -r file; do
+      if [[ "$file" =~ \.(js|jsx|ts|tsx)$ ]]; then
+        echo ""
+        echo "🔍 Reviewing: $file"
+        
+        # Intelligent prompt selection based on file path
+        if [[ "$file" =~ ^src/app/api/ ]] || [[ "$file" =~ ^src/server/ ]] || [[ "$file" =~ ^src/middleware ]] || [[ "$file" =~ middleware\.ts$ ]]; then
+          # Backend files - use backend prompt
+          echo "  📊 Using Backend/API review prompt"
+          claude code review "$file" --prompt-file=".claude/commands/backend/code-review.md"
+        elif [[ "$file" =~ ^src/(app|components|hooks|stores)/ ]] || [[ "$file" =~ \.(tsx)$ ]]; then
+          # Frontend files - use frontend prompt  
+          echo "  🎨 Using Frontend/React review prompt"
+          claude code review "$file" --prompt-file=".claude/commands/frontend/code-review.md"
+        elif [[ "$file" =~ ^src/(shared|types|utils)/ ]]; then
+          # Shared files - use brief review
+          echo "  🔧 Using general review"
+          claude code review "$file" --brief
+        else
+          # Other files - use brief review
+          echo "  📋 Using brief review"  
+          claude code review "$file" --brief
+        fi
+        echo "  ✅ Review completed for $file"
+      fi
+    done
+  fi
+  
+  echo ""
+  echo "🔍 Claude Code Review completed!"
+  echo "💡 Review the suggestions above before pushing."
+  echo ""
+  read -p "Do you want to continue with the push? (y/N): " -n 1 -r
+  echo ""
+  if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+    echo "❌ Push cancelled. Please review and fix the issues."
+    exit 1
+  fi
+else
+  echo "⚠️  Claude CLI not found. Skipping Claude Code Review."
+  echo "   To enable: install Claude Code CLI"
+fi

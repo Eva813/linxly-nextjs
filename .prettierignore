@@ -1,0 +1,60 @@
+# Dependencies
+node_modules/
+
+# Build outputs
+.next/
+out/
+build/
+dist/
+
+# Environment files
+.env*
+
+# Logs
+*.log
+
+# Generated files
+next-env.d.ts
+*.tsbuildinfo
+
+# Package manager
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Vercel
+.vercel/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# Temporary
+*.tmp
+*.temp
+
+# Documentation (often has specific formatting)
+docs/
+README.md
+README.zh-TW.md
+debug-folder.md
+
+# AI tool configurations (may have specific formatting)
+.claude/
+.gemini/
+.github/copilot-instructions.md
+
+# Test and debug files
+src/app/test-*/
+src/test/
+
+# Configuration files that may need specific formatting
+firestore.indexes.json
+components.json
+
+# Specific files with intentional formatting
+src/app/api/v1/prompts/[promptId]/folderPrompts-1.prompt.md

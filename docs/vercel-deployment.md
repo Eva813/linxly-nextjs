@@ -3,11 +3,13 @@
 ## 環境變數設定
 
 ### Production Environment
+
 ```
 NEXT_PUBLIC_APP_URL=https://your-domain.com
 ```
 
 ### Preview Environment (可選)
+
 ```
 NEXT_PUBLIC_APP_URL=https://your-app-git-branch.vercel.app
 ```
@@ -26,7 +28,8 @@ NEXT_PUBLIC_APP_URL=https://your-app-git-branch.vercel.app
 1. 檢查 Vercel 環境變數設定
 2. 重新部署專案
 3. 檢查瀏覽器開發者工具的網路請求
-4. 檢查實際生成的邀請連結是否正確
+4. 查看 Vercel 部署日誌
+5. 在其他 API 路由中添加 console.log 除錯
 
 ## 注意事項
 

@@ -1,0 +1,9 @@
+npx lint-staged
+
+# Formatting friendly reminder
+echo ""
+echo "💡 Formatting Tips:"
+echo "  • VS Code users: Enable 'Format on Save' for automatic formatting"
+echo "  • Before commit: Run 'npm run format:staged' to format staged files"
+echo "  • Quick check: Run 'npm run check:quick' to verify code quality"
+echo ""

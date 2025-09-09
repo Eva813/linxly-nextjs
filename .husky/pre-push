@@ -1,0 +1,35 @@
+# ===============================
+# Professional DevOps Pre-push Hook
+# Fast-fail strategy: type-check → build
+# ===============================
+
+echo "🚀 Running professional CI checks with fast-fail strategy..."
+
+# Step 1: Type Check (Fast - ~10-30s)
+echo ""
+echo "🔧 Step 1/2: TypeScript Type Check"
+echo "⏰ Running type check..."
+if ! npm run type-check; then
+  echo ""
+  echo "❌ Type check failed! Please fix TypeScript errors before pushing."
+  echo "💡 Run 'npm run type-check' to see detailed errors."
+  exit 1
+fi
+echo "✅ Type check passed!"
+
+# Step 2: Build (Slow - ~1-5min)
+echo ""
+echo "🏗️  Step 2/2: Production Build"
+echo "⏰ Running build (this may take a few minutes)..."
+if ! npm run build; then
+  echo ""
+  echo "❌ Build failed! Please fix build errors before pushing."
+  echo "💡 Run 'npm run build' locally to debug issues."
+  exit 1
+fi
+echo "✅ Build successful!"
+
+echo ""
+echo "🎉 All checks passed! Ready to push."
+echo "💡 For AI code review, run: npm run review"
+echo "📊 Summary: ✅ Type-check → ✅ Build"

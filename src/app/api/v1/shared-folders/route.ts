@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { adminDb } from '@/server/db/firebase';
 import { getUserEmail } from '@/server/utils/folderAccess';
+import { memoryCache } from '@/lib/cache';
+
+export const dynamic = 'force-dynamic';
 
 interface SharedFolderItem {
   id: string;
@@ -22,6 +25,22 @@ export async function GET(request: NextRequest) {
         { error: 'Unauthorized: User ID is required' },
         { status: 401 }
       );
+    }
+
+    // 檢查記憶體快取
+    const cacheKey = `shared-folders:${userId}`;
+    const cached = memoryCache.get<{
+      folders: SharedFolderItem[];
+      total: number;
+    }>(cacheKey);
+    if (cached) {
+      console.log(`Cache hit for shared folders: ${userId}`);
+      return NextResponse.json(cached, {
+        headers: {
+          'Cache-Control': 'public, s-maxage=600, stale-while-revalidate=300',
+          'X-Cache': 'HIT',
+        },
+      });
     }
 
     const userEmail = await getUserEmail(userId);
@@ -104,27 +123,58 @@ export async function GET(request: NextRequest) {
 
     // 3a. 處理 Space 分享的 folders
     if (spaceIds.length > 0) {
-      for (const spaceId of spaceIds) {
-        const [spaceDoc, foldersInSpace] = await Promise.all([
-          adminDb.collection('prompt_spaces').doc(spaceId).get(),
-          adminDb
-            .collection('folders')
-            .where('promptSpaceId', '==', spaceId)
-            .get(),
-        ]);
+      // 批量獲取所有 spaces 和相關 folders
+      const spaceResults = await Promise.all(
+        spaceIds.map(async (spaceId) => {
+          const [spaceDoc, foldersInSpace] = await Promise.all([
+            adminDb.collection('prompt_spaces').doc(spaceId).get(),
+            adminDb
+              .collection('folders')
+              .where('promptSpaceId', '==', spaceId)
+              .get(),
+          ]);
 
+          return { spaceId, spaceDoc, foldersInSpace };
+        })
+      );
+
+      // 收集所有需要查詢 prompt count 的 folder IDs
+      const allSpaceFolderIds: string[] = [];
+      const folderSpaceMap = new Map<string, string>();
+
+      for (const { spaceId, spaceDoc, foldersInSpace } of spaceResults) {
+        if (spaceDoc.exists) {
+          for (const folderDoc of foldersInSpace.docs) {
+            allSpaceFolderIds.push(folderDoc.id);
+            folderSpaceMap.set(folderDoc.id, spaceId);
+          }
+        }
+      }
+
+      // 批量查詢所有 prompt counts
+      const promptCounts = await Promise.all(
+        allSpaceFolderIds.map((folderId) =>
+          adminDb
+            .collection('prompts')
+            .where('folderId', '==', folderId)
+            .count()
+            .get()
+        )
+      );
+
+      const promptCountMap = new Map<string, number>();
+      allSpaceFolderIds.forEach((folderId, index) => {
+        promptCountMap.set(folderId, promptCounts[index].data().count);
+      });
+
+      // 組裝結果
+      for (const { spaceId, spaceDoc, foldersInSpace } of spaceResults) {
         if (spaceDoc.exists) {
           const permission = spacePermissions.get(spaceId) as 'view' | 'edit';
 
           for (const folderDoc of foldersInSpace.docs) {
             const folderData = folderDoc.data();
-
-            // 計算 folder 內的 prompt 數量
-            const promptsCount = await adminDb
-              .collection('prompts')
-              .where('folderId', '==', folderDoc.id)
-              .select()
-              .get();
+            const promptCount = promptCountMap.get(folderDoc.id) || 0;
 
             // 獲取分享者資訊
             const ownerId = spaceOwners.get(spaceId);
@@ -138,7 +188,7 @@ export async function GET(request: NextRequest) {
               description: folderData.description,
               permission,
               shareType: 'space',
-              promptCount: promptsCount.size,
+              promptCount,
               sharedFrom: sharerName,
               shareEmail: ownerData?.email,
             });
@@ -149,21 +199,31 @@ export async function GET(request: NextRequest) {
 
     // 3b. 處理 Additional emails 分享的 folders
     if (additionalFolderIds.length > 0) {
-      for (const folderId of additionalFolderIds) {
-        const folderDoc = await adminDb
-          .collection('folders')
-          .doc(folderId)
-          .get();
+      // 批量獲取 folder 文件
+      const additionalFolderDocs = await Promise.all(
+        additionalFolderIds.map((folderId) =>
+          adminDb.collection('folders').doc(folderId).get()
+        )
+      );
+
+      // 批量獲取 prompt counts
+      const additionalPromptCounts = await Promise.all(
+        additionalFolderIds.map((folderId) =>
+          adminDb
+            .collection('prompts')
+            .where('folderId', '==', folderId)
+            .count()
+            .get()
+        )
+      );
+
+      // 組裝結果
+      additionalFolderIds.forEach((folderId, index) => {
+        const folderDoc = additionalFolderDocs[index];
+        const promptCount = additionalPromptCounts[index].data().count;
 
         if (folderDoc.exists) {
           const folderData = folderDoc.data();
-
-          // 計算 folder 內的 prompt 數量
-          const promptsCount = await adminDb
-            .collection('prompts')
-            .where('folderId', '==', folderId)
-            .select()
-            .get();
 
           // 獲取分享者資訊
           const ownerId = folderOwners.get(folderId);
@@ -177,12 +237,12 @@ export async function GET(request: NextRequest) {
             description: folderData?.description,
             permission: 'view', // Additional emails 固定為 view 權限
             shareType: 'additional',
-            promptCount: promptsCount.size,
+            promptCount,
             sharedFrom: sharerName,
             shareEmail: ownerData?.email,
           });
         }
-      }
+      });
     }
 
     // 4. 去重複（同一個 folder 可能同時通過 Space 和 Additional 方式分享）
@@ -207,9 +267,19 @@ export async function GET(request: NextRequest) {
       `API: Found ${finalFolders.length} shared folders for user ${userId}`
     );
 
-    return NextResponse.json({
+    const result = {
       folders: finalFolders,
       total: finalFolders.length,
+    };
+
+    // 存入記憶體快取 (10分鐘)
+    memoryCache.set(cacheKey, result, 10 * 60 * 1000);
+
+    return NextResponse.json(result, {
+      headers: {
+        'Cache-Control': 'public, s-maxage=600, stale-while-revalidate=300',
+        'X-Cache': 'MISS',
+      },
     });
   } catch (error) {
     console.error('Error getting shared folders:', error);

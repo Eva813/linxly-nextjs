@@ -1,4 +1,6 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
+import useSWR from 'swr';
+import { fetcher, sharedFoldersConfig } from '@/lib/swr';
 
 export interface SharedFolder {
   id: string;
@@ -44,214 +46,85 @@ interface UseSharedFolderDetailsReturn extends UseSharedFolderDetailsState {
 }
 
 /**
- * Hook for managing shared folders list
+ * Hook for managing shared folders list with SWR
  */
 export const useSharedFolders = (): UseSharedFoldersReturn => {
-  const [state, setState] = useState<UseSharedFoldersState>({
-    folders: [],
-    isLoading: true,
-    error: null,
-    folderCount: 0,
-  });
+  const { data, error, isLoading, mutate } = useSWR(
+    '/api/v1/shared-folders',
+    fetcher,
+    sharedFoldersConfig
+  );
 
-  const fetchSharedFolders = useCallback(async () => {
-    setState((prev) => ({ ...prev, isLoading: true, error: null }));
-
-    try {
-      // 添加超時機制
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 15000); // 15秒超時
-
-      const response = await fetch('/api/v1/shared-folders', {
-        signal: controller.signal,
-      });
-
-      clearTimeout(timeoutId);
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data = await response.json();
-      const folders = data.folders || [];
-
-      setState({
-        folders,
-        isLoading: false,
-        error: null,
-        folderCount: folders.length,
-      });
-    } catch (error) {
-      console.error('Error fetching shared folders:', error);
-      let errorMessage = 'Failed to fetch shared folders';
-
-      if (error instanceof Error) {
-        if (error.name === 'AbortError') {
-          errorMessage = 'Request timeout - please try again';
-        } else {
-          errorMessage = error.message;
-        }
-      }
-
-      setState((prev) => ({
-        ...prev,
-        isLoading: false,
-        error: errorMessage,
-      }));
-    }
-  }, []);
+  const folders = useMemo(() => data?.folders || [], [data?.folders]);
+  const folderCount = folders.length;
 
   const refresh = useCallback(async () => {
-    await fetchSharedFolders();
-  }, [fetchSharedFolders]);
+    await mutate();
+  }, [mutate]);
 
   const getFolderById = useCallback(
     (id: string) => {
-      return state.folders.find((folder) => folder.id === id);
+      return folders.find((folder: SharedFolder) => folder.id === id);
     },
-    [state.folders]
+    [folders]
   );
 
-  useEffect(() => {
-    fetchSharedFolders();
-  }, [fetchSharedFolders]);
-
   return {
-    ...state,
+    folders,
+    isLoading,
+    error: error?.message || null,
+    folderCount,
     refresh,
     getFolderById,
   };
 };
 
 /**
- * Hook for managing specific shared folder details
+ * Hook for managing specific shared folder details with SWR
  */
 export const useSharedFolderDetails = (
   folderId: string
 ): UseSharedFolderDetailsReturn => {
-  const [state, setState] = useState<UseSharedFolderDetailsState>({
-    folder: null,
-    isLoading: true,
-    error: null,
-  });
-
-  const fetchFolderDetails = useCallback(async () => {
-    if (!folderId) {
-      setState({ folder: null, isLoading: false, error: 'Invalid folder ID' });
-      return;
+  const { data, error, isLoading, mutate } = useSWR(
+    folderId ? `/api/v1/shared-folders/${folderId}` : null,
+    fetcher,
+    {
+      ...sharedFoldersConfig,
+      onError: (error) => {
+        // 自定義錯誤處理
+        if (error.message.includes('403')) {
+          error.message = '你沒有權限查看此資料夾';
+        } else if (error.message.includes('404')) {
+          error.message = '找不到此共享資料夾';
+        }
+      },
     }
-
-    setState((prev) => ({ ...prev, isLoading: true, error: null }));
-
-    try {
-      // 添加超時機制
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 15000); // 15秒超時
-
-      const response = await fetch(`/api/v1/shared-folders/${folderId}`, {
-        signal: controller.signal,
-      });
-
-      clearTimeout(timeoutId);
-
-      if (!response.ok) {
-        if (response.status === 403) {
-          throw new Error('你沒有權限查看此資料夾');
-        }
-        if (response.status === 404) {
-          throw new Error('找不到此共享資料夾');
-        }
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data = await response.json();
-
-      setState({
-        folder: data,
-        isLoading: false,
-        error: null,
-      });
-    } catch (error) {
-      console.error('Error fetching folder details:', error);
-      let errorMessage = 'Failed to fetch folder details';
-
-      if (error instanceof Error) {
-        if (error.name === 'AbortError') {
-          errorMessage = 'Request timeout - please try again';
-        } else {
-          errorMessage = error.message;
-        }
-      }
-
-      setState((prev) => ({
-        ...prev,
-        isLoading: false,
-        error: errorMessage,
-      }));
-    }
-  }, [folderId]);
+  );
 
   const refresh = useCallback(async () => {
-    await fetchFolderDetails();
-  }, [fetchFolderDetails]);
-
-  useEffect(() => {
-    fetchFolderDetails();
-  }, [fetchFolderDetails]);
+    await mutate();
+  }, [mutate]);
 
   return {
-    ...state,
+    folder: data || null,
+    isLoading,
+    error: error?.message || null,
     refresh,
   };
 };
 
 /**
- * Hook for getting shared folders count only (lightweight)
+ * Hook for getting shared folders count only (lightweight) with SWR
  */
 export const useSharedFoldersCount = () => {
-  const [count, setCount] = useState<number>(0);
-  const [isLoading, setIsLoading] = useState(true);
+  const { data, isLoading } = useSWR('/api/v1/shared-folders', fetcher, {
+    ...sharedFoldersConfig,
+    onError: () => {
+      // 靜默處理錯誤，不在控制台顯示
+    },
+  });
 
-  useEffect(() => {
-    const fetchCount = async () => {
-      try {
-        setIsLoading(true);
-
-        // 添加超時機制
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 10000); // 10秒超時
-
-        const response = await fetch('/api/v1/shared-folders', {
-          signal: controller.signal,
-        });
-
-        clearTimeout(timeoutId);
-
-        if (response.ok) {
-          const data = await response.json();
-          setCount(data.folders?.length || 0);
-        } else {
-          console.error(
-            'Failed to fetch shared folders:',
-            response.status,
-            response.statusText
-          );
-          setCount(0);
-        }
-      } catch (error) {
-        if (error instanceof Error && error.name === 'AbortError') {
-          console.error('Shared folders fetch timeout');
-        } else {
-          console.error('Error fetching shared folders count:', error);
-        }
-        setCount(0);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchCount();
-  }, []);
+  const count = data?.folders?.length || 0;
 
   return { count, isLoading };
 };

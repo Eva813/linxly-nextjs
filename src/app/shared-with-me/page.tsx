@@ -3,7 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { Card, CardContent } from '@/components/ui/card';
-import { Folder, Users, RefreshCw } from 'lucide-react';
+import { Folder, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import LoadingSpinner from '@/app/components/loadingSpinner';
 import { useSharedFolders, type SharedFolder } from '@/hooks/useSharedFolders';
@@ -27,7 +27,7 @@ const SharedFoldersOverview: React.FC = () => {
   const getPermissionColor = (permission: string) => {
     return permission === 'edit'
       ? 'text-green-600 dark:text-green-400'
-      : 'text-blue-600 dark:text-blue-400';
+      : 'text-primary dark:text-blue-400';
   };
 
   if (isLoading) {
@@ -43,15 +43,9 @@ const SharedFoldersOverview: React.FC = () => {
       {/* 頁面標題 */}
       <div className="flex-shrink-0 mb-6">
         <div className="flex items-center justify-between">
-          <div>
-            <div className="flex items-center gap-3">
-              <Users className="h-6 w-6 text-muted-foreground" />
-              <h1 className="text-2xl font-bold">Shared with Me</h1>
-            </div>
-            <p className="text-muted-foreground mt-2">
-              View folders and Prompts shared with you by others
-            </p>
-          </div>
+          <p className="text-muted-foreground mt-2">
+            View folders and Prompts shared with you by others
+          </p>
           <Button
             variant="outline"
             size="sm"

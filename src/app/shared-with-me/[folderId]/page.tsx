@@ -53,7 +53,7 @@ const SharedFolderPage: React.FC<SharedFolderPageProps> = ({ params }) => {
   const getPermissionColor = (permission: string) => {
     return permission === 'edit'
       ? 'text-green-600 dark:text-green-400'
-      : 'text-blue-600 dark:text-blue-400';
+      : 'text-primary dark:text-blue-400';
   };
 
   if (isLoading) {

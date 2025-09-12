@@ -33,10 +33,7 @@ export default function SharedLayout({ children }: { children: ReactNode }) {
       >
         <SharedSidebar />
       </div>
-      <main className="flex-1 pl-4 pt-4 pr-4 h-full relative">
-        {children}
-        {/* <LoadingOverlay /> */}
-      </main>
+      <main className="flex-1 pl-4 pt-4 pr-4 h-full relative">{children}</main>
     </div>
   );
 }

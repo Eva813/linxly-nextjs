@@ -68,7 +68,7 @@ const SharedSidebar: React.FC = () => {
                   'text-xs px-2 py-0.5 rounded-full',
                   isSharedOverview
                     ? 'bg-background/80 text-foreground/80'
-                    : 'bg-muted text-muted-foreground'
+                    : 'bg-light text-muted-foreground'
                 )}
               >
                 {sharedFolderCount}

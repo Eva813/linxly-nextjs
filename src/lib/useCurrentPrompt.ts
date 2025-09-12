@@ -1,10 +1,10 @@
 import { useMemo, useState, useEffect } from 'react';
-import { usePromptStore } from "@/stores/prompt";
-import { getPrompt } from "@/api/prompts";
+import { usePromptStore } from '@/stores/prompt';
+import { getPrompt } from '@/api/prompts';
 import { Prompt } from '@/types/prompt';
 
 export function useCurrentPrompt(promptId: string) {
-  const folders = usePromptStore(state => state.folders);
+  const { folders } = usePromptStore();
   const [directPrompt, setDirectPrompt] = useState<Prompt | null>(null);
   const [directLoading, setDirectLoading] = useState(false);
 
@@ -24,13 +24,22 @@ export function useCurrentPrompt(promptId: string) {
     return null;
   }, [folders, promptId]);
 
-  // 只有當兩種格式都沒有內容時才需要直接調用 API
+  // 直接調用 API 的情況：
+  // 1. 在 folders 中找到 prompt 但內容為空
+  // 2. 在 folders 中找不到 prompt (可能是 shared prompt)
   useEffect(() => {
-    if (folderPrompt &&
-      (!folderPrompt.contentJSON || Object.keys(folderPrompt.contentJSON || {}).length === 0) &&
-      (!folderPrompt.content || folderPrompt.content.trim() === '') &&
+    const shouldCallAPI =
+      // 情況1: 找到 prompt 但內容為空
+      ((folderPrompt &&
+        (!folderPrompt.contentJSON ||
+          Object.keys(folderPrompt.contentJSON || {}).length === 0) &&
+        (!folderPrompt.content || folderPrompt.content.trim() === '')) ||
+        // 情況2: 找不到 prompt 且 folders 已載入 (可能是 shared prompt)
+        (!folderPrompt && folders.length > 0)) &&
       !directLoading &&
-      !directPrompt) { // 重要：如果已經有 directPrompt 就不再調用 API
+      !directPrompt;
+
+    if (shouldCallAPI) {
       setDirectLoading(true);
 
       getPrompt(promptId)
@@ -38,12 +47,12 @@ export function useCurrentPrompt(promptId: string) {
           setDirectPrompt(data);
           setDirectLoading(false);
         })
-        .catch(err => {
+        .catch((err) => {
           console.error('直接 API 調用失敗:', err);
           setDirectLoading(false);
         });
     }
-  }, [folderPrompt, promptId, directLoading, directPrompt]);
+  }, [folderPrompt, promptId, directLoading, directPrompt, folders.length]);
 
   return useMemo(() => {
     // 優先使用直接 API 取得的完整資料

@@ -7,10 +7,10 @@ interface PromptListProps {
   onPromptSelect: (prompt: Prompt) => void;
 }
 
-const PromptList = memo(function PromptList({ 
-  prompts, 
-  selectedPromptId, 
-  onPromptSelect 
+const PromptList = memo(function PromptList({
+  prompts,
+  selectedPromptId,
+  onPromptSelect,
 }: PromptListProps) {
   return (
     <div className="lg:col-span-2">
@@ -26,9 +26,7 @@ const PromptList = memo(function PromptList({
               key={prompt.id}
               onClick={() => onPromptSelect(prompt)}
               className={`w-full text-left p-4 border-b border-gray-100 hover:bg-gray-50 transition-colors ${
-                selectedPromptId === prompt.id 
-                  ? 'bg-light' 
-                  : ''
+                selectedPromptId === prompt.id ? 'bg-light' : ''
               }`}
             >
               <div className="space-y-2">

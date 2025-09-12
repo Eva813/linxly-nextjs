@@ -6,7 +6,9 @@ interface PromptContentProps {
   selectedPrompt: Prompt | null;
 }
 
-const PromptContent = memo(function PromptContent({ selectedPrompt }: PromptContentProps) {
+const PromptContent = memo(function PromptContent({
+  selectedPrompt,
+}: PromptContentProps) {
   const renderedContent = usePromptRenderer(
     selectedPrompt?.content,
     selectedPrompt?.contentJSON

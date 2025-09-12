@@ -14,20 +14,22 @@ interface SharedFolderViewProps {
 
 export default function SharedFolderView({ data }: SharedFolderViewProps) {
   const { folder, prompts } = data;
-  const [selectedPrompt, setSelectedPrompt] = useState(prompts.length > 0 ? prompts[0] : null);
-  
-  const handlePromptSelect = useCallback((prompt: typeof prompts[0]) => {
+  const [selectedPrompt, setSelectedPrompt] = useState(
+    prompts.length > 0 ? prompts[0] : null
+  );
+
+  const handlePromptSelect = useCallback((prompt: (typeof prompts)[0]) => {
     setSelectedPrompt(prompt);
   }, []);
-  
+
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 lg:px-8 py-8 space-y-12">
-        <FolderHeader 
+        <FolderHeader
           folderName={folder.name}
           folderDescription={folder.description}
         />
-        
+
         {prompts.length === 0 ? (
           <Card>
             <CardContent className="text-center py-12">
@@ -38,7 +40,7 @@ export default function SharedFolderView({ data }: SharedFolderViewProps) {
           </Card>
         ) : (
           <div className="flex flex-col lg:grid lg:grid-cols-5 gap-8 min-h-[600px]">
-            <PromptList 
+            <PromptList
               prompts={prompts}
               selectedPromptId={selectedPrompt?.id || null}
               onPromptSelect={handlePromptSelect}
@@ -46,9 +48,8 @@ export default function SharedFolderView({ data }: SharedFolderViewProps) {
             <PromptContent selectedPrompt={selectedPrompt} />
           </div>
         )}
-        
       </div>
-      
+
       <CTASection />
     </div>
   );

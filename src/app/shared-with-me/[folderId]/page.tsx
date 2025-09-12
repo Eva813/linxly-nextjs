@@ -2,7 +2,6 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import {
   Breadcrumb,
@@ -12,115 +11,19 @@ import {
   BreadcrumbSeparator,
   BreadcrumbPage,
 } from '@/components/ui/breadcrumb';
-import { Folder, Settings2, Eye, Edit, Users, RefreshCw } from 'lucide-react';
+import { Folder, Eye, Edit, Users, RefreshCw } from 'lucide-react';
 import LoadingSpinner from '@/app/components/loadingSpinner';
-import {
-  generateCompatibleSafeHTML,
-  analyzeInteractiveElements,
-  extractTextContent,
-} from '@/lib/utils/generateSafeHTML';
+import NavigationPromptCard from '@/components/ui/navigationPromptCard';
 import {
   useSharedFolderDetails,
   type SharedFolderDetails,
 } from '@/hooks/useSharedFolders';
-import type { JSONContent } from '@tiptap/react';
 
 interface SharedFolderPageProps {
   params: {
     folderId: string;
   };
 }
-
-const extractContentInfo = (
-  content: string | JSONContent | null | undefined,
-  contentJSON?: JSONContent | null | undefined
-) => {
-  const analysis = analyzeInteractiveElements(content, contentJSON);
-  const safeHTML = generateCompatibleSafeHTML(content, contentJSON);
-  let cleanText = extractTextContent(content, contentJSON);
-
-  if (analysis.totalCount <= 4) {
-    cleanText = safeHTML
-      .replace(
-        /<span[^>]*data-type=\"formtext\"[^>]*><\/span>/g,
-        ' [input field] '
-      )
-      .replace(
-        /<span[^>]*data-type=\"formmenu\"[^>]*><\/span>/g,
-        ' [dropdown menu] '
-      );
-  } else {
-    cleanText = safeHTML.replace(
-      /<span[^>]*data-type=\"[^\"]*\"[^>]*><\/span>/g,
-      ' [...] '
-    );
-  }
-
-  cleanText = cleanText
-    .replace(/<[^>]*>/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim();
-
-  return {
-    interactiveCount: analysis.totalCount,
-    cleanText,
-    formTextCount: analysis.formTextCount,
-    formMenuCount: analysis.formMenuCount,
-  };
-};
-
-const PromptItemCard: React.FC<{
-  prompt: SharedFolderDetails['prompts'][0];
-  folderId: string;
-  folderName: string;
-}> = ({ prompt, folderId, folderName }) => {
-  const { interactiveCount, cleanText, formTextCount, formMenuCount } =
-    extractContentInfo(prompt.content, prompt.contentJSON);
-  const hasInteractiveElements = interactiveCount > 0;
-
-  // 建立包含上下文的連結
-  const promptUrl = `/shared-with-me/prompt/${prompt.id}?folderId=${folderId}&folderName=${encodeURIComponent(folderName)}`;
-
-  return (
-    <Card className="w-full hover:shadow-md transition-shadow rounded-md">
-      <CardContent className="p-4">
-        <Link href={promptUrl} className="block">
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2 flex-1">
-                <h4 className="font-medium text-sm">{prompt.name}</h4>
-                {hasInteractiveElements && (
-                  <div className="flex items-center gap-1 text-muted-foreground">
-                    <Settings2 className="h-3 w-3" />
-                    <span className="text-xs">{interactiveCount}</span>
-                  </div>
-                )}
-              </div>
-              {prompt.shortcut && (
-                <span className="inline-block px-2 py-1 border border-secondary dark:border-third text-xs rounded-full ml-2">
-                  {prompt.shortcut}
-                </span>
-              )}
-            </div>
-
-            <p className="text-xs text-muted-foreground line-clamp-2">
-              {cleanText}
-            </p>
-
-            {interactiveCount > 2 && (
-              <div className="flex gap-2 text-xs text-muted-foreground">
-                {formTextCount > 0 && <span>{formTextCount} input fields</span>}
-                {formMenuCount > 0 && (
-                  <span>{formMenuCount} dropdown menus</span>
-                )}
-              </div>
-            )}
-          </div>
-        </Link>
-      </CardContent>
-    </Card>
-  );
-};
 
 const SharedFolderPage: React.FC<SharedFolderPageProps> = ({ params }) => {
   const { folderId } = params;
@@ -275,11 +178,10 @@ const SharedFolderPage: React.FC<SharedFolderPageProps> = ({ params }) => {
           ) : (
             <div className="space-y-3 pr-2">
               {folderDetails.prompts.map((prompt) => (
-                <PromptItemCard
+                <NavigationPromptCard
                   key={prompt.id}
                   prompt={prompt}
-                  folderId={folderId}
-                  folderName={folderDetails.name}
+                  href={`/shared-with-me/prompt/${prompt.id}?folderId=${folderId}&folderName=${encodeURIComponent(folderDetails.name)}`}
                 />
               ))}
             </div>

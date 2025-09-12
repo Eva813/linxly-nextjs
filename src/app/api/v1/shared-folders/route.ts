@@ -6,13 +6,11 @@ interface SharedFolderItem {
   id: string;
   name: string;
   description?: string;
-  promptSpaceId: string;
-  spaceName: string;
-  ownerEmail?: string;
   permission: 'view' | 'edit';
-  source: 'space' | 'additional' | 'public';
-  sharedAt: string;
-  totalPrompts: number;
+  shareType: 'space' | 'additional' | 'public';
+  promptCount: number;
+  sharedFrom: string;
+  shareEmail?: string;
 }
 
 // 獲取用戶有權限的所有 shared folders
@@ -46,10 +44,12 @@ export async function GET(request: NextRequest) {
       (doc) => doc.data().promptSpaceId
     );
     const spacePermissions = new Map<string, string>();
+    const spaceOwners = new Map<string, string>(); // spaceId -> ownerUserId
 
     spaceSharesQuery.docs.forEach((doc) => {
       const data = doc.data();
       spacePermissions.set(data.promptSpaceId, data.permission);
+      spaceOwners.set(data.promptSpaceId, data.ownerUserId);
     });
 
     // 1b. 通過 Additional emails 分享的 folders
@@ -62,11 +62,47 @@ export async function GET(request: NextRequest) {
     const additionalFolderIds = folderSharesQuery.docs.map(
       (doc) => doc.data().folderId
     );
+    const folderOwners = new Map<string, string>(); // folderId -> ownerUserId
 
-    // 2. 獲取所有相關的 folders 和 spaces 資訊
+    folderSharesQuery.docs.forEach((doc) => {
+      const data = doc.data();
+      folderOwners.set(data.folderId, data.userId);
+    });
+
+    // 2. 批量獲取所有相關用戶資訊
+    const allOwnerIds = new Set<string>();
+    spaceOwners.forEach((ownerId) => allOwnerIds.add(ownerId));
+    folderOwners.forEach((ownerId) => allOwnerIds.add(ownerId));
+
+    const ownersMap = new Map<
+      string,
+      { name?: string; displayName?: string; email?: string }
+    >();
+    if (allOwnerIds.size > 0) {
+      const ownerDocs = await Promise.all(
+        Array.from(allOwnerIds).map((ownerId) =>
+          adminDb.collection('users').doc(ownerId).get()
+        )
+      );
+
+      Array.from(allOwnerIds).forEach((ownerId, index) => {
+        if (ownerDocs[index].exists) {
+          const userData = ownerDocs[index].data();
+          if (userData) {
+            ownersMap.set(ownerId, {
+              name: userData.name,
+              displayName: userData.displayName,
+              email: userData.email,
+            });
+          }
+        }
+      });
+    }
+
+    // 3. 獲取所有相關的 folders 和 spaces 資訊
     const sharedFolders: SharedFolderItem[] = [];
 
-    // 2a. 處理 Space 分享的 folders
+    // 3a. 處理 Space 分享的 folders
     if (spaceIds.length > 0) {
       for (const spaceId of spaceIds) {
         const [spaceDoc, foldersInSpace] = await Promise.all([
@@ -78,7 +114,6 @@ export async function GET(request: NextRequest) {
         ]);
 
         if (spaceDoc.exists) {
-          const spaceData = spaceDoc.data();
           const permission = spacePermissions.get(spaceId) as 'view' | 'edit';
 
           for (const folderDoc of foldersInSpace.docs) {
@@ -91,25 +126,28 @@ export async function GET(request: NextRequest) {
               .select()
               .get();
 
+            // 獲取分享者資訊
+            const ownerId = spaceOwners.get(spaceId);
+            const ownerData = ownerId ? ownersMap.get(ownerId) : null;
+            const sharerName =
+              ownerData?.name || ownerData?.displayName || 'Unknown User';
+
             sharedFolders.push({
               id: folderDoc.id,
               name: folderData.name,
               description: folderData.description,
-              promptSpaceId: spaceId,
-              spaceName: spaceData?.name || 'Unknown Space',
               permission,
-              source: 'space',
-              sharedAt:
-                folderData.createdAt?.toDate?.()?.toISOString() ||
-                new Date().toISOString(),
-              totalPrompts: promptsCount.size,
+              shareType: 'space',
+              promptCount: promptsCount.size,
+              sharedFrom: sharerName,
+              shareEmail: ownerData?.email,
             });
           }
         }
       }
     }
 
-    // 2b. 處理 Additional emails 分享的 folders
+    // 3b. 處理 Additional emails 分享的 folders
     if (additionalFolderIds.length > 0) {
       for (const folderId of additionalFolderIds) {
         const folderDoc = await adminDb
@@ -120,18 +158,6 @@ export async function GET(request: NextRequest) {
         if (folderDoc.exists) {
           const folderData = folderDoc.data();
 
-          // 獲取 Space 資訊
-          let spaceName = 'Unknown Space';
-          if (folderData?.promptSpaceId) {
-            const spaceDoc = await adminDb
-              .collection('prompt_spaces')
-              .doc(folderData.promptSpaceId)
-              .get();
-            if (spaceDoc.exists) {
-              spaceName = spaceDoc.data()?.name || 'Unknown Space';
-            }
-          }
-
           // 計算 folder 內的 prompt 數量
           const promptsCount = await adminDb
             .collection('prompts')
@@ -139,45 +165,42 @@ export async function GET(request: NextRequest) {
             .select()
             .get();
 
-          // 獲取分享時間
-          const shareDoc = folderSharesQuery.docs.find(
-            (doc) => doc.data().folderId === folderId
-          );
-          const sharedAt =
-            shareDoc?.data()?.createdAt?.toDate?.()?.toISOString() ||
-            new Date().toISOString();
+          // 獲取分享者資訊
+          const ownerId = folderOwners.get(folderId);
+          const ownerData = ownerId ? ownersMap.get(ownerId) : null;
+          const sharerName =
+            ownerData?.name || ownerData?.displayName || 'Unknown User';
 
           sharedFolders.push({
             id: folderId,
             name: folderData?.name || 'Unknown Folder',
             description: folderData?.description,
-            promptSpaceId: folderData?.promptSpaceId,
-            spaceName,
             permission: 'view', // Additional emails 固定為 view 權限
-            source: 'additional',
-            sharedAt,
-            totalPrompts: promptsCount.size,
+            shareType: 'additional',
+            promptCount: promptsCount.size,
+            sharedFrom: sharerName,
+            shareEmail: ownerData?.email,
           });
         }
       }
     }
 
-    // 3. 去重複（同一個 folder 可能同時通過 Space 和 Additional 方式分享）
+    // 4. 去重複（同一個 folder 可能同時通過 Space 和 Additional 方式分享）
     const uniqueFolders = new Map<string, SharedFolderItem>();
 
     sharedFolders.forEach((folder) => {
       const existing = uniqueFolders.get(folder.id);
       if (
         !existing ||
-        (folder.source === 'space' && existing.source === 'additional')
+        (folder.shareType === 'space' && existing.shareType === 'additional')
       ) {
         // 優先保留 Space 權限（通常權限更高）
         uniqueFolders.set(folder.id, folder);
       }
     });
 
-    const finalFolders = Array.from(uniqueFolders.values()).sort(
-      (a, b) => new Date(b.sharedAt).getTime() - new Date(a.sharedAt).getTime()
+    const finalFolders = Array.from(uniqueFolders.values()).sort((a, b) =>
+      a.name.localeCompare(b.name)
     );
 
     console.log(

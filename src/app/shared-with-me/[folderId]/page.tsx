@@ -35,13 +35,7 @@ const SharedFolderPage: React.FC<SharedFolderPageProps> = ({ params }) => {
   } = useSharedFolderDetails(folderId);
 
   const getShareSourceText = (folder: SharedFolderDetails) => {
-    if (folder.shareType === 'space' && folder.spaceName) {
-      return folder.spaceName;
-    }
-    if (folder.shareType === 'additional' && folder.shareEmail) {
-      return folder.shareEmail;
-    }
-    return 'Unknown source';
+    return folder.sharedFrom;
   };
 
   const getPermissionIcon = (permission: string) => {

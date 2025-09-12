@@ -8,7 +8,6 @@ export interface SharedFolder {
   sharedFrom: string;
   shareType: 'space' | 'additional';
   permission: 'view' | 'edit';
-  spaceName?: string;
   shareEmail?: string;
 }
 

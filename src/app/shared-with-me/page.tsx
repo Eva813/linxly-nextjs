@@ -17,13 +17,7 @@ const SharedFoldersOverview: React.FC = () => {
   } = useSharedFolders();
 
   const getShareSourceText = (folder: SharedFolder) => {
-    if (folder.shareType === 'space' && folder.spaceName) {
-      return `From: ${folder.spaceName}`;
-    }
-    if (folder.shareType === 'additional' && folder.shareEmail) {
-      return `From: ${folder.shareEmail}`;
-    }
-    return 'From: Unknown source';
+    return `From: ${folder.sharedFrom}`;
   };
 
   const getPermissionText = (permission: string) => {
@@ -111,23 +105,18 @@ const SharedFoldersOverview: React.FC = () => {
                           <h3 className="font-medium text-foreground group-hover:text-primary transition-colors line-clamp-1">
                             {folder.name}
                           </h3>
-                          {folder.description && (
-                            <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
-                              {folder.description}
-                            </p>
-                          )}
+                          <span
+                            className={`text-sm font-medium ${getPermissionColor(folder.permission)}`}
+                          >
+                            {getPermissionText(folder.permission)}
+                          </span>
                         </div>
                       </div>
 
                       {/* 統計資訊 */}
-                      <div className="flex items-center justify-between text-sm">
+                      <div className="text-sm">
                         <span className="text-muted-foreground">
                           {folder.promptCount} 個 Prompts
-                        </span>
-                        <span
-                          className={`font-medium ${getPermissionColor(folder.permission)}`}
-                        >
-                          {getPermissionText(folder.permission)}
                         </span>
                       </div>
 

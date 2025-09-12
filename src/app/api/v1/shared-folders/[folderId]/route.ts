@@ -10,7 +10,6 @@ interface SharedFolderDetailResponse {
   sharedFrom: string;
   shareType: 'space' | 'additional' | 'public';
   permission: 'view' | 'edit';
-  spaceName?: string;
   shareEmail?: string;
   prompts: {
     id: string;
@@ -78,26 +77,32 @@ export async function GET(
       }
     }
 
-    // 4. 獲取權限來源標籤和相關信息
-    let sourceLabel = '';
-    let spaceName: string | undefined;
+    // 4. sharedFrom 標籤
+    let sharedFromText = '';
     let shareEmail: string | undefined;
 
-    if (accessCheck.source === 'space' && folderData?.promptSpaceId) {
-      const spaceDoc = await adminDb
-        .collection('prompt_spaces')
-        .doc(folderData.promptSpaceId)
-        .get();
-      if (spaceDoc.exists) {
-        const spaceData = spaceDoc.data();
-        spaceName = spaceData?.name || 'Unknown';
-        sourceLabel = `${spaceName} Space`;
+    // 優先顯示分享者姓名，其次是 email
+    if (sharedBy.name) {
+      sharedFromText = sharedBy.name;
+      shareEmail = sharedBy.email;
+    } else if (sharedBy.email) {
+      sharedFromText = sharedBy.email;
+      shareEmail = sharedBy.email;
+    } else {
+      // 如果都沒有，顯示根據分享類型的預設文字
+      switch (accessCheck.source) {
+        case 'space':
+          sharedFromText = 'Space member';
+          break;
+        case 'additional':
+          sharedFromText = 'Direct invitation';
+          break;
+        case 'public':
+          sharedFromText = 'Public sharing';
+          break;
+        default:
+          sharedFromText = 'Unknown source';
       }
-    } else if (accessCheck.source === 'additional') {
-      shareEmail = (await getUserEmail(userId)) || undefined;
-      sourceLabel = 'Direct invitation';
-    } else if (accessCheck.source === 'public') {
-      sourceLabel = 'Public sharing';
     }
 
     // 5. 獲取 folder 內的 prompts
@@ -119,16 +124,14 @@ export async function GET(
       };
     });
 
-    // 6. 組織回應資料
     const response: SharedFolderDetailResponse = {
       id: folderId,
       name: folderData?.name || 'Untitled Folder',
       description: folderData?.description,
       promptCount: prompts.length,
-      sharedFrom: sourceLabel,
+      sharedFrom: sharedFromText,
       shareType: accessCheck.source as 'space' | 'additional' | 'public',
       permission: accessCheck.permission as 'view' | 'edit',
-      spaceName,
       shareEmail,
       prompts,
     };
